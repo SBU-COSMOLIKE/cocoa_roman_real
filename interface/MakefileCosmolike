@@ -28,13 +28,21 @@ CLOG :=1
 # LINK PYBIND LIBRARY
 PYBIND := 1
 
+# LINK HDF5 LIBRARY
+#HDF5 := 1
+
+
 # DEFINE TEST CODE
 TEST := 1
 
 CSOURCES =
 OBJECTC =
+
+CPPSOURCES =
+OBJECTCPP =
+
 CFLAGS =  -std=c99 -I ${ROOTDIR}/.local/include/ -I ${ROOTDIR}/external_modules/code/
-CXXFLAGS = -std=c++14 -I ${ROOTDIR}/.local/include/ -I ${ROOTDIR}/external_modules/code/
+CXXFLAGS = -std=c++17 -I ${ROOTDIR}/.local/include/ -I ${ROOTDIR}/external_modules/code/
 LDFLAGS = -L ${ROOTDIR}/.local/lib
 
 ifdef COSMOLIKE_DEBUG_MODE
@@ -48,8 +56,8 @@ ifdef IGNORE_CPP_SPDLOG_INSTALLATION
 endif
 
 ifdef ARMA
-	CXXFLAGS += -DARMA
-	LDFLAGS += -llapack
+	CXXFLAGS += -DARMA -DARMA_DONT_PRINT_FAST_MATH_WARNING
+	LDFLAGS += -llapack -lopenblas -larpack -larmadillo
 endif
 
 ifdef GSL
@@ -107,10 +115,15 @@ ifdef PYBIND
 	LDFLAGS += $(shell python3-config --ldflags)
 endif
 
+ifdef HDF5
+	CFLAGS += -DHDF5LIB
+	LDFLAGS += -lhdf5
+endif
+
 LDFLAGS += -lm
 
 all:  shared
-shared: cosmolike_lsst_y1_interface.so
+shared: cosmolike_roman_real_interface.so
 
 CSOURCES += \
 		${ROOTDIR}/external_modules/code/cfftlog/cfftlog.c \
@@ -150,17 +163,29 @@ OBJECTC += \
 		./recompute.o \
 		./redshift_spline.o \
 		./structs.o \
-		./pt_cfastpt.o \
+		./pt_cfastpt.o
+
+CPPSOURCES += \
+		${ROOTDIR}/external_modules/code/cosmolike/generic_interface.cpp \
+		${ROOTDIR}/external_modules/code/cosmolike/cosmo2D_wrapper.cpp
+
+OBJECTCPP += \
+		./generic_interface.o \
+		./cosmo2D_wrapper.o
 
 $(OBJECTC): $(CSOURCES)
-	$(CC) $(CFLAGS) -fPIC -DCOBAYA_SAMPLER -c $(CSOURCES)
+	$(CC) $(CFLAGS) -fPIC -c $(CSOURCES)
 
-cosmolike_lsst_y1_interface.so: $(OBJECTC) $(CSOURCES) interface.cpp
-	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -shared -fPIC -o $@ $(OBJECTC) interface.cpp $(LDFLAGS)
+$(OBJECTCPP): $(CPPSOURCES)
+	$(CXX) $(CXXFLAGS) -fPIC -c $(CPPSOURCES)
+
+cosmolike_roman_real_interface.so: $(OBJECTC) $(OBJECTCPP)
+	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -shared -fPIC -o $@ $(OBJECTC) $(OBJECTCPP) interface.cpp $(LDFLAGS)
 	@rm *.o
 
-test: $(OBJECTC) $(CSOURCES) interface.cpp
-	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -fPIC -o $@ $(OBJECTC) interface.cpp $(LDFLAGS)
+test: $(OBJECTC) $(CSOURCES) $(CPPSOURCES)
+	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -fPIC -o $@ $(OBJECTC) $(CPPSOURCES) $(LDFLAGS)
 
 clean:
-	@rm -rf cosmolike_lsst_y1_interface.so cosmolike_lsst_y1_interface.so.dSYM  *.o
+	@rm -rf cosmolike_roman_real_interface.so cosmolike_roman_real_interface.so.dSYM  *.o
+

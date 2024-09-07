@@ -15,7 +15,7 @@ from getdist import IniFile
 import euclidemu2
 import math
 
-import cosmolike_lsst_y1_interface as ci
+import cosmolike_roman_real_interface as ci
 
 # default is best fit LCDM - just need to be an ok Cosmology
 default_omega_matter = 0.315
@@ -71,9 +71,6 @@ default_chi = np.array([
  ])
 
 class _cosmolike_prototype_base(DataSetLikelihood):
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
 
   def initialize(self, probe):
 
@@ -81,8 +78,6 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ini = IniFile(os.path.normpath(os.path.join(self.path, self.data_file)))
 
     self.probe = probe
-
-    self.IA_type = ini.int('IA_model')
 
     self.data_vector_file = ini.relativeFileName('data_file')
 
@@ -93,8 +88,6 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     self.lens_file = ini.relativeFileName('nz_lens_file')
 
     self.source_file = ini.relativeFileName('nz_source_file')
-
-    self.ggl_olap_cut = ini.float("lensing_overlap_cut")
 
     self.lens_ntomo = ini.int("lens_ntomo") #5
 
@@ -108,7 +101,10 @@ class _cosmolike_prototype_base(DataSetLikelihood):
 
     self.force_cache_false = False
 
+    self.ggl_tomo_combo = ini.float_list("ggl_tomo_combo")
+
     # ------------------------------------------------------------------------
+    
     self.z_interp_1D = np.linspace(0,2.0,1000)
     self.z_interp_1D = np.concatenate((self.z_interp_1D,
       np.linspace(2.0,10.1,200)),axis=0)
@@ -133,11 +129,12 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     # ------------------------------------------------------------------------
 
     ci.initial_setup()
+    
     ci.init_accuracy_boost(self.accuracyboost, self.samplingboost, self.integration_accuracy)
 
     ci.init_probes(possible_probes=self.probe)
 
-    ci.init_binning(self.ntheta, self.theta_min_arcmin, self.theta_max_arcmin)
+    ci.init_binning(int(self.ntheta), self.theta_min_arcmin, self.theta_max_arcmin)
 
     ci.init_cosmo_runmode(is_linear=False)
 
@@ -148,26 +145,17 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     # convert chi to Mpc/h
     ci.init_distances(default_z, default_chi*default_hubble/100.0)
 
-    ci.init_IA(self.IA_type)
+    ci.init_IA(ia_model = int(self.IA_model), ia_redshift_evolution = int(self.IA_redshift_evolution))
 
-    ci.init_source_sample(self.source_file, self.source_ntomo)
+    ci.init_source_sample(filename=self.source_file, ntomo_bins=int(self.source_ntomo))
 
-    ci.init_lens_sample(self.lens_file, self.lens_ntomo, self.ggl_olap_cut)
+    ci.init_lens_sample(filename=self.lens_file, ntomo_bins=int(self.lens_ntomo))
 
-    ci.init_size_data_vector()
+    ci.init_ggl_tomo_combo(combos=self.ggl_tomo_combo)
 
     ci.init_data_real(self.cov_file, self.mask_file, self.data_vector_file)
 
-    # FOR ALLOWED OPTIONS FOR `which_baryonic_simulations`, SEE BARYONS.C
-    # FUNCTION `void init_baryons(char* scenario)`. SIMS INCLUDE
-    # TNG100, HzAGN, mb2, illustris, eagle, owls_AGN_T80, owls_AGN_T85,
-    # owls_AGN_T87, BAHAMAS_T76, BAHAMAS_T78, BAHAMAS_T80
-    ci.init_baryons_contamination(
-      self.use_baryonic_simulations_for_dv_contamination,
-      self.which_baryonic_simulations_for_dv_contamination)
-
     if self.create_baryon_pca:
-      ci.init_baryon_pca_scenarios(self.baryon_pca_select_simulations)
       self.use_baryon_pca = False
     else:
       if ini.string('baryon_pca_file', default=''):
@@ -176,24 +164,26 @@ class _cosmolike_prototype_base(DataSetLikelihood):
         self.log.info('use_baryon_pca = True')
         self.log.info('baryon_pca_file = %s loaded', baryon_pca_file)
         self.use_baryon_pca = True
+        ci.set_baryon_pcs(eigenvectors=self.baryon_pcs)
       else:
         self.log.info('use_baryon_pca = False')
         self.use_baryon_pca = False
 
-    self.baryon_pcs_qs = np.zeros(4)
+    self.npcs = 4
+    self.baryon_pcs_qs = np.zeros(self.npcs)
+    
     # ------------------------------------------------------------------------
 
-    self.do_cache_lnPL = np.zeros(
-      self.len_log10k_interp_2D*self.len_z_interp_2D)
+    self.do_cache_lnPL = np.zeros(self.len_log10k_interp_2D*self.len_z_interp_2D)
 
-    self.do_cache_lnPNL = np.zeros(
-      self.len_log10k_interp_2D*self.len_z_interp_2D)
+    self.do_cache_lnPNL = np.zeros(self.len_log10k_interp_2D*self.len_z_interp_2D)
 
     self.do_cache_chi = np.zeros(len(self.z_interp_1D))
 
     self.do_cache_cosmo = np.zeros(2)
 
     # ------------------------------------------------------------------------
+    
     if self.non_linear_emul == 1:
       self.emulator = ee2=euclidemu2.PyEuclidEmulator()
 
@@ -206,6 +196,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       "As": None,
       "H0": None,
       "omegam": None,
+      "omegab": None,
       "mnu": None,
       "w": None,
       "Pk_interpolator": {
@@ -362,7 +353,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ci.set_nuisance_shear_calib(
       M = [
         params_values.get(p, None) for p in [
-          "LSST_M"+str(i+1) for i in range(self.source_ntomo)
+          "Roman_real_M"+str(i+1) for i in range(self.source_ntomo)
         ]
       ]
     )
@@ -370,7 +361,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ci.set_nuisance_shear_photoz(
       bias = [
         params_values.get(p, None) for p in [
-          "LSST_DZ_S"+str(i+1) for i in range(self.source_ntomo)
+          "Roman_real_DZ_S"+str(i+1) for i in range(self.source_ntomo)
         ]
       ]
     )
@@ -378,17 +369,17 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ci.set_nuisance_ia(
       A1 = [
         params_values.get(p, None) for p in [
-          "LSST_A1_"+str(i+1) for i in range(self.source_ntomo)
+          "Roman_real_A1_"+str(i+1) for i in range(self.source_ntomo)
         ]
       ],
       A2 = [
         params_values.get(p, None) for p in [
-          "LSST_A2_"+str(i+1) for i in range(self.source_ntomo)
+          "Roman_real_A2_"+str(i+1) for i in range(self.source_ntomo)
         ]
       ],
       B_TA = [
         params_values.get(p, None) for p in [
-          "LSST_BTA_"+str(i+1) for i in range(self.source_ntomo)
+          "Roman_real_BTA_"+str(i+1) for i in range(self.source_ntomo)
         ]
       ],
     )
@@ -401,133 +392,34 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ci.set_nuisance_bias(
       B1 = [
         params_values.get(p, None) for p in [
-          "LSST_B1_"+str(i+1) for i in range(self.lens_ntomo)
+          "Roman_real_B1_"+str(i+1) for i in range(self.lens_ntomo)
         ]
       ],
       B2 = [
         params_values.get(p, None) for p in [
-          "LSST_B2_"+str(i+1) for i in range(self.lens_ntomo)
+          "Roman_real_B2_"+str(i+1) for i in range(self.lens_ntomo)
         ]
       ],
       B_MAG = [
         params_values.get(p, None) for p in [
-          "LSST_BMAG_"+str(i+1) for i in range(self.lens_ntomo)
+          "Roman_real_BMAG_"+str(i+1) for i in range(self.lens_ntomo)
         ]
       ]
     )
     ci.set_nuisance_clustering_photoz(
       bias = [
         params_values.get(p, None) for p in [
-          "LSST_DZ_L"+str(i+1) for i in range(self.lens_ntomo)
+          "Roman_real_DZ_L"+str(i+1) for i in range(self.lens_ntomo)
         ]
       ]
     )
     ci.set_point_mass(
       PMV = [
         params_values.get(p, None) for p in [
-          "LSST_PM"+str(i+1) for i in range(self.lens_ntomo)
+          "Roman_real_PM"+str(i+1) for i in range(self.lens_ntomo)
         ]
       ]
     )
 
-  # ------------------------------------------------------------------------
-  # --------------------------- baryonic PCAs ------------------------------
-  # ------------------------------------------------------------------------
-
-  def set_baryon_related(self, **params_values):
-    self.baryon_pcs_qs[0] = params_values.get("LSST_BARYON_Q1", 0.0)
-    self.baryon_pcs_qs[1] = params_values.get("LSST_BARYON_Q2", 0.0)
-    self.baryon_pcs_qs[2] = params_values.get("LSST_BARYON_Q3", 0.0)
-    self.baryon_pcs_qs[3] = params_values.get("LSST_BARYON_Q4", 0.0)
-    
-  def add_baryon_pcs_to_datavector(self, datavector):    
-    return datavector[:] + self.baryon_pcs_qs[0]*self.baryon_pcs[:,0] \
-      + self.baryon_pcs_qs[1]*self.baryon_pcs[:,1] \
-      + self.baryon_pcs_qs[2]*self.baryon_pcs[:,2] \
-      + self.baryon_pcs_qs[3]*self.baryon_pcs[:,3]
-
-  def compute_dm_datavector_masked_reduced_dim(self, **params_values):
-
-    self.force_cache_false = True
-
-    ci.init_baryons_contamination(False, "")
-
-    self.set_cosmo_related()
-
-    self.force_cache_false = False
-
-    if (self.probe != "xi"):
-      self.set_lens_related(**params_values)
-
-    if (self.probe != "wtheta"):
-      self.set_source_related(**params_values)
-
-    # datavector C++ returns a list (not numpy array)
-    return np.array(ci.compute_data_vector_masked_reduced_dim())
-
-  # Hack to create baryonic PCAs
-  def compute_barion_datavector_masked_reduced_dim(self, sim, **params_values):
-
-    self.force_cache_false = True
-
-    ci.init_baryons_contamination(True, sim)
-
-    self.set_cosmo_related()
-
-    self.force_cache_false = False
-
-    if (self.probe != "xi"):
-      self.set_lens_related(**params_values)
-
-    if (self.probe != "wtheta"):
-      self.set_source_related(**params_values)
-
-    # datavector C++ returns a list (not numpy array)
-    return np.array(ci.compute_data_vector_masked_reduced_dim())
-
-  def generate_baryonic_PCA(self, **params_values):
-
-    cov_L_cholesky = np.linalg.cholesky(
-      ci.get_covariance_masked_reduced_dim())
-
-    inv_cov_L_cholesky = np.linalg.inv(cov_L_cholesky)
-
-    ndata_reduced = ci.get_nreduced_dim()
-
-    nbaryons_scenario = ci.get_baryon_pca_nscenarios()
-
-    modelv_dm = self.compute_dm_datavector_masked_reduced_dim(**params_values)
-
-    baryon_diff = np.zeros(shape=(ndata_reduced, nbaryons_scenario))
-
-    for i in range(nbaryons_scenario):
-      modelv_baryon = self.compute_barion_datavector_masked_reduced_dim(
-        ci.get_baryon_pca_scenario_name(i), **params_values)
-
-      baryon_diff[:,i] = (modelv_baryon-modelv_dm)
-
-    baryon_weighted_diff = np.dot(inv_cov_L_cholesky, baryon_diff)
-
-    U, Sdig, VT = np.linalg.svd(baryon_weighted_diff, full_matrices=True)
-
-    # MAKE SURE WHATEVER VERSION OF NP HAVE U IN THE RIGHT ORDER
-    if(np.all(np.diff(Sdig) <= 0) != True):
-      raise LoggedError(self.log, "LOGICAL ERROR WITH NUMPY FUNCTION GEN PCA")
-
-    PCs = np.empty(shape=(ndata_reduced, nbaryons_scenario))
-
-    for i in range(nbaryons_scenario):
-      PCs[:,i] = U[:,i]
-
-    PCs = np.dot(cov_L_cholesky, PCs)
-
-    # Now we need to expand the number of dimensions
-    ndata = ci.get_ndim()
-    PCS_FINAL = np.empty(shape=(ndata, nbaryons_scenario))
-
-    for i in range(nbaryons_scenario):
-      PCS_FINAL[:,i] = ci.get_expand_dim_from_masked_reduced_dim(PCs[:,i])
-
-    np.savetxt(self.filename_baryon_pca, PCS_FINAL)
-
-    ci.init_baryons_contamination(False,"")
+  #  self.baryon_pcs_qs[0] = params_values.get("Roman_real_BARYON_Q1", 0.0)
+     

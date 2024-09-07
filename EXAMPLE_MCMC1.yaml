@@ -5,59 +5,14 @@ stop_at_error: False
 likelihood:
   lsst_y1.lsst_cosmic_shear:
     path: ./external_modules/data/lsst_y1
+    print_datavector: False
     accuracyboost: 1.0
     integration_accuracy: 0
     kmax_boltzmann: 5.0
     # 1 EE2, 2 Halofit
     non_linear_emul: 2
-
-# IN THIS EXAMPLE, WE ASSUMED THE DATA VECTOR WERE CREATED W/ THE FOLLOWING 
-# PARAMETERS (WE USED HALOFIT TO CREATE THE DATAVECTOR)
-#    As_1e9: 2.1
-#    ns: 0.96605
-#    H0: 67.32
-#    omegab: 0.04
-#    omegam: 0.3
-#    mnu: 0.06
-#    LSST_DZ_S1: 0.0414632
-#    LSST_DZ_S2: 0.00147332
-#    LSST_DZ_S3: 0.0237035
-#    LSST_DZ_S4: -0.0773436
-#    LSST_DZ_S5: -8.67127e-05
-#    LSST_M1: 0.0191832
-#    LSST_M2: -0.0431752
-#    LSST_M3: -0.034961
-#    LSST_M4: -0.0158096
-#    LSST_M5: -0.0158096
-#    LSST_A1_1: 0.606102
-#    LSST_A1_2: -1.51541
-#    LSST_DZ_L1: 0.00457604
-#    LSST_DZ_L2: 0.000309875
-#    LSST_DZ_L3: 0.00855907
-#    LSST_DZ_L4: -0.00316269
-#    LSST_DZ_L5: -0.0146753
-#    LSST_B1_1: 1.72716
-#    LSST_B1_2: 1.65168
-#    LSST_B1_3: 1.61423
-#    LSST_B1_4: 1.92886
-#    LSST_B1_5: 2.11633
-#    w0pwa: -0.9 (wa = 0)
-#    w: -0.9
-#  LSST_BMAG_1:
-#    value: 0.0
-#    latex: b_\mathrm{BMAG-LSST}^1
-#  LSST_BMAG_2:
-#    value: 0.0
-#    latex: b_\mathrm{BMAG-LSST}^2
-#  LSST_BMAG_3:
-#    value: 0.0
-#    latex: b_\mathrm{BMAG-LSST}^3
-#  LSST_BMAG_4:
-#    value: 0.0
-#    latex: b_\mathrm{BMAG-LSST}^4
-#  LSST_BMAG_5:
-#    value: 0.0
-#    latex: b_\mathrm{BMAG-LSST}^5
+    IA_model: 0
+    IA_redshift_evolution: 3
 
 params:
   As_1e9:
@@ -67,8 +22,8 @@ params:
     ref:
       dist: norm
       loc: 2.1
-      scale: 0.1
-    proposal: 0.1
+      scale: 0.2
+    proposal: 0.2
     latex: 10^9 A_\mathrm{s}
     drop: true
     renames: A
@@ -79,8 +34,8 @@ params:
     ref:
       dist: norm
       loc: 0.96605
-      scale: 0.005
-    proposal: 0.005
+      scale: 0.015
+    proposal: 0.015
     latex: n_\mathrm{s}
   H0:
     prior:
@@ -89,8 +44,8 @@ params:
     ref:
       dist: norm
       loc: 67.32
-      scale: 2
-    proposal: 1
+      scale: 3
+    proposal: 3
     latex: H_0
   omegab:
     prior:
@@ -99,8 +54,8 @@ params:
     ref:
       dist: norm
       loc: 0.0495
-      scale: 0.0025
-    proposal: 0.0025
+      scale: 0.005
+    proposal: 0.005
     latex: \Omega_\mathrm{b}
     drop: true
   omegam:
@@ -110,8 +65,8 @@ params:
     ref:
       dist: norm
       loc: 0.316
-      scale: 0.01
-    proposal: 0.01
+      scale: 0.015
+    proposal: 0.015
     latex: \Omega_\mathrm{m}
     drop: true
   w:
