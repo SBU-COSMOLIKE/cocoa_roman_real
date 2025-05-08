@@ -2,9 +2,9 @@ from cobaya.likelihoods.roman_real._cosmolike_prototype_base import _cosmolike_p
 import cosmolike_roman_real_interface as ci
 import numpy as np
 
-class roman_real_xi_ggl(_cosmolike_prototype_base):
+class roman_real_xi_gg(_cosmolike_prototype_base):
   def initialize(self):
-    super(roman_real_xi_ggl,self).initialize(probe="xi_ggl")
+    super(roman_real_xi_gg,self).initialize(probe="xi_gg")
   
   def logp(self, **params_values):
     datavector = self.internal_get_datavector(**params_values)
@@ -25,14 +25,14 @@ class roman_real_xi_ggl(_cosmolike_prototype_base):
       pcs = ci.compute_baryon_pcas(scenarios = self.baryon_pca_sims)
       np.savetxt(self.filename_baryon_pca, pcs)
       # No need to call set_cosmo_related again with self.force_cache_false = True
-      # Why? End of compute_baryon_pcas function forced C cosmo cache renew
+      # Why? End of compute_baryon_pcas function forced cosmo cache renew
 
     if self.use_baryon_pca:      
       datavector = np.array(
         ci.compute_data_vector_masked_with_baryon_pcs(
           Q = [
                 params_values.get(p, None) for p in [
-                  survey+"_BARYON_Q"+str(i+1) for i in range(self.npcs)
+                  survey + "_BARYON_Q"+str(i+1) for i in range(self.npcs)
                 ]
               ]
         )

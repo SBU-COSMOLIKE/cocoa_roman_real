@@ -1,4 +1,4 @@
-from cobaya.likelihoods.roman_real._cosmolike_prototype_base import _cosmolike_prototype_base
+from cobaya.likelihoods.roman_real._cosmolike_prototype_base import _cosmolike_prototype_base, survey
 import cosmolike_roman_real_interface as ci
 import numpy as np
 
@@ -22,15 +22,13 @@ class roman_real_cosmic_shear(_cosmolike_prototype_base):
     if self.create_baryon_pca:
       pcs = ci.compute_baryon_pcas(scenarios = self.baryon_pca_sims)
       np.savetxt(self.filename_baryon_pca, pcs)
-      # No need to call set_cosmo_related again with self.force_cache_false = True
-      # Why? End of compute_baryon_pcas function forced C cosmo cache renew
     
     if self.use_baryon_pca:      
       datavector = np.array(
         ci.compute_data_vector_masked_with_baryon_pcs(
           Q = [
                 params_values.get(p, None) for p in [
-                  "Roman_real_BARYON_Q"+str(i+1) for i in range(self.npcs)
+                  survey+"_BARYON_Q"+str(i+1) for i in range(self.npcs)
                 ]
               ]
         )

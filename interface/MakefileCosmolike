@@ -31,10 +31,6 @@ PYBIND := 1
 # LINK HDF5 LIBRARY
 #HDF5 := 1
 
-
-# DEFINE TEST CODE
-TEST := 1
-
 CSOURCES =
 OBJECTC =
 
@@ -103,10 +99,6 @@ ifdef SPDLOG
 	endif
 endif
 
-ifdef TEST
-	COMMON_FLAGS += -DTEST
-endif
-
 CFLAGS += ${COMMON_FLAGS}
 CXXFLAGS += ${COMMON_FLAGS}
 
@@ -139,7 +131,6 @@ CSOURCES += \
 		${ROOTDIR}/external_modules/code/cosmolike/cosmo2D.c \
 		${ROOTDIR}/external_modules/code/cosmolike/halo.c \
 		${ROOTDIR}/external_modules/code/cosmolike/IA.c \
-		${ROOTDIR}/external_modules/code/cosmolike/recompute.c \
 		${ROOTDIR}/external_modules/code/cosmolike/radial_weights.c \
 		${ROOTDIR}/external_modules/code/cosmolike/redshift_spline.c \
 		${ROOTDIR}/external_modules/code/cosmolike/structs.c \
@@ -160,7 +151,6 @@ OBJECTC += \
 		./halo.o \
 		./IA.o \
 		./radial_weights.o \
-		./recompute.o \
 		./redshift_spline.o \
 		./structs.o \
 		./pt_cfastpt.o
@@ -183,9 +173,5 @@ cosmolike_roman_real_interface.so: $(OBJECTC) $(OBJECTCPP)
 	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -shared -fPIC -o $@ $(OBJECTC) $(OBJECTCPP) interface.cpp $(LDFLAGS)
 	@rm *.o
 
-test: $(OBJECTC) $(CSOURCES) $(CPPSOURCES)
-	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -fPIC -o $@ $(OBJECTC) $(CPPSOURCES) $(LDFLAGS)
-
 clean:
 	@rm -rf cosmolike_roman_real_interface.so cosmolike_roman_real_interface.so.dSYM  *.o
-

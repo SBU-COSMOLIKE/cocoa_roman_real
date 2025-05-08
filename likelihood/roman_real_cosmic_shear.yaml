@@ -1,5 +1,5 @@
 path: null
-data_file: roman_real.dataset
+data_file: roman_real_M1_GGL0.05.dataset
 accuracyboost: 1.0
 samplingboost: 1.0
 integration_accuracy: 0
@@ -24,4 +24,4 @@ filename_baryon_pca: "./projects/roman_real/data/pca.txt"
 print_datavector: False
 print_datavector_file: "./projects/roman_real/chains/roman_real_theory.modelvector"
 
-params: !defaults [params_roman_real_source]
+params: !defaults [roman_real_params_source]

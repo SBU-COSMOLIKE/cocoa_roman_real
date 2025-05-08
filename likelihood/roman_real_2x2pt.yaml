@@ -1,16 +1,23 @@
 path: null
-data_file: ROMAN_REAL_M1_GGL0.05.dataset
+data_file: roman_real_M1_GGL0.05.dataset
 accuracyboost: 1.0
 samplingboost: 1.0
 integration_accuracy: 0 
 kmax_boltzmann: 5.0
 speed: 1
 non_linear_emul: 2
-# 0 = NO_IA (AMPLITUDES SET TO ZERO), 1 = IA_NLA_LF
-# 2 = IA_REDSHIFT_BINNING, 3 = IA_REDSHIFT_EVOLUTION
+
+# IA REDSHIFT EVOLUTION: 0 = NO_IA (AMPLITUDES SET TO ZERO), 
+#                        1 = IA_NLA_LF
+#                        2 = IA_REDSHIFT_BINNING, 
+#                        3 = IA_REDSHIFT_EVOLUTION
 IA_redshift_evolution: 3
+
 # IA_MODEL: 0 = NLA, 1 = TATT
 IA_model: 0 
+
+# BIAS REDSHIFT EVOLUTION [b1,b2,bs2,b3,bmag] (choices: see bias.h)
+bias_model: [0,0,0,1,0]
 
 print_intermediate_products: False
 
@@ -24,4 +31,4 @@ filename_baryon_pca: "./projects/roman_real/data/pca.txt"
 print_datavector: False
 print_datavector_file: "./projects/roman_real/chains/roman_real_theory.modelvector"
 
-params: !defaults [params_roman_real_lens, params_roman_real_source]
+params: !defaults [roman_real_params_lens, roman_real_params_source]

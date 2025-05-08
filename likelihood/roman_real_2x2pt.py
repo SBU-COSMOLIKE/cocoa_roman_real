@@ -1,4 +1,4 @@
-from cobaya.likelihoods.roman_real._cosmolike_prototype_base import _cosmolike_prototype_base
+from cobaya.likelihoods.roman_real._cosmolike_prototype_base import _cosmolike_prototype_base, survey
 import cosmolike_roman_real_interface as ci
 import numpy as np
 
@@ -32,7 +32,7 @@ class roman_real_2x2pt(_cosmolike_prototype_base):
         ci.compute_data_vector_masked_with_baryon_pcs(
           Q = [
                 params_values.get(p, None) for p in [
-                  "LSST_BARYON_Q"+str(i+1) for i in range(self.npcs)
+                  survey+"_BARYON_Q"+str(i+1) for i in range(self.npcs)
                 ]
               ]
         )

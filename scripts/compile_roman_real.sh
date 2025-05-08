@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-if [ -z "${IGNORE_COSMOLIKE_Roman_real_CODE}" ]; then
+if [ -z "${IGNORE_COSMOLIKE_romanY1_CODE}" ]; then
 
   if [ -z "${ROOTDIR}" ]; then
     source start_cocoa.sh || { pfail 'ROOTDIR'; return 1; }
@@ -57,12 +57,12 @@ if [ -z "${IGNORE_COSMOLIKE_Roman_real_CODE}" ]; then
 
   PROJECT="${ROOTDIR:?}/projects"
 
-  FOLDER="${Roman_real_NAME:-"roman_real"}"
+  FOLDER="${roman_real_NAME:-"roman_real"}"
 
   PACKDIR="${PROJECT:?}/${FOLDER:?}"
 
   # Name to be printed on this shell script messages
-  PRINTNAME="Roman_real"
+  PRINTNAME="roman_real"
 
   ptop "COMPILING ${PRINTNAME:?}" || return 1
 

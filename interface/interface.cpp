@@ -30,7 +30,6 @@ namespace py = pybind11;
 #include "cosmolike/cosmo3D.h"
 #include "cosmolike/halo.h"
 #include "cosmolike/radial_weights.h"
-#include "cosmolike/recompute.h"
 #include "cosmolike/pt_cfastpt.h"
 #include "cosmolike/redshift_spline.h"
 #include "cosmolike/structs.h"
@@ -45,12 +44,6 @@ namespace py = pybind11;
 // The conversion between STL vector and python np array is cleaner
 // arma:Col is cast to 2D np array with 1 column (not as nice!)
 
-using vector = arma::Col<double>;
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -60,19 +53,18 @@ using vector = arma::Col<double>;
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
+
+void init_bias(std::vector<double> bias_z_evol_model)
+{
+  cosmolike_interface::init_bias(
+      arma::conv_to<arma::Col<double>>::from(bias_z_evol_model)
+    );
+}
 
 void init_baryons_contamination(std::string sim)
 {
   cosmolike_interface::init_baryons_contamination(sim);
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void init_data_3x2pt_real_space(
     std::string cov, 
@@ -82,79 +74,12 @@ void init_data_3x2pt_real_space(
 {
   arma::Col<int>::fixed<3> order = {0, 1, 2};
   cosmolike_interface::init_data_3x2pt_real_space(cov, mask, data, order);
-  return;
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
-void init_distances(std::vector<double> io_z, std::vector<double> io_chi)
-{
-  cosmolike_interface::init_distances(
-      arma::conv_to<vector>::from(io_z),
-      arma::conv_to<vector>::from(io_chi)
-    );
-  return;
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
-void init_growth(std::vector<double> io_z, std::vector<double> io_G)
-{
-  cosmolike_interface::init_growth(
-      arma::conv_to<vector>::from(io_z),
-      arma::conv_to<vector>::from(io_G)
-    );
-  return; 
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
-void init_linear_power_spectrum(
-    std::vector<double> io_log10k,
-    std::vector<double> io_z, 
-    std::vector<double> io_lnP
-  )
-{
-  cosmolike_interface::init_linear_power_spectrum(
-      arma::conv_to<vector>::from(io_log10k),
-      arma::conv_to<vector>::from(io_z),
-      arma::conv_to<vector>::from(io_lnP)
-    );
-}
-
-void init_non_linear_power_spectrum(
-    std::vector<double> io_log10k,
-    std::vector<double> io_z, 
-    std::vector<double> io_lnP
-  )
-{
-  cosmolike_interface::init_non_linear_power_spectrum(
-      arma::conv_to<vector>::from(io_log10k),
-      arma::conv_to<vector>::from(io_z),
-      arma::conv_to<vector>::from(io_lnP)
-    );
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // SET FUNCTIONS
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -167,51 +92,6 @@ void set_baryon_pcs(arma::Mat<double> eigenvectors)
 
   spdlog::debug("\x1b[90m{}\x1b[0m: Ends", "set_baryon_pcs");
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
-void set_cosmological_parameters(
-    const double omega_matter,
-    const double hubble, 
-    const bool is_cached_cosmology
-  )
-{
-  spdlog::debug("\x1b[90m{}\x1b[0m: Begins", "set_cosmological_parameters");
-
-  if(!is_cached_cosmology)
-  {
-    // Cosmolike should not need parameters from inflation or dark energy.
-    // because Cobaya provides P(k,z), H(z), D(z), Chi(z)...
-    // It may require H0 to set scales and \Omega_M to set the halo model
-
-    // cosmolike c interface
-    cosmology.Omega_m = omega_matter;
-    cosmology.Omega_v = 1.0-omega_matter;
-    // Cosmolike only needs to know that there are massive neutrinos (>0)
-    cosmology.Omega_nu = 0.1;
-    cosmology.h0 = hubble/100.0; // assuming H0 in km/s/Mpc
-    cosmology.MGSigma = 0.0;
-    cosmology.MGmu = 0.0;
-
-    // Technical Problem: we want Cosmolike to calculate the data vector when
-    // Cobaya request (no cache). To avoid cache in Cosmolike, we use a
-    // random number generators to set cosmology.random
-    cosmology.random = cosmolike_interface::RandomNumber::get_instance().get();
-    cosmology.is_cached = 0;
-  }
-  else
-  {
-    cosmology.is_cached = 1;
-  }
-
-  spdlog::debug("\x1b[90m{}\x1b[0m: Ends", "set_cosmological_parameters");
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_cosmology(
     const double omega_matter,
@@ -227,49 +107,32 @@ void set_cosmology(
 {
   spdlog::debug("\x1b[90m{}\x1b[0m: Begins", "set_cosmology");
 
-  cosmology.Omega_m = omega_matter;
-  cosmology.Omega_v = 1.0-omega_matter;
+  cosmolike_interface::set_cosmological_parameters(omega_matter, hubble);
 
-  // Cosmolike only needs to know that there are massive neutrinos (>0)
-  cosmology.Omega_nu = 0.1;
-  cosmology.h0 = hubble/100.0; // assuming H0 in km/s/Mpc
-  cosmology.MGSigma = 0.0;
-  cosmology.MGmu = 0.0;
-
-  // Technical Problem: we want Cosmolike to calculate new data vector when
-  // we update distances / matter power spectrum / Growth factor.
-  // To avoid cache, we use a random number generator to set cosmology.random
-  cosmology.random = cosmolike_interface::RandomNumber::get_instance().get();
-  cosmology.is_cached = 0;
-
-  cosmolike_interface::init_linear_power_spectrum(
-    arma::conv_to<vector>::from(io_log10k_2D),
-    arma::conv_to<vector>::from(io_z_2D),
-    arma::conv_to<vector>::from(io_lnP_linear)
+  cosmolike_interface::set_linear_power_spectrum(
+    arma::conv_to<arma::Col<double>>::from(io_log10k_2D),
+    arma::conv_to<arma::Col<double>>::from(io_z_2D),
+    arma::conv_to<arma::Col<double>>::from(io_lnP_linear)
   );
 
-  cosmolike_interface::init_non_linear_power_spectrum(
-    arma::conv_to<vector>::from(io_log10k_2D),
-    arma::conv_to<vector>::from(io_z_2D),
-    arma::conv_to<vector>::from(io_lnP_nonlinear)
+  cosmolike_interface::set_non_linear_power_spectrum(
+    arma::conv_to<arma::Col<double>>::from(io_log10k_2D),
+    arma::conv_to<arma::Col<double>>::from(io_z_2D),
+    arma::conv_to<arma::Col<double>>::from(io_lnP_nonlinear)
   );
 
-  cosmolike_interface::init_growth(
-      arma::conv_to<vector>::from(io_z_2D),
-      arma::conv_to<vector>::from(io_G)
+  cosmolike_interface::set_growth(
+      arma::conv_to<arma::Col<double>>::from(io_z_2D),
+      arma::conv_to<arma::Col<double>>::from(io_G)
     );
 
-  cosmolike_interface::init_distances(
-      arma::conv_to<vector>::from(io_z_1D),
-      arma::conv_to<vector>::from(io_chi)
+  cosmolike_interface::set_distances(
+      arma::conv_to<arma::Col<double>>::from(io_z_1D),
+      arma::conv_to<arma::Col<double>>::from(io_chi)
     );
 
   spdlog::debug("\x1b[90m{}\x1b[0m: Ends", "set_cosmology");
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_nuisance_IA(
     std::vector<double> A1, 
@@ -278,48 +141,32 @@ void set_nuisance_IA(
   )
 {
   cosmolike_interface::set_nuisance_IA(
-      arma::conv_to<vector>::from(A1),
-      arma::conv_to<vector>::from(A2),
-      arma::conv_to<vector>::from(BTA)
+      arma::conv_to<arma::Col<double>>::from(A1),
+      arma::conv_to<arma::Col<double>>::from(A2),
+      arma::conv_to<arma::Col<double>>::from(BTA)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_nuisance_shear_calib(std::vector<double> M)
 {
   cosmolike_interface::set_nuisance_shear_calib(
-      arma::conv_to<vector>::from(M)
+      arma::conv_to<arma::Col<double>>::from(M)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_nuisance_shear_photoz(std::vector<double> SP)
 {
   cosmolike_interface::set_nuisance_shear_photoz(
-      arma::conv_to<vector>::from(SP)
+      arma::conv_to<arma::Col<double>>::from(SP)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_nuisance_clustering_photoz(std::vector<double> CP)
 {
   cosmolike_interface::set_nuisance_clustering_photoz(
-      arma::conv_to<vector>::from(CP)
+      arma::conv_to<arma::Col<double>>::from(CP)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_nuisance_bias(
     std::vector<double> B1, 
@@ -328,28 +175,19 @@ void set_nuisance_bias(
   )
 {
   cosmolike_interface::set_nuisance_bias(
-      arma::conv_to<vector>::from(B1),
-      arma::conv_to<vector>::from(B2),
-      arma::conv_to<vector>::from(BMAG)
+      arma::conv_to<arma::Col<double>>::from(B1),
+      arma::conv_to<arma::Col<double>>::from(B2),
+      arma::conv_to<arma::Col<double>>::from(BMAG)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 void set_pm(std::vector<double> PM)
 {  
   cosmolike_interface::PointMass::get_instance().set_pm_vector(
-      arma::conv_to<vector>::from(PM)
+      arma::conv_to<arma::Col<double>>::from(PM)
     );
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -357,22 +195,13 @@ void set_pm(std::vector<double> PM)
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 double compute_chi2(std::vector<double> datavector)
 {
   return cosmolike_interface::IP::get_instance().get_chi2(
-      arma::conv_to<vector>::from(datavector)
+      arma::conv_to<arma::Col<double>>::from(datavector)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 arma::Mat<double> compute_baryon_pcas_3x2pt(std::string scenarios)
 {
@@ -380,26 +209,16 @@ arma::Mat<double> compute_baryon_pcas_3x2pt(std::string scenarios)
 
   // Init BaryonScenario Class --------------------------------------------
   cosmolike_interface::BaryonScenario::get_instance().set_scenarios(scenarios);
-
-  return cosmolike_interface::compute_baryon_pcas_3x2pt(order);
+  return cosmolike_interface::compute_baryon_pcas_3x2pt_real(order);
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 std::vector<double> compute_theory_data_vector_masked()
 {
   arma::Col<int>::fixed<3> order = {0, 1, 2};
-  
   return arma::conv_to<std::vector<double>>::from(
-      cosmolike_interface::compute_data_vector_3x2pt_masked_any_order(order)
+      cosmolike_interface::compute_data_vector_3x2pt_real_masked_any_order(order)
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 std::vector<double> compute_theory_data_vector_masked_with_baryon_pcs(
     std::vector<double> Q  // PC amplitudes
@@ -407,16 +226,12 @@ std::vector<double> compute_theory_data_vector_masked_with_baryon_pcs(
 {
   arma::Col<int>::fixed<3> order = {0, 1, 2};
   return arma::conv_to<std::vector<double>>::from(
-      cosmolike_interface::compute_data_vector_3x2pt_masked_any_order(
+      cosmolike_interface::compute_data_vector_3x2pt_real_masked_any_order(
           Q,
           order
         )
     );
 }
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 std::vector<double> get_binning_real_space()
 {  
@@ -426,17 +241,19 @@ std::vector<double> get_binning_real_space()
 }
 
 // ---------------------------------------------------------------------------
-// ---------------------------- PYTHON WRAPPER -------------------------------
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// PYTHON WRAPPER
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
 PYBIND11_MODULE(cosmolike_roman_real_interface, m)
 {
-  m.doc() = "CosmoLike Interface for Roman real 3x2pt Module";
+  m.doc() = "CosmoLike Interface for roman-Y1 3x2pt Module";
 
   // --------------------------------------------------------------------
-  // --------------------------------------------------------------------
   // INIT FUNCTIONS
-  // --------------------------------------------------------------------
   // --------------------------------------------------------------------
 
   m.def("init_accuracy_boost",
@@ -451,6 +268,12 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       &init_baryons_contamination,
       "Init data vector contamination (on the matter power spectrum) with baryons",
       py::arg("sim").none(false)
+    );
+
+  m.def("init_bias", 
+      &init_bias, 
+      "Set the bias modeling choices",
+      py::arg("bias_model").none(false)
     );
 
   m.def("init_binning",
@@ -476,54 +299,11 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("DATA").none(false)
     );
 
-  m.def("init_distances",
-      &init_distances,
-      "Load comoving distance, chi(z), as a function  of redshift to Cosmolike",
-      py::arg("z").none(false),
-      py::arg("chi").none(false)
-    );
-
-  m.def("init_growth",
-      &init_growth,
-      "Load Growth Factor (G(z) = D/a) as a function of redshift to Cosmolike",
-      py::arg("z").none(false),
-      py::arg("G").none(false)
-    );
-
   m.def("init_IA",
       &cosmolike_interface::init_IA,
       "Init IA related options",
       py::arg("ia_model").none(false).noconvert(),
       py::arg("ia_redshift_evolution").none(false).noconvert()
-    );
-
-  m.def("init_lens_sample",
-      &cosmolike_interface::init_lens_sample,
-      "Init Lens Sample",
-      py::arg("filename").none(false),
-      py::arg("ntomo_bins").none(false).noconvert()
-    );
-
-    m.def("init_ggl_tomo_combo",
-      &cosmolike_interface::init_ggl_tomo_combo,
-      "Init GGL tomographic bin combinations",
-      py::arg("combos").none(false).noconvert(),
-    );
-
-  m.def("init_linear_power_spectrum",
-      &init_linear_power_spectrum,
-      "Load Linear Matter Power Spectrum from Cobaya to Cosmolike",
-      py::arg("log10k").none(false),
-      py::arg("z").none(false),
-      py::arg("lnP").none(false)
-    );
-
-  m.def("init_non_linear_power_spectrum",
-      &init_non_linear_power_spectrum,
-      "Load Matter Power Spectrum from Cobaya to Cosmolike",
-      py::arg("log10k").none(false),
-      py::arg("z").none(false),
-      py::arg("lnP").none(false)
     );
 
   m.def("init_probes",
@@ -537,11 +317,13 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "Initialize Cosmolike Variables to their Default Values"
     );
 
-  m.def("init_source_sample",
-    &cosmolike_interface::init_source_sample,
-      "Init source sample from File",
-      py::arg("filename").none(false),
-      py::arg("ntomo_bins").none(false).noconvert()
+  m.def("init_redshift_distributions_from_files",
+      &cosmolike_interface::init_redshift_distributions_from_files,
+      "Init lens and source n(z) from files",
+      py::arg("lens_multihisto_file").none(false),
+      py::arg("lens_ntomo").none(false).noconvert(),
+      py::arg("source_multihisto_file").none(false),
+      py::arg("source_ntomo").none(false).noconvert()
     );
 
   m.def("init_survey_parameters",
@@ -553,9 +335,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   // --------------------------------------------------------------------
-  // --------------------------------------------------------------------
   // SET FUNCTIONS
-  // --------------------------------------------------------------------
   // --------------------------------------------------------------------
 
   m.def("set_cosmology",
@@ -610,14 +390,6 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       &set_nuisance_shear_photoz,
       "Set nuisance shear photo-z bias amplitudes",
       py::arg("bias").none(false)
-    );
-
-  m.def("set_cosmological_parameters",
-      &set_cosmological_parameters,
-      "Set cosmological parameters",
-      py::arg("omega_matter").none(false),
-      py::arg("hubble").none(false),
-      py::arg("is_cached").none(false)
     );
 
   m.def("set_point_mass",
@@ -682,6 +454,11 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "Get real space binning (theta bins)"
     );
 
+  m.def("get_gs_redshift_bins",
+      &cosmolike_interface::gs_bins,
+      "Get galaxy-galaxy lensing redshift binning"
+    );
+
   m.def("xi_pm_tomo",
       &cosmolike_interface::xi_pm_tomo_cpp,
       "Compute cosmic shear (real space) data vector at all tomographic"
@@ -717,7 +494,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("C_ss_tomo_limber",
-      py::overload_cast<vector>(
+      py::overload_cast<arma::Col<double>>(
         &cosmolike_interface::C_ss_tomo_limber_cpp
       ),
       "Compute shear-shear (fourier - limber) data vector at all tomographic"
@@ -739,7 +516,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("int_for_C_ss_tomo_limber",
-      py::overload_cast<vector, vector>(
+      py::overload_cast<arma::Col<double>, arma::Col<double>>(
         &cosmolike_interface::int_for_C_ss_tomo_limber_cpp
       ),
       "Compute integrand shear-shear (fourier - limber) data vector at all" 
@@ -764,7 +541,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("C_gs_tomo_limber",
-      py::overload_cast<vector>(
+      py::overload_cast<arma::Col<double>>(
         &cosmolike_interface::C_gs_tomo_limber_cpp
       ),
       "Compute shear-position (fourier - limber) data vector at all tomographic"
@@ -786,7 +563,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("int_for_C_gs_tomo_limber",
-      py::overload_cast<vector, vector>(
+      py::overload_cast<arma::Col<double>, arma::Col<double>>(
         &cosmolike_interface::int_for_C_gs_tomo_limber_cpp
       ),
       "Compute integrand shear-shear (fourier - limber) data vector at all" 
@@ -798,55 +575,19 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
 
   // --------------------------------------------------------------------
   // --------------------------------------------------------------------
-
   m.def("C_gg_tomo_limber",
-      py::overload_cast<const double, const int>(
+      py::overload_cast<arma::Col<double>>(
         &cosmolike_interface::C_gg_tomo_limber_cpp
       ),
-      "Compute position-position (fourier - limber) data vector at a single"
-      " tomographic bin and ell value",
-      py::arg("l").none(false).noconvert(),
-      py::arg("nz").none(false).noconvert()
-    );
-
-  m.def("C_gg_tomo_limber",
-      py::overload_cast<vector>(
-        &cosmolike_interface::C_gg_tomo_limber_cpp
-      ),
-      "Compute position-position (fourier - limber) data vector at all"
-      " tomographic bins and many ell (vectorized)",
+      "Compute position-position (fourier - limber) data vector"
+      " at all tomographic bins and many ell (vectorized)",
       py::arg("l").none(false),
       py::return_value_policy::move
     );
 
-  m.def("int_for_C_gg_tomo_limber",
-      py::overload_cast<const double, const double, const int, const int>(
-        &cosmolike_interface::int_for_C_gg_tomo_limber_cpp
-      ),
-      "Compute integrand for position-position (fourier - limber) data vector"
-      " at a single tomographic bin and ell value",
-      py::arg("a").none(false).noconvert(),
-      py::arg("l").none(false).noconvert(),
-      py::arg("ni").none(false).noconvert(),
-      py::arg("nj").none(false).noconvert()
-    );
-
-  m.def("int_for_C_gg_tomo_limber",
-      py::overload_cast<vector, vector>(
-        &cosmolike_interface::int_for_C_gg_tomo_limber_cpp
-      ),
-      "Compute integrand position-position (fourier - limber) data vector" 
-      " at all tomographic bins and many scale factor and ell (vectorized)",
-      py::arg("a").none(false),
-      py::arg("l").none(false),
-      py::return_value_policy::move
-    );
-
-  // --------------------------------------------------------------------
-  // --------------------------------------------------------------------
 
   m.def("C_gg_tomo",
-      py::overload_cast<vector>(
+      py::overload_cast<arma::Col<double>>(
         &cosmolike_interface::C_gg_tomo_cpp
       ),
       "Compute position-position (fourier - non-limber/limber) data vector"

@@ -1,11 +1,12 @@
-timing: False
+#Example MCMC for cosmic shear data vector
+timing: True
 debug: False
 stop_at_error: False
 
 likelihood:
-  lsst_y1.lsst_cosmic_shear:
-    path: ./external_modules/data/lsst_y1
-    print_datavector: False
+  roman.roman_cosmic_shear:
+    path: ./external_modules/data/roman_real
+    data_file: example1.dataset 
     accuracyboost: 1.0
     integration_accuracy: 0
     kmax_boltzmann: 5.0
@@ -13,6 +14,42 @@ likelihood:
     non_linear_emul: 2
     IA_model: 0
     IA_redshift_evolution: 3
+    print_datavector: False
+    #accuracyboost: 3.0
+    #integration_accuracy: 10 
+    #kmax_boltzmann: 20.0
+    # 1 EE2, 2 Halofit
+    #non_linear_emul: 2
+
+
+#ASSUME DATA VECTOR WAS CREATED WITH FOLLOWING PARAMS
+#  As_1e9: 2.1
+#  ns: 0.96605
+#  H0: 67.32
+#  omegab: 0.04
+#  omegam: 0.3
+#  mnu: 0.06
+#  roman_DZ_S1: 0.0
+#  roman_DZ_S2: 0.0
+#  roman_DZ_S3: 0.0
+#  roman_DZ_S4: 0.0
+#  roman_DZ_S5: 0.0
+#  roman_DZ_S6: 0.0
+#  roman_DZ_S7: 0.0
+#  roman_DZ_S8: 0.0
+#  roman_M1: 0.0
+#  roman_M2: 0.0
+#  roman_M3: 0.0
+#  roman_M4: 0.0
+#  roman_M5: 0.0
+#  roman_M6: 0.0
+#  roman_M7: 0.0
+#  roman_M8: 0.0
+#  roman_A1_1: 0.6
+#  roman_A1_2: -1.5
+#  w0pwa: -1.0
+#  w0: -1.0
+
 
 params:
   As_1e9:
@@ -24,7 +61,7 @@ params:
       loc: 2.1
       scale: 0.2
     proposal: 0.2
-    latex: 10^9 A_\mathrm{s}
+    latex: 10^9 A_\mathrm{s})
     drop: true
     renames: A
   ns:
@@ -34,8 +71,8 @@ params:
     ref:
       dist: norm
       loc: 0.96605
-      scale: 0.015
-    proposal: 0.015
+      scale: 0.01
+    proposal: 0.01
     latex: n_\mathrm{s}
   H0:
     prior:
@@ -54,8 +91,8 @@ params:
     ref:
       dist: norm
       loc: 0.0495
-      scale: 0.005
-    proposal: 0.005
+      scale: 0.004
+    proposal: 0.004
     latex: \Omega_\mathrm{b}
     drop: true
   omegam:
@@ -70,14 +107,7 @@ params:
     latex: \Omega_\mathrm{m}
     drop: true
   w:
-    prior:
-      min: -3
-      max: -0.01
-    ref:
-      dist: norm
-      loc: -0.99
-      scale: 0.02
-    proposal: 0.02
+    value: -1.0
     latex: w_{0,\mathrm{DE}}
   mnu:
     value: 0.06
@@ -88,12 +118,14 @@ params:
   # ------------------------------------- DERIVED PARAMETERS ------------------------------
   # ---------------------------------------------------------------------------------------
   # WARNING: DO NOT REMOVE omegabh2/omegach2/omegamh2/wa/As/ FROM DERIVED PARAMETERS
-  # WARNING: DO NOT REMOVE THE DROP FLAG FROM omegab/omegam/As_1e9/w0pwa
   # SEE: github.com/CosmoLike/cocoa#warning-warning-warning-weak-lensing-yaml-files-in-cobaya-
   # --------------------------------------------------------------------------------------- 
   As:
     value: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
+  wa:
+    value: 'lambda w0pwa, w: w0pwa - w'
+    latex: w_{a,\mathrm{DE}}
   omegabh2:
     value: 'lambda omegab, H0: omegab*(H0/100)**2'
     latex: \Omega_\mathrm{b} h^2
@@ -127,144 +159,208 @@ params:
   omegan:
     derived: 'lambda omegan2, H0: omegan2/((H0/100)**2)'
     latex: \Omega_\mathrm{\\nu}
-  LSST_BARYON_Q1:
-    value: 0.0
-    latex: Q1_\mathrm{LSST}^1
-  LSST_BARYON_Q2:
-    value: 0.0
-    latex: Q2_\mathrm{LSST}^2
+
   # WL photo-z errors
-  LSST_DZ_S1:
+  roman_DZ_S1:
     prior:
       dist: norm
-      loc: 0.0414632
+      loc: 0.0
       scale: 0.002
     ref:
       dist: norm
-      loc: 0.0414632
+      loc: 0.0
       scale: 0.002
     proposal: 0.002
-    latex: \Delta z_\mathrm{s,LSST}^1
-  LSST_DZ_S2:
+    latex: \Delta z_\mathrm{s,roman}^1
+  roman_DZ_S2:
     prior:
       dist: norm
-      loc: 0.00147332
+      loc: 0.0
       scale: 0.002
     ref:
       dist: norm
-      loc: 0.00147332
+      loc: 0.0
       scale: 0.002
     proposal: 0.002
-    latex: \Delta z_\mathrm{s,LSST}^2
-  LSST_DZ_S3:
+    latex: \Delta z_\mathrm{s,roman}^2
+  roman_DZ_S3:
     prior:
       dist: norm
-      loc: 0.0237035
+      loc: 0.0
       scale: 0.002
     ref:
       dist: norm
-      loc: 0.0237035
+      loc: 0.0
       scale: 0.002
     proposal: 0.002
-    latex: \Delta z_\mathrm{s,LSST}^3
-  LSST_DZ_S4:
+    latex: \Delta z_\mathrm{s,roman}^3
+  roman_DZ_S4:
     prior:
       dist: norm
-      loc: -0.0773436
+      loc: 0.0
       scale: 0.002
     ref:
       dist: norm
-      loc: -0.0773436
+      loc: 0.0
       scale: 0.002
     proposal: 0.002
-    latex: \Delta z_\mathrm{s,LSST}^4
-  LSST_DZ_S5:
+    latex: \Delta z_\mathrm{s,roman}^4
+  roman_DZ_S5:
     prior:
       dist: norm
-      loc: -8.67127e-05
+      loc: 0.0
       scale: 0.002
     ref:
       dist: norm
-      loc: -8.67127e-05
+      loc: 0.0
       scale: 0.002
     proposal: 0.002
-    latex: \Delta z_\mathrm{s,LSST}^5
+    latex: \Delta z_\mathrm{s,roman}^5
+  roman_DZ_S6:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.002
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.002
+    proposal: 0.002
+    latex: \Delta z_\mathrm{s,roman}^6
+  roman_DZ_S7:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.002
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.002
+    proposal: 0.002
+    latex: \Delta z_\mathrm{s,roman}^7
+  roman_DZ_S8:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.002
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.002
+    proposal: 0.002
+    latex: \Delta z_\mathrm{s,roman}^8
+
+
+  roman_M1:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^1
+  roman_M2:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^2
+  roman_M3:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^3
+  roman_M4:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^4
+  roman_M5:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^5
+  roman_M6:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^6
+  roman_M7:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^7
+  roman_M8:
+    prior:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.005
+    proposal: 0.005
+    latex: m_\mathrm{roman}^8
+
   # Intrinsic alignment
-  LSST_A1_1:
+  roman_A1_1:
     prior:
       min: -5
       max:  5
     ref:
       dist: norm
-      loc: 0.7
+      loc: 0.6
       scale: 0.5
     proposal: 0.5
-    latex: A_\mathrm{1-IA,LSST}^1
-  LSST_A1_2:
+    latex: A_\mathrm{1-IA,roman}^1
+  roman_A1_2:
     prior:
       min: -5
       max:  5
     ref:
       dist: norm
-      loc: -1.7
+      loc: -1.5
       scale: 0.5
     proposal: 0.5
-  # Shear calibration parameters
-  LSST_M1:
-    prior:
-      dist: norm
-      loc: 0.0191832
-      scale: 0.005
-    ref:
-      dist: norm
-      loc: 0.0191832
-      scale: 0.005
-    proposal: 0.005
-    latex: m_\mathrm{LSST}^1
-  LSST_M2:
-    prior:
-      dist: norm
-      loc: -0.0431752
-      scale: 0.005
-    ref:
-      dist: norm
-      loc: -0.0431752
-      scale: 0.005
-    proposal: 0.005
-    latex: m_\mathrm{LSST}^2
-  LSST_M3:
-    prior:
-      dist: norm
-      loc: -0.034961
-      scale: 0.005
-    ref:
-      dist: norm
-      loc: -0.034961
-      scale: 0.005
-    proposal: 0.005
-    latex: m_\mathrm{LSST}^3
-  LSST_M4:
-    prior:
-      dist: norm
-      loc: -0.0158096
-      scale: 0.005
-    ref:
-      dist: norm
-      loc: -0.0158096
-      scale: 0.005
-    proposal: 0.005
-    latex: m_\mathrm{LSST}^4
-  LSST_M5:
-    prior:
-      dist: norm
-      loc: -0.0158096
-      scale: 0.005
-    ref:
-      dist: norm
-      loc: -0.0158096
-      scale: 0.005
-    proposal: 0.005
-    latex: m_\mathrm{LSST}^5
+    latex: A_\mathrm{1-IA,roman}^2
 
 theory:
   camb:
@@ -287,64 +383,66 @@ sampler:
     # File (w/ path) or matrix defining a covariance matrix for the proposal:
     # - null (default): will be generated from params info (prior and proposal)
     # - matrix: remember to set `covmat_params` to the parameters in the matrix
-    covmat: ./projects/lsst_y1/EXAMPLE_MCMC1.covmat
+    covmat: 
     covmat_params:
-    # --------------------------------------
-    # --------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # Proposal covariance matrix learning
-    # --------------------------------------
-    # --------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     learn_proposal: True
     # Don't learn if convergence better than...
-    learn_proposal_Rminus1_min: 0.035
+    learn_proposal_Rminus1_min: 0.03
     # Don't learn if convergence is worse than...
-    learn_proposal_Rminus1_max: 150
+    learn_proposal_Rminus1_max: 100.
     # (even earlier if a param is not in the given covariance matrix)
-    learn_proposal_Rminus1_max_early: 300.
-    # --------------------------------------
-    # --------------------------------------
+    learn_proposal_Rminus1_max_early: 500.
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # Convergence and stopping
-    # --------------------------------------
-    # --------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # Maximum number of posterior evaluations
     max_samples: .inf
-    # Gelman-Rubin R-1 on means
-    Rminus1_stop: 0.005
-    # Gelman-Rubin R-1 on std deviations
-    Rminus1_cl_stop: 0.15
+    Rminus1_stop: 0.015
+    Rminus1_cl_stop: 0.17
     Rminus1_cl_level: 0.95
-    # --------------------------------------
-    # --------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # Exploiting speed hierarchy
-    # --------------------------------------
-    # --------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     measure_speeds: False
     drag: False
-    # Cosmolike Cosmic Shear without Cosmo change is ~0.1seconds (8 cores) @OCelote
-    blocking:
-      - [1,
-          [
-            As_1e9, ns, H0, omegab, omegam, w 
-          ]
-        ]
-      - [6,
-          [
-            LSST_DZ_S1, LSST_DZ_S2, LSST_DZ_S3, LSST_DZ_S4, LSST_DZ_S5, LSST_A1_1, LSST_A1_2
-          ]
-        ]
-      - [25,
-          [
-            LSST_M1, LSST_M2, LSST_M3, LSST_M4, LSST_M5
-          ]
-        ]
     oversample_power: 0.3
     oversample_thin: True
-    # --------------------------------------
-    # --------------------------------------
+    blocking:
+    - [1,
+        [
+          As_1e9, ns, H0, omegab, omegam,
+        ]
+      ]
+    - [6,
+        [
+          roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, roman_DZ_S5,
+          roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
+          roman_A1_1, roman_A1_2,
+        ]
+      ]
+    - [25,
+        [
+          roman_M1, roman_M2, roman_M3, roman_M4, roman_M5,
+          roman_M6, roman_M7, roman_M8,
+        ]
+      ]
+
+    learn_every: 10d
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # Avoid chain getting suck forever
-    # --------------------------------------
-    # --------------------------------------
-    max_tries: .inf
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    max_tries: 10000
     burn_in: 0
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
@@ -352,5 +450,8 @@ sampler:
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
     Rminus1_single_split: 4
-
-output: ./projects/lsst_y1/chains/EXAMPLE_MCMC1
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+output: ./projects/roman/chains/example1

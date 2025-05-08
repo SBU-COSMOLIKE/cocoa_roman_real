@@ -10,7 +10,7 @@ ggl_efficiency_cut = [0.05]
 for Year in [1]:
   for mask_choice in [1,2,3,4,5,6]:
     if (mask_choice == 1):
-      # LSST_YX_M1.mask  (lmax = 3000) on CS -----------------------------------
+      # roman_YX_M1.mask  (lmax = 3000) on CS -----------------------------------
       # lmax \times \theta_min corresponds to the first zero of the Bessel 𝐽0/4
       # lmax x theta_min corresponds to the first zero of the Bessel 𝐽0/4
       # J0 first zero is 2.4048, J4 first zero is 6.3802
@@ -19,27 +19,27 @@ for Year in [1]:
       ξm_CUTOFF = 8.6955 # cutoff scale in arcminutes
       gc_CUTOFF = 21     # Galaxy clustering cutoff in Mpc/h
     elif (mask_choice == 2):
-      # LSST_YX_M2.mask  -----------------------------------
+      # roman_YX_M2.mask  -----------------------------------
       ξp_CUTOFF = 5.512  # cutoff scale in arcminutes
       ξm_CUTOFF = 17.391 # cutoff scale in arcminutes
       gc_CUTOFF = 21     # Galaxy clustering cutoff in Mpc/h
     elif (mask_choice == 3):
-      # LSST_YX_M3.mask  ------------------------------------
+      # roman_YX_M3.mask  ------------------------------------
       ξp_CUTOFF = 11.024  # cutoff scale in arcminutes
       ξm_CUTOFF = 34.782 # cutoff scale in arcminutes
       gc_CUTOFF = 21     # Galaxy clustering cutoff in Mpc/h
     elif (mask_choice == 4):
-      # LSST_YX_M3.mask  ------------------------------------
+      # roman_YX_M3.mask  ------------------------------------
       ξp_CUTOFF = 22.048 # cutoff scale in arcminutes
       ξm_CUTOFF = 69.564 # cutoff scale in arcminutes
       gc_CUTOFF = 21     # Galaxy clustering cutoff in Mpc/h
     elif (mask_choice == 5):
-      # LSST_YX_M3.mask  ------------------------------------
+      # roman_YX_M3.mask  ------------------------------------
       ξp_CUTOFF = 44.096  # cutoff scale in arcminutes
       ξm_CUTOFF = 139.128 # cutoff scale in arcminutes
       gc_CUTOFF = 21      # Galaxy clustering cutoff in Mpc/h
     elif (mask_choice == 6):
-      # LSST_YX_M6.mask  all ones ---------------------------------------------
+      # roman_YX_M6.mask  all ones ---------------------------------------------
       ξp_CUTOFF = 0 # cutoff scale in arcminutes
       ξm_CUTOFF = 0 # cutoff scale in arcminutes
       gc_CUTOFF = 0 # Galaxy clustering cutoff in Mpc/h
@@ -111,7 +111,7 @@ for Year in [1]:
     #VM output -----------------------------------------------------------------
     mask = np.hstack([ξp_mask, ξm_mask, γt_mask, w_mask])
     if (Year == 1):
-      np.savetxt("LSST_Y" + str(Year) + "_M" + str(mask_choice) +
+      np.savetxt("roman_Y" + str(Year) + "_M" + str(mask_choice) +
         "_GGLOLAP" + str(ggl_efficiency_cut[0]) + ".mask", 
         np.column_stack((np.arange(0,len(mask)), mask)),
         fmt='%d %1.1f')
