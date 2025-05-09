@@ -1,0 +1,17 @@
+.DS_Store
+*.o
+*.pyc
+*.so
+*.pyo
+*.cfg
+*.yaml
+*.locked
+*.pdf
+*.input.yaml
+*.updated.yaml
+*.txt
+chains/
+.ipynb_checkpoints/
+.ipynb_*
+*.sbatch
+data/*cov
