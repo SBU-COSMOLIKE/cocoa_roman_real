@@ -1,3 +1,4 @@
+.DS_Store
 *.o
 *.pyc
 *.so
@@ -6,6 +7,5 @@
 chains/
 .ipynb_checkpoints/
 .ipynb_*
-EXAMPLE_PROFILE1_UOFA.sbatch
-*cov
+*.sbatch
 data/*cov
