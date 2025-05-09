@@ -6,11 +6,19 @@ integration_accuracy: 0
 kmax_boltzmann: 5.0
 speed: 1
 non_linear_emul: 2
-# 0 = NO_IA (AMPLITUDES SET TO ZERO), 1 = IA_NLA_LF
-# 2 = IA_REDSHIFT_BINNING, 3 = IA_REDSHIFT_EVOLUTION
+debug: False
+
+# IA REDSHIFT EVOLUTION: 0 = NO_IA (AMPLITUDES SET TO ZERO), 
+#                        1 = IA_NLA_LF
+#                        2 = IA_REDSHIFT_BINNING, 
+#                        3 = IA_REDSHIFT_EVOLUTION
 IA_redshift_evolution: 3
-# IA_MODEL: 0 = NLA, 1 = TATT
+
+# IA_MODEL: 0 = NLA, 
+#           1 = TATT
 IA_model: 0
+
+ggl_exclude: [[4,0],[5,0],[5,1],[6,0],[6,1],[6,2],[7,0],[7,1],[7,2],[7,3]] 
 
 print_intermediate_products: False
 

@@ -73,6 +73,9 @@ class _cosmolike_prototype_base(DataSetLikelihood):
 
     # ------------------------------------------------------------------------
 
+    if self.debug:
+      ci.set_log_level_debug()
+      
     ci.initial_setup()
     
     ci.init_accuracy_boost(
@@ -83,6 +86,8 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ci.init_probes(possible_probes=self.probe)
 
     ci.init_binning(int(self.ntheta), self.theta_min_arcmin, self.theta_max_arcmin)
+
+    ci.init_ggl_exclude(np.array(self.ggl_exclude).flatten())
 
     ci.init_cosmo_runmode(is_linear=False)
 

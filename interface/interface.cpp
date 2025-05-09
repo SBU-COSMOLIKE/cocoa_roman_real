@@ -76,6 +76,13 @@ void init_data_3x2pt_real_space(
   cosmolike_interface::init_data_3x2pt_real_space(cov, mask, data, order);
 }
 
+void init_ggl_exclude(std::vector<int> ggl_exclude)
+{
+  cosmolike_interface::init_ggl_exclude(
+      arma::conv_to<arma::Col<int>>::from(ggl_exclude)
+    );
+}
+
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -188,6 +195,15 @@ void set_pm(std::vector<double> PM)
     );
 }
 
+void set_log_level_debug() {
+    spdlog::set_level(spdlog::level::debug);
+}
+
+void set_log_level_info() {
+    spdlog::set_level(spdlog::level::info);
+}
+
+
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -299,6 +315,13 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("DATA").none(false)
     );
 
+  m.def("init_ggl_exclude",
+      &init_ggl_exclude,
+      "Initialize the lens-source tomography bin pairs that are excluded in "
+      "galaxy-galaxy lensing",
+      py::arg("ggl_exclude").none(false)
+    );
+
   m.def("init_IA",
       &cosmolike_interface::init_IA,
       "Init IA related options",
@@ -398,6 +421,15 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("PMV").none(false)
     );
 
+  m.def("set_log_level_debug", 
+      &set_log_level_debug,
+      "Set the SPDLOG level to debug"
+    );
+
+  m.def("set_log_level_info", 
+      &set_log_level_info,
+      "Set the SPDLOG level to info"
+    );
   // --------------------------------------------------------------------
   // --------------------------------------------------------------------
   // reset FUNCTIONS
