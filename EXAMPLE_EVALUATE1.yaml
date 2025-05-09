@@ -13,9 +13,9 @@ likelihood:
     non_linear_emul: 2
     IA_model: 0
     IA_redshift_evolution: 3
-    print_datavector: True
+    print_datavector: False
     print_datavector_file: "./projects/roman_real/data/example1.modelvector"
-
+    ggl_exclude: [[6,0],[7,0],[7,1]]
 
 #ASSUME DATA VECTOR WAS CREATED WITH FOLLOWING PARAMS
 #  As_1e9: 2.1
@@ -278,6 +278,7 @@ theory:
     extra_args:
       halofit_version: takahashi
       AccuracyBoost: 1.1
+      kmax: 5
       lens_potential_accuracy: 1.0
       num_massive_neutrinos: 1
       nnu: 3.046
