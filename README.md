@@ -39,9 +39,7 @@ and
     
     export OMP_PROC_BIND=close; export OMP_NUM_THREADS=8
       
-### Examples not involving Cosmolike
-
- **Step :three:**: The folder `projects/example` contains examples. So, run the `cobaya-run` on the first example following the commands below.
+ **Step :three:**: The folder `projects/roman_real` contains examples. So, run the `cobaya-run` on the first example following the commands below.
 
 One model evaluation:
       
