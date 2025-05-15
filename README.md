@@ -49,8 +49,7 @@ MCMC:
 
       mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
 
-## Running Cosmolike projects (Advanced instructions in case you want to clone this manually - not advised) <a name="running_cosmolike_projects"></a> 
-(From lsst_y1 repository)
+## Running Cosmolike projects (manual clone - not advised) <a name="running_cosmolike_projects"></a> 
 
 In this tutorial, we assume the user installed Cocoa via the *Conda installation* method, and the name of the Conda environment is `cocoa`. We also presume the user's terminal is in the folder where Cocoa was cloned.
 
@@ -64,7 +63,7 @@ and
 
 and
 
-      ${CONDA_PREFIX}/bin/git clone --depth 1 https://github.com/CosmoLike/cocoa_roman_real.git --branch hb_roman roman_real
+      ${CONDA_PREFIX}/bin/git clone https://github.com/CosmoLike/cocoa_roman_real.git roman_real
 
 :warning: Cocoa scripts and YAML files assume the removal of the `cocoa_` prefix when cloning the repository.
       
