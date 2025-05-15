@@ -108,6 +108,36 @@
       scale: 0.1
     proposal: 0.1
     latex: b_\mathrm{1-roman}^5
+  roman_B1_6:
+    prior:
+      min: 0.8
+      max: 3
+    ref:
+      dist: norm
+      loc: 1.47
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-roman}^6
+  roman_B1_7:
+    prior:
+      min: 0.8
+      max: 3
+    ref:
+      dist: norm
+      loc: 1.60
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-roman}^7
+  roman_B1_8:
+    prior:
+      min: 0.8
+      max: 3
+    ref:
+      dist: norm
+      loc: 1.76
+      scale: 0.1
+    proposal: 0.1
+    latex: b_\mathrm{1-roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -126,6 +156,15 @@
   roman_B2_5:
     value: 0.0
     latex: b_\mathrm{2-roman}^5
+  roman_B2_6:
+    value: 0.0
+    latex: b_\mathrm{2-roman}^6
+  roman_B2_7:
+    value: 0.0
+    latex: b_\mathrm{2-roman}^7
+  roman_B2_8:
+    value: 0.0
+    latex: b_\mathrm{2-roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -144,6 +183,15 @@
   roman_BMAG_5:
     value: 0.0
     latex: b_\mathrm{BMAG-roman}^5
+  roman_BMAG_6:
+    value: 0.0
+    latex: b_\mathrm{BMAG-roman}^6
+  roman_BMAG_7:
+    value: 0.0
+    latex: b_\mathrm{BMAG-roman}^7
+  roman_BMAG_8:
+    value: 0.0
+    latex: b_\mathrm{BMAG-roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -163,3 +211,12 @@
   roman_PM5:
     value: 0.0
     latex: PM_\mathrm{roman}^5
+  roman_PM6:
+    value: 0.0
+    latex: PM_\mathrm{roman}^6
+  roman_PM7:
+    value: 0.0
+    latex: PM_\mathrm{roman}^7
+  roman_PM8:
+    value: 0.0
+    latex: PM_\mathrm{roman}^8
