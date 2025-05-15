@@ -1,9 +1,9 @@
 timing: True
 debug: False
-stop_at_error: True
+stop_at_error: False
 
 likelihood:
-  roman_real.roman_real_3x2pt:
+  roman_real.roman_real_cosmic_shear:
     path: ./external_modules/data/roman_real
     data_file: example1.dataset
     accuracyboost: 1.0
@@ -24,8 +24,8 @@ params:
     ref:
       dist: norm
       loc: 2.1
-      scale: 0.2
-    proposal: 0.2
+      scale: 0.65
+    proposal: 0.4
     latex: 10^9 A_\mathrm{s})
     drop: true
     renames: A
@@ -46,7 +46,7 @@ params:
     ref:
       dist: norm
       loc: 67.32
-      scale: 3
+      scale: 5
     proposal: 3
     latex: H_0
   omegab:
@@ -63,12 +63,12 @@ params:
   omegam:
     prior:
       min: 0.1
-      max: 0.6
+      max: 0.9
     ref:
       dist: norm
       loc: 0.316
-      scale: 0.015
-    proposal: 0.015
+      scale: 0.02
+    proposal: 0.02
     latex: \Omega_\mathrm{m}
     drop: true
   mnu:
@@ -149,31 +149,6 @@ params:
   omegan:
     derived: 'lambda omegan2, H0: omegan2/((H0/100)**2)'
     latex: \Omega_\mathrm{\\nu}
-# FIXED roman PARAMETERS
-  roman_BMAG_1:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^1
-  roman_BMAG_2:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^2
-  roman_BMAG_3:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^3
-  roman_BMAG_4:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^4
-  roman_BMAG_5:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^5
-  roman_BMAG_6:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^6
-  roman_BMAG_7:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^7
-  roman_BMAG_8:
-    value: 0.0
-    latex: b_\mathrm{BMAG-roman}^8
 
   roman_M1:
     prior:
@@ -264,87 +239,6 @@ params:
     proposal: 0.005
     latex: m_\mathrm{roman}^8
 
-  # Bin bias parameters
-  roman_B1_1:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 1.18
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^1
-  roman_B1_2:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 1.40
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^2
-  roman_B1_3:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 1.55
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^3
-  roman_B1_4:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 1.71
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^4
-  roman_B1_5:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 1.90
-      scale: 0.1
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^5
-  roman_B1_6:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 2.15
-      scale: 0.1
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^6
-  roman_B1_7:
-    prior:
-      min: 0.8
-      max: 3
-    ref:
-      dist: norm
-      loc: 2.52
-      scale: 0.1
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^7
-  roman_B1_8:
-    prior:
-      min: 0.8
-      max: 4
-    ref:
-      dist: norm
-      loc: 3.44
-      scale: 0.1
-    proposal: 0.1
-    latex: b_\mathrm{1-roman}^8
 
 theory:
   camb:
@@ -354,6 +248,7 @@ theory:
     extra_args:
       halofit_version: takahashi
       AccuracyBoost: 1.1
+      kmax: 5
       lens_potential_accuracy: 1.0
       num_massive_neutrinos: 1
       nnu: 3.046
@@ -401,4 +296,4 @@ sampler:
       w0pwa: -1.0
       w: -1.0
 
-output: ./projects/roman_real/chains/example_eval1
+output: ./projects/roman_real/chains/EXAMPLE_EVALUATE1
