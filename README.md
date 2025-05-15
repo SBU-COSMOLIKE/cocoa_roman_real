@@ -1,5 +1,7 @@
 ## Running Cosmolike projects (Basic instructions) <a name="running_cosmolike_projects"></a> 
 
+From `Cocoa/Readme instructions`:
+
 > [!Note]
 > We provide several cosmolike projects that can be loaded and compiled using `setup_cocoa.sh` and `compile_cocoa.sh` scripts. To activate them, comment the following lines on `set_installation_options.sh` 
 > 
