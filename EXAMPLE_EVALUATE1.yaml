@@ -13,6 +13,7 @@ likelihood:
     non_linear_emul: 2
     IA_model: 0
     IA_redshift_evolution: 3
+    print_datavector: False
     ggl_exclude: [[6,0],[7,0],[7,1]]
 
 params:
