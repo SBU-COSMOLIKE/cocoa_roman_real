@@ -49,20 +49,33 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     self.theta_max_arcmin = ini.float("theta_max_arcmin")
     
     # ------------------------------------------------------------------------
-    
-    self.z_interp_1D = np.linspace(0,2.0,1000)
-    self.z_interp_1D = np.concatenate((self.z_interp_1D,
-      np.linspace(2.0,10.1,200)),axis=0)
-    self.z_interp_1D = np.concatenate((self.z_interp_1D,
-      np.linspace(1080,2000,20)),axis=0) #CMB 6x2pt g_CMB (possible in the future)
+
+    self.nz_interp_1d=int(500 + 250*self.accuracyboost)
+    self.nz_interp_2d=int(min(60 + 15*self.accuracyboost,150))
+    self.nk_interp_2d=int(500 + 250*self.accuracyboost)
+
+    self.z_interp_1D = np.linspace(0, 3.0, max(100,int(0.80*self.nz_interp_2d)))
+    self.z_interp_1D = np.concatenate(
+      (self.z_interp_1D,
+      np.linspace(3.0,10.1,max(100,int(0.20*self.nz_interp_2d)))),
+      axis=0)
+
+    self.z_interp_1D = np.concatenate(
+      (self.z_interp_1D,
+      np.linspace(1080, 2000, 20)),
+      axis=0) #CMB 6x2pt g_CMB (possible in the future)
     self.z_interp_1D[0] = 0
 
-    self.z_interp_2D = np.linspace(0,2.0,120)
-    self.z_interp_2D = np.concatenate((self.z_interp_2D, np.linspace(2.01,10,30)),axis=0)
+    self.z_interp_2D = np.linspace(0,3.0,max(20,int(0.85*self.nz_interp_2d)))
+    self.z_interp_2D = np.concatenate(
+      (self.z_interp_2D, 
+       np.linspace(3.01, 20, max(10,int(0.15*self.nz_interp_2d)))), 
+       axis=0)
     self.z_interp_2D[0] = 0
 
     self.len_z_interp_2D = len(self.z_interp_2D)
-    self.len_log10k_interp_2D = 1400
+    #self.len_log10k_interp_2D = 1400
+    self.len_log10k_interp_2D = self.nk_interp_2d
     self.log10k_interp_2D = np.linspace(-4.2,2.0,self.len_log10k_interp_2D)
 
     # Cobaya wants k in 1/Mpc
