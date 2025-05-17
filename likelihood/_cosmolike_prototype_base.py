@@ -49,10 +49,15 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     self.theta_max_arcmin = ini.float("theta_max_arcmin")
     
     # ------------------------------------------------------------------------
-
     self.nz_interp_1d=int(500 + 250*self.accuracyboost)
     # EUCLID EMULATOR CAN ONLY HANDLE 100 Z's BELOW Z=10
+    max_nz_interp_2d=150
+    if self.non_linear_emul == 1:
+      max_nz_interp_2d=99
+    else: 
+      max_nz_interp_2d=150
     self.nz_interp_2d=int(min(60 + 15*self.accuracyboost,150))
+    
     self.nk_interp_2d=int(500 + 250*self.accuracyboost)
 
     self.z_interp_1D = np.linspace(0, 3.0, max(100,int(0.80*self.nz_interp_2d)))
@@ -66,15 +71,14 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       axis=0) #CMB 6x2pt g_CMB (possible in the future)
     self.z_interp_1D[0] = 0
     
-    self.z_interp_2D = np.linspace(0,3.0,max(20,int(0.85*self.nz_interp_2d)))
+    self.z_interp_2D = np.linspace(0,3.0,max(10,int(0.85*self.nz_interp_2d)))
     self.z_interp_2D = np.concatenate(
       (self.z_interp_2D, 
-       np.linspace(3.01, 20, max(10,int(0.15*self.nz_interp_2d)))), 
+       np.linspace(3.01, 10, max(10,int(0.15*self.nz_interp_2d)))), 
        axis=0)
     self.z_interp_2D[0] = 0
 
     self.len_z_interp_2D = len(self.z_interp_2D)
-    #self.len_log10k_interp_2D = 1400
     self.len_log10k_interp_2D = self.nk_interp_2d
     self.log10k_interp_2D = np.linspace(-4.2,2.0,self.len_log10k_interp_2D)
 
