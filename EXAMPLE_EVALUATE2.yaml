@@ -193,7 +193,7 @@ theory:
       nnu: 3.046
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
-      k_per_logint: 20
+      k_per_logint: 15
 
 sampler:
   evaluate:
