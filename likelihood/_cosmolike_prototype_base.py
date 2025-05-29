@@ -50,14 +50,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     
     # ------------------------------------------------------------------------
     self.nz_interp_1d=int(500 + 250*self.accuracyboost)
-    # EUCLID EMULATOR CAN ONLY HANDLE 100 Z's BELOW Z=10
-    max_nz_interp_2d=150
-    if self.non_linear_emul == 1:
-      max_nz_interp_2d=99
-    else: 
-      max_nz_interp_2d=150
     self.nz_interp_2d=int(min(60 + 15*self.accuracyboost,150))
-    
     self.nk_interp_2d=int(500 + 250*self.accuracyboost)
 
     self.z_interp_1D = np.linspace(0, 3.0, max(100,int(0.80*self.nz_interp_2d)))
