@@ -84,8 +84,9 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
 
   m.def("init_data_real",
       [](std::string cov, std::string mask, std::string data) {
+        using namespace cosmolike_interface;
         arma::Col<int>::fixed<3> order = {0, 1, 2};
-        cosmolike_interface::init_data_3x2pt_real_space(cov, mask, data, order);
+        init_data_3x2pt_real_space(cov, mask, data, order);
       },
       "Load covariance matrix, mask (vec of 0/1s) and data vector",
       py::arg("COV").none(false),
@@ -228,16 +229,12 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("set_log_level_debug", 
-      []() {
-        spdlog::set_level(spdlog::level::debug);
-      },
+      []() {spdlog::set_level(spdlog::level::debug);},
       "Set the SPDLOG level to debug"
     );
 
   m.def("set_log_level_info", 
-      []() {
-        spdlog::set_level(spdlog::level::info);
-      },
+      []() {spdlog::set_level(spdlog::level::info);},
       "Set the SPDLOG level to info"
     );
 
