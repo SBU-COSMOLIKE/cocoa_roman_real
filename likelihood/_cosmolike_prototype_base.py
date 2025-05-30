@@ -142,7 +142,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     self.baryon_pcs_qs = np.zeros(self.npcs)
         
     if self.non_linear_emul == 1:
-      self.emulator = ee2
+      self.emulator = ee2.PyEuclidEmulator()
 
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -209,7 +209,8 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       nz = self.len_z_interp_2D
       nk = self.len_k_interp_2D
       kbt = 10**np.linspace(-2.0589, 0.973, nk)
-      kbt, tmp_bt = ee2.get_boost(params, self.z_interp_2D, kbt)
+      #kbt, tmp_bt = ee2.get_boost(params, self.z_interp_2D, kbt)
+      kbt, tmp_bt = ee2.get_boost2(params, self.z_interp_2D, self.emulator, kbt)
       bt = np.array([tmp_bt[i] for i in range(nz)])  
 
       lnbt = interp1d(np.log10(kbt), 
