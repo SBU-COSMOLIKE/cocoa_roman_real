@@ -77,7 +77,7 @@ def ang_cut(z):
 for j in range(N_LENS): 
     for k in range(N_SRC):
         if [j,k] in ggl_skip_combos:
-            γt_mask.append(np.zeros(N_ANG_BINS))
+            continue
         else:
             γt_mask.append((theta[:-1] > ang_cut(zavg[j])))
 γt_mask = np.hstack(γt_mask) 
