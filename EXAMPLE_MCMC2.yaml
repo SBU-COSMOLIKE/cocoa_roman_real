@@ -3,7 +3,7 @@ debug: False
 stop_at_error: False
 
 likelihood:
-  roman_real.roman_real_cosmic_shear:
+  roman_real.roman_real_3x2pt:
     path: ./external_modules/data/roman_real
     data_file: example1.dataset 
     accuracyboost: 1.0
@@ -24,8 +24,8 @@ params:
     ref:
       dist: norm
       loc: 2.1
-      scale: 0.65
-    proposal: 0.4
+      scale: 0.2
+    proposal: 0.2
     latex: 10^9 A_\mathrm{s})
     drop: true
     renames: A
@@ -128,6 +128,7 @@ params:
   omegan:
     derived: 'lambda omegan2, H0: omegan2/((H0/100)**2)'
     latex: \Omega_\mathrm{\\nu}
+
   # WL photo-z errors
   roman_DZ_S1:
     prior:
@@ -217,6 +218,8 @@ params:
       scale: 0.002
     proposal: 0.002
     latex: \Delta z_\mathrm{s,roman}^8
+
+
   roman_M1:
     prior:
       dist: norm
@@ -305,6 +308,7 @@ params:
       scale: 0.005
     proposal: 0.005
     latex: m_\mathrm{roman}^8
+
   # Intrinsic alignment
   roman_A1_1:
     prior:
@@ -326,6 +330,87 @@ params:
       scale: 0.5
     proposal: 0.5
     latex: A_\mathrm{1-IA,roman}^2
+  # Bin bias parameters
+  roman_B1_1:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.24
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^1
+  roman_B1_2:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.36
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^2
+  roman_B1_3:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.47
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^3
+  roman_B1_4:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.60
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^4
+  roman_B1_5:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.76
+      scale: 0.1
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^5
+  roman_B1_6:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.47
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^6
+  roman_B1_7:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.60
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^7
+  roman_B1_8:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.76
+      scale: 0.1
+    proposal: 0.1
+    latex: b_\mathrm{1-Roman}^8
 
 theory:
   camb:
@@ -387,11 +472,12 @@ sampler:
           As_1e9, ns, H0, omegab, omegam,
         ]
       ]
-    - [6,
+    - [2,
         [
           roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, roman_DZ_S5,
           roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
-          roman_A1_1, roman_A1_2,
+          roman_A1_1, roman_A1_2, roman_B1_1, roman_B1_2, roman_B1_3, 
+          roman_B1_4, roman_B1_5, roman_B1_6, roman_B1_7, roman_B1_8
         ]
       ]
     - [25,
@@ -420,4 +506,4 @@ sampler:
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
 
-output: ./projects/roman_real/chains/EXAMPLE_MCMC1
+output: ./projects/roman_real/chains/EXAMPLE_MCMC2

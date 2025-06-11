@@ -308,7 +308,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     ci.set_nuisance_clustering_photoz(
       bias = [
         params_values.get(p, None) for p in [
-          survey+"_DZ_S"+str(i+1) for i in range(self.lens_ntomo)
+          survey+"_DZ_L"+str(i+1) for i in range(self.lens_ntomo)
         ]
       ]
     )
