@@ -10,3 +10,4 @@ chains/
 *.sbatch
 data/*cov
 scripts/.DS_Store
+data_challenge/
