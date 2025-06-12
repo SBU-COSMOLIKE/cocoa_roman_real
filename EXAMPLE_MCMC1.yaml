@@ -5,7 +5,7 @@ stop_at_error: False
 likelihood:
   roman_real.roman_real_cosmic_shear:
     path: ./external_modules/data/roman_real
-    data_file: example1.dataset 
+    data_file: example1.dataset # that assumes lens = source
     accuracyboost: 1.0
     integration_accuracy: 0
     kmax_boltzmann: 5.0
@@ -128,7 +128,11 @@ params:
   omegan:
     derived: 'lambda omegan2, H0: omegan2/((H0/100)**2)'
     latex: \Omega_\mathrm{\\nu}
-  # WL photo-z errors
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
+  # NUISANCE SET HERE (so eval dont get affected if we change default yaml)
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
   roman_DZ_S1:
     prior:
       dist: norm
@@ -217,6 +221,8 @@ params:
       scale: 0.002
     proposal: 0.002
     latex: \Delta z_\mathrm{s,roman}^8
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
   roman_M1:
     prior:
       dist: norm
@@ -305,6 +311,8 @@ params:
       scale: 0.005
     proposal: 0.005
     latex: m_\mathrm{roman}^8
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
   # Intrinsic alignment
   roman_A1_1:
     prior:
@@ -312,7 +320,7 @@ params:
       max:  5
     ref:
       dist: norm
-      loc: 0.6
+      loc: 0.7
       scale: 0.5
     proposal: 0.5
     latex: A_\mathrm{1-IA,roman}^1
@@ -322,10 +330,42 @@ params:
       max:  5
     ref:
       dist: norm
-      loc: -1.5
+      loc: -1.7
       scale: 0.5
     proposal: 0.5
-    latex: A_\mathrm{1-IA,roman}^2
+  roman_A2_1:
+    value: 0.0
+    #prior:
+    #  min: -5
+    #  max:  5
+    #ref:
+    #  dist: norm
+    #  loc: -1.36
+    #  scale: 0.5
+    #proposal: 0.5
+    latex: A_\mathrm{2-IA,Roman}^1
+  roman_A2_2:
+    value: 0.0
+    #prior:
+    #  min: -5
+    #  max:  5
+    #ref:
+    #  dist: norm
+    #  loc: -2.5
+    #  scale: 0.5
+    #proposal: 0.5
+    latex: A_\mathrm{2-IA,Roman}^2
+  roman_BTA_1:
+    value: 0.0
+    #prior:
+    #  min: 0
+    #  max: 2
+    #ref:
+    #  dist: norm
+    #  loc: 1
+    #  scale: 0.15
+    #proposal: 0.1
+    latex: A_\mathrm{BTA-IA,Roman}^1
 
 theory:
   camb:
