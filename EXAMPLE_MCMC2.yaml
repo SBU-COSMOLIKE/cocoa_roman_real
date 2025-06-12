@@ -130,7 +130,9 @@ params:
     latex: \Omega_\mathrm{\\nu}
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
-  # NUISANCE SET HERE (so eval dont get affected if we change default yaml)
+  # Nuisance parameters below (it overwrites the default settings)
+  # Default settings in likelihood/roman_real_params_lens.yaml
+  # Default settings in likelihood/roman_real_params_source.yaml
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   roman_DZ_S1:
