@@ -193,7 +193,8 @@ CPPSOURCES += \
 
 OBJECTCPP += \
 		./generic_interface.o \
-		./cosmo2D_wrapper.o
+		./cosmo2D_wrapper.o \
+		./cosmo2D_scuts_wrapper.o
 
 $(OBJECTC): $(CSOURCES)
 	$(CC) $(CFLAGS) -fPIC -c $(CSOURCES)
