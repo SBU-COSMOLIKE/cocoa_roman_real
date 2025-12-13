@@ -564,10 +564,6 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
   // Derivative
   // --------------------------------------------------------------------
 
-  /*py::tuple dlnC_ss_dlnk_tomo_limber_cpp(const arma::Col<double> k, 
-                                       const arma::Col<double> l)
-*/
-
   m.def("dlnC_ss_dlnk_tomo_limber",
       py::overload_cast<const double, const double, const int, const int>(
         &cosmolike_interface::dlnC_ss_dlnk_tomo_limber_cpp
@@ -581,12 +577,30 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("dlnC_ss_dlnk_tomo_limber",
-      py::overload_cast<arma::Col<double>, arma::Col<double>>(
+      py::overload_cast<const arma::Col<double>, const arma::Col<double>>(
         &cosmolike_interface::dlnC_ss_dlnk_tomo_limber_cpp
       ),
       "Compute dlnC_ss_dlnk (fourier - limber) derivative of the data vector",
       py::arg("k").none(false),
       py::arg("l").none(false),
+      py::return_value_policy::move
+    );
+
+  m.def("dlnxi_dlnk_pm_tomo_limber",
+      py::overload_cast<const double>(
+        &cosmolike_interface::dlnxi_dlnk_pm_tomo_limber_cpp
+      ),
+      "Compute dlnxi_dlnk (real - limber) derivative of the data vector",
+      py::arg("k").none(false),
+      py::return_value_policy::move
+    );
+
+  m.def("dlnxi_dlnk_pm_tomo_limber",
+      py::overload_cast<const arma::Col<double>>(
+        &cosmolike_interface::dlnxi_dlnk_pm_tomo_limber_cpp
+      ),
+      "Compute dlnxi_dlnk (real - limber) derivative of the data vector",
+      py::arg("k").none(false),
       py::return_value_policy::move
     );
 
