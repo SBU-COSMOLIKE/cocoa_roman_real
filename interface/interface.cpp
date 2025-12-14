@@ -586,6 +586,28 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::return_value_policy::move
     );
 
+  m.def("rf_C_ss_tomo_limber",
+      py::overload_cast<const double, const double, const int, const int>(
+        &cosmolike_interface::RF_C_ss_tomo_limber_cpp
+      ),
+      "Compute int from -infty to k of |dlnC_ss_dlnk| (fourier - limber)",
+      py::arg("k").none(false).noconvert(),
+      py::arg("l").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert(),
+      py::arg("nj").none(false).noconvert(),
+      py::return_value_policy::move
+    );
+
+  m.def("rf_C_ss_tomo_limber",
+      py::overload_cast<const arma::Col<double>, const arma::Col<double>>(
+        &cosmolike_interface::RF_C_ss_tomo_limber_cpp
+      ),
+      "Compute int from -infty to k of |dlnC_ss_dlnk| (fourier - limber)",
+      py::arg("k").none(false),
+      py::arg("l").none(false),
+      py::return_value_policy::move
+    );
+
   m.def("dlnxi_dlnk_pm_tomo_limber",
       py::overload_cast<const double>(
         &cosmolike_interface::dlnxi_dlnk_pm_tomo_limber_cpp
