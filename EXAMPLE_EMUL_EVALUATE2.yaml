@@ -490,8 +490,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/roman_real_cs_CNN.emul']
-      extra: ['./projects/roman_real/emulators/roman_real_cs_CNN.h5']
+      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.emul']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
         'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
@@ -508,8 +508,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/roman_real_ggl_CNNemul']
-      extra: ['./projects/roman_real/emulators/roman_real_ggl_CNN.h5']
+      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_ggl_CNN.emul']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_ggl_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
         'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
@@ -529,8 +529,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/roman_real_gc_CNN.emul']
-      extra: ['./projects/roman_real/emulators/roman_real_gc_CNN.h5']
+      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_gc_CNN.emul']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_gc_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
         'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8']]
@@ -541,6 +541,14 @@ theory:
         'CNN_DIM': 576, 
         'KERNEL_DIM': 21,
         'OUTPUT_DIM': 120}]
+
+  emulrdrag:
+    path: ./cobaya/cobaya/theories/
+    provides: ['rdrag']
+    extra_args:
+      file: ['external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_rdrag_GP.joblib'] 
+      extra: ['external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_rdrag.npy'] 
+      ord: [['omegabh2','omegach2']]
 
   emulbaosn:
     path: ./cobaya/cobaya/theories/

@@ -74,15 +74,6 @@ params:
       scale: 0.02
     proposal: 0.02
     latex: \Omega_\mathrm{m}
-  mnu:
-    prior:
-      min: 0.06
-      max: 0.6
-    ref:
-      dist: norm
-      loc: 0.25
-      scale: 0.1
-    proposal: 0.05
   w0pwa:
     prior:
       min: -5 
@@ -109,17 +100,6 @@ params:
   # WARNING: DO NOT REMOVE omegabh2/omegach2/omegamh2/wa/As/ FROM DERIVED PARAMETERS
   # SEE: github.com/CosmoLike/cocoa#warning-warning-warning-weak-lensing-yaml-files-in-cobaya-
   # --------------------------------------------------------------------------------------- 
-  omegabh2:
-    value: 'lambda omegab, H0: omegab*(H0/100)**2'
-    latex: \Omega_\mathrm{b} h^2
-  omegach2:
-    value: 'lambda omegam, omegab, mnu, H0: (omegam-omegab)*(H0/100)**2-(mnu*(3.046/3)**0.75)/94.0708'
-    latex: \Omega_\mathrm{c} h^2
-  omegamh2:
-    derived: 'lambda omegam, H0: omegam*(H0/100)**2'
-    latex: \Omega_\mathrm{m} h^2
-  rdrag:
-    latex: r_\mathrm{drag}
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
@@ -367,8 +347,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/roman_real_cs_CNN.emul']
-      extra: ['./projects/roman_real/emulators/roman_real_cs_CNN.h5']
+      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.emul']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
         'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
@@ -389,7 +369,6 @@ sampler:
       H0: 67.32
       omegab: 0.04
       omegam: 0.3
-      mnu: 0.06
       roman_DZ_S1: 0.0
       roman_DZ_S2: 0.0
       roman_DZ_S3: 0.0
