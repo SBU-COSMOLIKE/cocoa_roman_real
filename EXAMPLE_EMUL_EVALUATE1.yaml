@@ -4,24 +4,9 @@ stop_at_error: False
 
 likelihood:
   roman_real.cosmic_shear:
-    use_emulator: true
-    print_datavector: true
-    print_datavector_file: emulator_test.dv
+    use_emulator: 1
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
-    lmax: 75000 # lmax computed for real space correlation function
-    accuracyboost: 1.0
-    integration_accuracy: 0
-    kmax_boltzmann: 7.5
-    # 1 EE2, 2 Halofit
-    non_linear_emul: 2
-    IA_model: 0
-    IA_redshift_evolution: 3
-    ggl_exclude: [[6,0],[7,0],[7,1]]
-    create_baryon_pca: false
-    baryon_pca_select_sims: "antilles-2-99/antilles-101-378/antilles-380-400"
-    filename_baryon_pca: "./projects/lsst_y1/chains/pca.txt"
-
 params:
   As_1e9:
     prior:
@@ -94,17 +79,9 @@ params:
       scale: 0.05
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}
-  # ---------------------------------------------------------------------------------------
-  # ------------------------------------- DERIVED PARAMETERS ------------------------------
-  # ---------------------------------------------------------------------------------------
-  # WARNING: DO NOT REMOVE omegabh2/omegach2/omegamh2/wa/As/ FROM DERIVED PARAMETERS
-  # SEE: github.com/CosmoLike/cocoa#warning-warning-warning-weak-lensing-yaml-files-in-cobaya-
-  # --------------------------------------------------------------------------------------- 
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
-  # Default settings in likelihood/roman_real_params_lens.yaml
-  # Default settings in likelihood/roman_real_params_source.yaml
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   roman_DZ_S1:
@@ -340,26 +317,25 @@ params:
     #  scale: 0.15
     #proposal: 0.1
     latex: A_\mathrm{BTA-IA,Roman}^1
-
 theory:
   emul_cosmic_shear:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.emul']
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.emul']
       extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
-        'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
-        'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
-        'roman_A1_1','roman_A1_2']]
-      fast_params: [['roman_M1','roman_M2','roman_M3','roman_M4','roman_M5','roman_M6','roman_M7','roman_M8']]
+             'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
+             'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
+             'roman_A1_1','roman_A1_2']]
+      fast_params: [['roman_M1','roman_M2','roman_M3','roman_M4',
+                     'roman_M5','roman_M6','roman_M7','roman_M8']]
       extrapar: [{'MLA': 'CNN', 
-        'INT_DIM_RES': 256, 
-        'CNN_DIM': 576, 
-        'KERNEL_DIM': 21,
-        'OUTPUT_DIM': 1080}]
-
+                  'INT_DIM_RES': 256, 
+                  'CNN_DIM': 576, 
+                  'KERNEL_DIM': 21,
+                  'OUTPUT_DIM': 1080}]
 sampler:
   evaluate:
     N: 1
@@ -389,5 +365,4 @@ sampler:
       roman_A1_2: -1.5
       w0pwa: -1.0
       w: -1.0
-
 output: ./projects/roman_real/chains/EXAMPLE_EMUL_EVALUATE1
