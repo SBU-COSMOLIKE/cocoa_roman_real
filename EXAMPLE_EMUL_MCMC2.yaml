@@ -69,7 +69,6 @@ params:
       scale: 0.05
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
-    drop: true
   w:
     prior:
       min: -3
