@@ -28,7 +28,7 @@ matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
 parameter = [u'As_1e9', u'ns', u'H0', u'omegam', u'omegab', 
-             u'roman_A1_1', u'roman_A1_2', u'chi2v2']
+             u'roman_A1_1', u'roman_A1_2', u'chi2']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25, 
