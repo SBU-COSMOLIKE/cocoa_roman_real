@@ -17,19 +17,6 @@ From `Cocoa/Readme` instructions:
 >     export IGNORE_COSMOLIKE_ROMAN_REAL_CODE=1
 >
 >     (...)
->
->     # ------------------------------------------------------------------------------
->     # OVERWRITE_EXISTING_XXX_CODE=1 -> setup_cocoa overwrites existing PACKAGES ----
->     # overwrite: delete the existing PACKAGE folder and install it again -----------
->     # redownload: delete the compressed file and download data again ---------------
->     # These keys are only relevant if you run setup_cocoa multiple times -----------
->     # ------------------------------------------------------------------------------
->     (...)
->     export OVERWRITE_EXISTING_COSMOLIKE_CODE=1 # dangerous (possible lost of uncommit work)
->                                                # if unset, users must manually delete
->                                                # project if wants setup_cocoa to reclone it
->
->     (...)
 > 
 >     # ------------------------------------------------------------------------------
 >     # Cosmolike projects below -------------------------------------------
@@ -43,8 +30,27 @@ From `Cocoa/Readme` instructions:
 >     export ROMAN_REAL_COMMIT="23a774c32480b7b4bd5da5f637270310bc88f86c"
 >     #BRANCH: if unset, load the specified TAG
 >     #export ROMAN_REAL_TAG="v4.0-beta17"
+
+
+> [!NOTE]
+> In case users need to rerun `setup_cocoa.sh`, Cocoa will not download previously installed packages, cosmolike projects, or large datasets, unless the following keys are set on `set_installation_options.sh`
 >
-> If users comment these lines (unsetting the corresponding IGNORE keys) after running `setup_cocoa.sh` and `compile_cocoa.sh`, there is no need to rerun these general scripts, which would reinstall many packages (slow). Instead, run the following three commands:
+>     [Adapted from Cocoa/set_installation_options.sh shell script]
+>     # ------------------------------------------------------------------------------
+>     # OVERWRITE_EXISTING_XXX_CODE=1 -> setup_cocoa overwrites existing PACKAGES ----
+>     # overwrite: delete the existing PACKAGE folder and install it again -----------
+>     # redownload: delete the compressed file and download data again ---------------
+>     # These keys are only relevant if you run setup_cocoa multiple times -----------
+>     # ------------------------------------------------------------------------------
+>     (...)
+>     export OVERWRITE_EXISTING_ALL_PACKAGES=1    # except cosmolike projects
+>     #export OVERWRITE_EXISTING_COSMOLIKE_CODE=1 # dangerous (possible loss of uncommitted work)
+>                                                 # if unset, users must manually delete cosmolike projects
+>     #export REDOWNLOAD_EXISTING_ALL_DATA=1      # warning: some data is many GB
+>
+
+> [!NOTE]
+> If users want to recompile cosmolike, there is no need to rerun the Cocoa general scripts. Instead, run the following three commands:
 >
 >      source start_cocoa.sh
 >
@@ -56,9 +62,28 @@ From `Cocoa/Readme` instructions:
 > 
 >       source ./installation_scripts/compile_all_projects.sh
 > 
-> or (in case users just want to compile roman_real project)
+> or (in case users just want to compile the lsst-y1 project)
 >
 >       source ./projects/roman_real/scripts/compile_roman_real.sh
+
+> [!TIP]
+> Assuming Cocoa is installed on a local (not remote!) machine, type the command below after step 2️⃣ to run Jupyter Notebooks.
+>
+>     jupyter notebook --no-browser --port=8888
+>
+> The terminal will then show a message similar to the following template:
+>
+>     (...)
+>     [... NotebookApp] Jupyter Notebook 6.1.1 is running at:
+>     [... NotebookApp] http://f0a13949f6b5:8888/?token=XXX
+>     [... NotebookApp] or http://127.0.0.1:8888/?token=XXX
+>     [... NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+>
+> Now go to the local internet browser and type `http://127.0.0.1:8888/?token=XXX`, where XXX is the previously saved token displayed on the line
+> 
+>     [... NotebookApp] or http://127.0.0.1:8888/?token=XXX
+>
+> The project roman_real contains jupyter notebook examples located at `projects/roman_real`.
 
 To run the example
 
@@ -72,14 +97,93 @@ and
  
  **Step :two:**: Select the number of OpenMP cores (below, we set it to 8).
     
-    export OMP_PROC_BIND=close; export OMP_NUM_THREADS=8
+    export OMP_PROC_BIND=close; export OMP_NUM_THREADS=8; export OMP_PLACES=cores; export OMP_DYNAMIC=FALSE
       
  **Step :three:**: The folder `projects/roman_real` contains examples. So, run the `cobaya-run` on the first example following the commands below.
 
-One model evaluation:
-      
-       mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run ./projects/roman_real/EXAMPLE_EVALUATE1.yaml -f
- 
-MCMC:
+- **One model evaluation**:
 
-      mpirun -n 4 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
+  - Linux
+
+        mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
+           --bind-to core:overload-allowed --mca mpi_yield_when_idle 1 --report-bindings  \
+           --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
+           cobaya-run ./projects/roman_real/EXAMPLE_EVALUATE1.yaml -f
+
+  -  macOS (arm)
+
+         mpirun -n 1 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EVALUATE1.yaml -f
+
+- **MCMC (Metropolis-Hastings Algorithm)**:
+
+  - Linux
+
+        mpirun -n 4 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
+           --bind-to core:overload-allowed --mca mpi_yield_when_idle 1 --report-bindings  \
+           --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
+           cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
+
+   -  macOS (arm)
+     
+          mpirun -n 4 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
+
+# Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
+
+> [!Warning]
+> The code and examples associated with this section are still in alpha stage
+
+Our main line of research involves emulators that simulate the entire Cosmolike data vectors, and each project (LSST, Roman, DES) contains its own README with emulator examples. The speed of such emulators is incredible, especially when GPUs are available, and our emulators do take advantage of the CPU-GPU integration on Apple MX chips. For example, the average timing of lsst-y1 cosmic shear data vector emulation is around 0.005s ($\sim$ 200828 evaluations in $\sim$ 850.5 seconds) on a macOS M2 Pro.
+
+While the data vector emulators are incredibly fast, there is an intermediate approach that emulates only the Boltzmann outputs (comoving distance, linear and nonlinear matter power spectrum). This hybrid-ML case can offer greater flexibility, especially in the initial phases of a research project, as changes to the modeling of nuisance parameters or to the assumed galaxy distributions do not require retraining of the network. 
+
+Examples in the hybrid case all have the prefix **EXAMPLE_EMUL2** (note the `2`). The required flags on `set_installation_options.sh` are similar to what we showed in the previous emulator section.
+
+Now, users must follow all the steps below.
+
+ **Step :one:**: Activate the private Python environment by sourcing the script `start_cocoa.sh`
+
+    source start_cocoa.sh
+
+ **Step :two:**: Select the number of OpenMP cores. Below, we set it to 4, the ideal setting for hybrid examples.
+
+  - Linux
+    
+        export OMP_NUM_THREADS=4; export OMP_PROC_BIND=close; export OMP_PLACES=cores; export OMP_DYNAMIC=FALSE
+
+  - macOS (arm)
+    
+        export OMP_NUM_THREADS=4; export OMP_PROC_BIND=disabled; export OMP_PLACES=cores; export OMP_DYNAMIC=FALSE
+    
+ **Step :three:** Run `cobaya-run` on the first emulator example, following the commands below (here we only provide lsst-y1 examples).
+
+- **One model evaluation**:
+
+  - Linux
+    
+        mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
+           --bind-to core:overload-allowed --mca mpi_yield_when_idle 1 --report-bindings  \
+           --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
+           cobaya-run ./projects/roman_real/EXAMPLE_EMUL2_EVALUATE1.yaml -f
+
+  - macOS (arm)
+    
+        mpirun -n 1 --oversubscribe  cobaya-run ./projects/roman_real/EXAMPLE_EMUL2_EVALUATE1.yaml -f
+    
+- **MCMC (Metropolis-Hastings Algorithm)**:
+
+  - Linux
+    
+        mpirun -n 4 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --map-by slot --mca mpi_yield_when_idle 1 \
+            cobaya-run ./projects/roman_real/EXAMPLE_EMUL_EMUL2_MCMC1.yaml -r
+
+  - macOS (arm)
+
+        mpirun -n 4 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EMUL2_MCMC1.yaml -r
+    
+Details on the matter power spectrum emulator designs will be presented in the [emulator_code](https://github.com/CosmoLike/emulators_code) repository. Basically, we apply standard neural network techniques to generalize the *syren-new* Eq. 6 of [arXiv:2410.14623](https://arxiv.org/abs/2410.14623) formula for the linear power spectrum (w0waCDM with a fixed neutrino mass of $0.06$ eV) to new models, extended ranges, or higher precision. Similarly, we use networks to generalize the *syren-Halofit* LCDM nonlinear boost fit (Eq. 11 of [arXiv:2402.17492](https://arxiv.org/abs/2402.17492)).
+
+> [!NOTE] 
+> Users can decide not to correct the *syren-new* formula for the linear power spectrum (flag in the yaml). Although we have not conducted extensive studies of the caveats of the syren-new approximation, it appears sufficient for w0waCDM forecasts when combined with the Euclid Emulator to compute the nonlinear boost.
+>
+> For back-of-the-envelope LCDM calculations (e.g., to test cosmolike features), users can also choose not to correct the *syren-Halofit* formula for the LCDM nonlinear boost (see figure below). In this case, the overhead on top of cosmolike computations is minimum, at the order of $0.01$ seconds on a macOS M2Pro laptop. 
