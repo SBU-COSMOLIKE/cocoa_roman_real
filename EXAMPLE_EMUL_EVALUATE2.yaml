@@ -4,24 +4,9 @@ stop_at_error: False
 
 likelihood:
   roman_real.combo_3x2pt:
-    print_datavector: true
-    print_datavector_file: emulator_test.dv
-    use_emulator: true
+    use_emulator: 1
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
-    lmax: 75000 # lmax computed for real space correlation function
-    accuracyboost: 1.0
-    integration_accuracy: 0
-    kmax_boltzmann: 7.5
-    # 1 EE2, 2 Halofit
-    non_linear_emul: 2
-    IA_model: 0
-    IA_redshift_evolution: 3
-    ggl_exclude: [[6,0],[7,0],[7,1]]
-    create_baryon_pca: false
-    baryon_pca_select_sims: "antilles-2-99/antilles-101-378/antilles-380-400"
-    filename_baryon_pca: "./projects/lsst_y1/chains/pca.txt"
-
 params:
   As_1e9:
     prior:
@@ -32,7 +17,8 @@ params:
       loc: 2.1
       scale: 0.65
     proposal: 0.4
-    latex: 10^9 A_\mathrm{s})
+    latex: 10^9 A_\mathrm{s}
+    renames: A
   ns:
     prior:
       min: 0.87
@@ -93,25 +79,13 @@ params:
       scale: 0.05
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}
-  # ---------------------------------------------------------------------------------------
-  # ------------------------------------- DERIVED PARAMETERS ------------------------------
-  # ---------------------------------------------------------------------------------------
-  # WARNING: DO NOT REMOVE omegabh2/omegach2/omegamh2/wa/As/ FROM DERIVED PARAMETERS
-  # SEE: github.com/CosmoLike/cocoa#warning-warning-warning-weak-lensing-yaml-files-in-cobaya-
-  # --------------------------------------------------------------------------------------- 
-  mnu:
-    value: 0.06
-  omegabh2:
-    value: 'lambda omegab, H0: omegab*(H0/100)**2'
-    latex: \Omega_\mathrm{b} h^2
-  omegach2:
-    value: 'lambda omegam, omegab, mnu, H0: (omegam-omegab)*(H0/100)**2-(mnu*(3.046/3)**0.75)/94.0708'
-    latex: \Omega_\mathrm{c} h^2
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
+  rdrag:
+    value: 144 # it does not matter given we are not computing BAO chi2
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
-  # Default settings in likelihood/roman_real_params_lens.yaml
-  # Default settings in likelihood/roman_real_params_source.yaml
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   roman_DZ_S1:
@@ -347,7 +321,6 @@ params:
     #  scale: 0.15
     #proposal: 0.1
     latex: A_\mathrm{BTA-IA,Roman}^1
-
 # Bin bias parameters
   roman_B1_1:
     prior:
@@ -483,15 +456,14 @@ params:
   roman_DZ_L8:
     value: 'lambda roman_DZ_S8: roman_DZ_S8'
     latex: \Delta z_\mathrm{l,Roman}^8
-
 theory:
   emul_cosmic_shear:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.emul']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_cs_CNN.h5']
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
         'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
@@ -502,54 +474,43 @@ theory:
         'CNN_DIM': 576, 
         'KERNEL_DIM': 21,
         'OUTPUT_DIM': 1080}]
-
   emul_ggl:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_ggl_CNN.emul']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_ggl_CNN.h5']
+      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_w0wa_hmcode2020_nobaryon_ggl_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_w0wa_hmcode2020_nobaryon_ggl_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
         'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
-        'roman_A1_1','roman_A1_2']]
+        'roman_A1_1','roman_A1_2',
+        'roman_B1_1','roman_B1_2','roman_B1_3','roman_B1_4',
+        'roman_B1_5','roman_B1_6','roman_B1_7','roman_B1_8']]
       fast_params: [['roman_M1','roman_M2','roman_M3','roman_M4',
-                     'roman_M5','roman_M6','roman_M7','roman_M8',
-                     'roman_B1_1','roman_B1_2','roman_B1_3','roman_B1_4',
-                     'roman_B1_5','roman_B1_6','roman_B1_7','roman_B1_8']] # FIX COMING SOON
+                     'roman_M5','roman_M6','roman_M7','roman_M8']]
       extrapar: [{'MLA': 'CNN', 
         'INT_DIM_RES': 256, 
         'CNN_DIM': 576, 
         'KERNEL_DIM': 21,
         'OUTPUT_DIM': 915}]
-
   emul_wtheta:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_gc_CNN.emul']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_gc_CNN.h5']
+      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_w0wa_hmcode2020_nobaryon_gc_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_w0wa_hmcode2020_nobaryon_gc_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
         'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
-        'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8']]
-      fast_params: [['roman_B1_1','roman_B1_2','roman_B1_3','roman_B1_4',
-                     'roman_B1_5','roman_B1_6','roman_B1_7','roman_B1_8']] # FIX COMING SOON
+        'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
+        'roman_B1_1','roman_B1_2','roman_B1_3','roman_B1_4',
+        'roman_B1_5','roman_B1_6','roman_B1_7','roman_B1_8']]
       extrapar: [{'MLA': 'CNN', 
         'INT_DIM_RES': 256, 
         'CNN_DIM': 576, 
         'KERNEL_DIM': 21,
         'OUTPUT_DIM': 120}]
-
-  emulrdrag:
-    path: ./cobaya/cobaya/theories/
-    provides: ['rdrag']
-    extra_args:
-      file: ['external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_rdrag_GP.joblib'] 
-      extra: ['external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_rdrag.npy'] 
-      ord: [['omegabh2','omegach2']]
-
   emulbaosn:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True
@@ -562,7 +523,6 @@ theory:
                  {'MLA': 'ResMLP', 'offset' : 0.0, 'INTDIM' : 1, 'NLAYER' : 1,
                   'TMAT': 'external_modules/data/emultrf/BAO_SN_RES/PCA_lcdm_H.npy',
                   'ZLIN': 'external_modules/data/emultrf/BAO_SN_RES/z_lin_lcdm.npy'}]
-
 sampler:
   evaluate:
     N: 1
@@ -590,15 +550,14 @@ sampler:
       roman_M8: 0.0
       roman_A1_1: 0.6
       roman_A1_2: -1.5
-      roman_B1_1: 1.0
-      roman_B1_2: 1.0
-      roman_B1_3: 1.0
-      roman_B1_4: 1.0
-      roman_B1_5: 1.0
-      roman_B1_6: 1.0
-      roman_B1_7: 1.0
-      roman_B1_8: 1.0
+      roman_B1_1: 1.18
+      roman_B1_2: 1.40
+      roman_B1_3: 1.55
+      roman_B1_4: 1.71
+      roman_B1_5: 1.90
+      roman_B1_6: 2.15
+      roman_B1_7: 2.52
+      roman_B1_8: 2.44
       w0pwa: -1.0
       w: -1.0
-
-output: ./projects/roman_real/chains/EXAMPLE_EMUL_EVALUATE1
+output: ./projects/roman_real/chains/EXAMPLE_EMUL_EVALUATE2

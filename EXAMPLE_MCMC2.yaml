@@ -27,7 +27,7 @@ params:
       loc: 2.1
       scale: 0.2
     proposal: 0.2
-    latex: 10^9 A_\mathrm{s})
+    latex: 10^9 A_\mathrm{s}
     drop: true
     renames: A
   ns:
