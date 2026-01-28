@@ -59,15 +59,6 @@ params:
       scale: 0.01
     proposal: 0.01
     latex: \Omega_\mathrm{m}
-  w0pwa:
-    value: -1.0
-    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
-  w:
-    value: -1.0
-    latex: w_{0,\mathrm{DE}}
-  wa:
-    derived: 'lambda w0pwa, w: w0pwa - w'
-    latex: 'w_{a,\mathrm{DE}}'
   As:
     derived: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
@@ -284,14 +275,6 @@ params:
     latex: A_\mathrm{2-IA,Roman}^2
   roman_BTA_1:
     value: 0.0
-    #prior:
-    #  min: 0
-    #  max: 2
-    #ref:
-    #  dist: norm
-    #  loc: 1
-    #  scale: 0.15
-    #proposal: 0.1
     latex: A_\mathrm{BTA-IA,Roman}^1
 theory:
   emul_cosmic_shear:
@@ -299,8 +282,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.pt']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.h5']
+      file:  ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam',
              'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
              'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',

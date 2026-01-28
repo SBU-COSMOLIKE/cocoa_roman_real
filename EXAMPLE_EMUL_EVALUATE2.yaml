@@ -290,36 +290,12 @@ params:
     proposal: 0.5
   roman_A2_1:
     value: 0.0
-    #prior:
-    #  min: -5
-    #  max:  5
-    #ref:
-    #  dist: norm
-    #  loc: -1.36
-    #  scale: 0.5
-    #proposal: 0.5
     latex: A_\mathrm{2-IA,Roman}^1
   roman_A2_2:
     value: 0.0
-    #prior:
-    #  min: -5
-    #  max:  5
-    #ref:
-    #  dist: norm
-    #  loc: -2.5
-    #  scale: 0.5
-    #proposal: 0.5
     latex: A_\mathrm{2-IA,Roman}^2
   roman_BTA_1:
     value: 0.0
-    #prior:
-    #  min: 0
-    #  max: 2
-    #ref:
-    #  dist: norm
-    #  loc: 1
-    #  scale: 0.15
-    #proposal: 0.1
     latex: A_\mathrm{BTA-IA,Roman}^1
 # Bin bias parameters
   roman_B1_1:

@@ -191,28 +191,15 @@ params:
   mnu:
     value: 0.06
   w0pwa:
-    prior:
-      min: -5 
-      max: -0.01
-    ref:
-      dist: norm
-      loc: -0.99
-      scale: 0.05
-    proposal: 0.05
+    value: -1.0
     latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
+    drop: true
   w:
-    prior:
-      min: -3
-      max: -0.01
-    ref:
-      dist: norm
-      loc: -0.99
-      scale: 0.05
-    proposal: 0.05
+    value: -1.0
     latex: w_{0,\mathrm{DE}}
   wa:
-    value: 'lambda w0pwa, w: w0pwa - w'
     derived: false
+    value: 'lambda w0pwa, w: w0pwa - w'
     latex: w_{a,\mathrm{DE}}
   H0:
     derived: true
@@ -453,7 +440,7 @@ theory:
     extra_args:
       file: ['external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_rdrag_GP.joblib'] 
       extra: ['external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_rdrag.npy'] 
-      ord: [['omegabh2','omegach2']]
+      ord: [['omegabh2', 'omegach2']]
   emulcmb:
     path: ./cobaya/cobaya/theories/
     extra_args:
@@ -493,13 +480,19 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['projects/lsst_y1/emulators/lcdm_nla_halofit_cosmic_shear_trf/transformer.emul']
-      extra: ['projects/lsst_y1/emulators/lcdm_nla_halofit_cosmic_shear_trf/transformer.h5']
-      ord:   [['logA','ns','H0','omegabh2','omegach2',
-               'LSST_DZ_S1','LSST_DZ_S2','LSST_DZ_S3','LSST_DZ_S4','LSST_DZ_S5',
-               'LSST_A1_1','LSST_A1_2']]
-      extrapar: [{'MLA': 'TRF', 'INT_DIM_RES': 256, 
-                  'INT_DIM_TRF': 1024, 'NC_TRF': 32, 'OUTPUT_DIM': 780}]
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.h5']
+      ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
+             'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
+             'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
+             'roman_A1_1','roman_A1_2']]
+      fast_params: [['roman_M1','roman_M2','roman_M3','roman_M4',
+                     'roman_M5','roman_M6','roman_M7','roman_M8']]
+      extrapar: [{'MLA': 'CNN', 
+                  'INT_DIM_RES': 256, 
+                  'CNN_DIM': 576, 
+                  'KERNEL_DIM': 21,
+                  'OUTPUT_DIM': 1080}]
 """
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------

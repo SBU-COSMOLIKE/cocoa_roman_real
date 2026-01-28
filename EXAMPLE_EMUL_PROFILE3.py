@@ -40,7 +40,7 @@ from schwimmbad import MPIPool
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-parser = argparse.ArgumentParser(prog='EXAMPLE_EMUL_PROFILE1')
+parser = argparse.ArgumentParser(prog='EXAMPLE_EMUL_PROFILE3')
 parser.add_argument("--nstw",
                     dest="nstw",
                     help="Number of likelihood evaluations (steps) per temperature per walker",
@@ -157,6 +157,26 @@ params:
       scale: 0.02
     proposal: 0.02
     latex: \Omega_\mathrm{m}
+  w0pwa:
+    prior:
+      min: -5 
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
+  w:
+    prior:
+      min: -3
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
@@ -377,7 +397,7 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.pt']
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN_yijie_new.pt']
       extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
              'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
