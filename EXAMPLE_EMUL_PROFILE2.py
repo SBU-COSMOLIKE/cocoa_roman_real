@@ -40,7 +40,7 @@ from schwimmbad import MPIPool
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-parser = argparse.ArgumentParser(prog='EXAMPLE_EMUL_PROFILE1')
+parser = argparse.ArgumentParser(prog='EXAMPLE_EMUL_PROFILE3')
 parser.add_argument("--nstw",
                     dest="nstw",
                     help="Number of likelihood evaluations (steps) per temperature per walker",
@@ -101,120 +101,87 @@ args, unknown = parser.parse_known_args()
 # ------------------------------------------------------------------------------
 yaml_string=r"""
 likelihood:
-  planck_2018_highl_plik.TTTEEE:
-    path: ./external_modules/
-    clik_file: plc_3.0/hi_l/plik/plik_rd12_HM_v22b_TTTEEE_33_396.clik
-  planck_2018_lowl.TT:
-    path: ./external_modules
-  # choose only one low ell EE likelihood
-  #planck_2018_lowl.EE:
-  #  path: ./external_modules
-  planck_2018_lowl.EE_sroll2: null 
-  #planck_2020_lollipop.lowlE:
-  #  data_folder: planck/lollipop
-  bao.desi_dr2.desi_bao_all:
-    path: ./external_modules/data/
-  sn.desy5: 
-    path: ./external_modules/data/sn_data 
   roman_real.cosmic_shear:
     use_emulator: 1
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
 params:
-  logA:
+  As_1e9:
     prior:
-      min: 1.61
-      max: 3.91
+      min: 0.5
+      max: 5
     ref:
       dist: norm
-      loc: 3.0448
-      scale: 0.05
-    proposal: 0.05
-    latex: \log(10^{10} A_\mathrm{s})
+      loc: 2.1
+      scale: 0.65
+    proposal: 0.4
+    latex: 10^9 A_\mathrm{s}
+    renames: A
   ns:
     prior:
-      min: 0.92
-      max: 1.05
+      min: 0.87
+      max: 1.07
     ref:
       dist: norm
       loc: 0.96605
-      scale: 0.005
-    proposal: 0.005
+      scale: 0.01
+    proposal: 0.01
     latex: n_\mathrm{s}
-  thetastar:
-    prior:
-      min: 1
-      max: 1.2
-    ref:
-      dist: norm
-      loc: 1.04109
-      scale: 0.0004
-    proposal: 0.0002
-    latex: 100\theta_\mathrm{*}
-    renames: theta
-  omegabh2:
-    prior:
-      min: 0.01
-      max: 0.04
-    ref:
-      dist: norm
-      loc: 0.022383
-      scale: 0.005
-    proposal: 0.005
-    latex: \Omega_\mathrm{b} h^2
-  omegach2:
-    prior:
-      min: 0.06
-      max: 0.2
-    ref:
-      dist: norm
-      loc: 0.12011
-      scale: 0.03
-    proposal: 0.03
-    latex: \Omega_\mathrm{c} h^2
-  tau:
-    prior:
-      min: 0.04
-      max: 0.1
-    ref:
-      dist: norm
-      loc: 0.055
-      scale: 0.006
-    proposal: 0.003
-    latex: \tau_\mathrm{reio}
-  As:
-    derived: 'lambda logA: 1e-10*np.exp(logA)'
-    latex: A_\mathrm{s}
-  A:
-    derived: 'lambda As: 1e9*As'
-    latex: 10^9 A_\mathrm{s}
-  mnu:
-    value: 0.06
-  w0pwa:
-    value: -1.0
-    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
-    drop: true
-  w:
-    value: -1.0
-    latex: w_{0,\mathrm{DE}}
-  wa:
-    derived: false
-    value: 'lambda w0pwa, w: w0pwa - w'
-    latex: w_{a,\mathrm{DE}}
   H0:
-    derived: true
+    prior:
+      min: 55
+      max: 91
+    ref:
+      dist: norm
+      loc: 67.32
+      scale: 5
+    proposal: 3
     latex: H_0
-  omegamh2:
-    derived: true
-    value: 'lambda omegach2, omegabh2, mnu: omegach2+omegabh2+(mnu*(3.046/3)**0.75)/94.0708'
-    latex: \Omega_\mathrm{m} h^2
+  omegab:
+    prior:
+      min: 0.03
+      max: 0.07
+    ref:
+      dist: norm
+      loc: 0.0495
+      scale: 0.004
+    proposal: 0.004
+    latex: \Omega_\mathrm{b}
   omegam:
-    derived: true
+    prior:
+      min: 0.1
+      max: 0.9
+    ref:
+      dist: norm
+      loc: 0.316
+      scale: 0.02
+    proposal: 0.02
     latex: \Omega_\mathrm{m}
-  rdrag:
-    derived: true
-    latex: r_\mathrm{drag}
-  # WL photo-z errors
+  w0pwa:
+    prior:
+      min: -5 
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
+  w:
+    prior:
+      min: -3
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
+  # Nuisance parameters below (it overwrites the default settings)
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
   roman_DZ_S1:
     prior:
       dist: norm
@@ -305,7 +272,6 @@ params:
     latex: \Delta z_\mathrm{s,roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
-  # Shear calibration parameters
   roman_M1:
     prior:
       dist: norm
@@ -426,55 +392,6 @@ params:
     value: 0.0
     latex: A_\mathrm{BTA-IA,Roman}^1
 theory:
-  emultheta:
-    path: ./cobaya/cobaya/theories/
-    provides: ['H0', 'omegam']
-    extra_args:
-      file: ['external_modules/data/emultrf/CMB_TRF/emul_lcdm_thetaH0_GP.joblib']
-      extra: ['external_modules/data/emultrf/CMB_TRF/extra_lcdm_thetaH0.npy']
-      ord: [['omegabh2','omegach2','thetastar']]
-      extrapar: [{'MLA' : "GP"}]
-  emulrdrag:
-    path: ./cobaya/cobaya/theories/
-    provides: ['rdrag']
-    extra_args:
-      file: ['external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_rdrag_GP.joblib'] 
-      extra: ['external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_rdrag.npy'] 
-      ord: [['omegabh2', 'omegach2']]
-  emulcmb:
-    path: ./cobaya/cobaya/theories/
-    extra_args:
-      # This version of the emul was not trained with CosmoRec
-      eval: [True, True, True, False] #TT,TE,EE,PHIPHI
-      device: "cuda"
-      ord: [['omegabh2','omegach2','H0','tau','ns','logA','mnu','w','wa'],
-            ['omegabh2','omegach2','H0','tau','ns','logA','mnu','w','wa'],
-            ['omegabh2','omegach2','H0','tau','ns','logA','mnu','w','wa'],
-            None]
-      file: ['external_modules/data/emultrf/CMB_TRF/emul_lcdm_CMBTT_CNN.pt',
-             'external_modules/data/emultrf/CMB_TRF/emul_lcdm_CMBTE_CNN.pt',
-             'external_modules/data/emultrf/CMB_TRF/emul_lcdm_CMBEE_CNN.pt', 
-             None]
-      extra: ['external_modules/data/emultrf/CMB_TRF/extra_lcdm_CMBTT_CNN.npy',
-              'external_modules/data/emultrf/CMB_TRF/extra_lcdm_CMBTE_CNN.npy',
-              'external_modules/data/emultrf/CMB_TRF/extra_lcdm_CMBEE_CNN.npy', 
-              None]
-      extrapar: [{'ellmax' : 5000, 'MLA': 'CNN', 'INTDIM': 4, 'INTCNN': 5120},
-                 {'ellmax' : 5000, 'MLA': 'CNN', 'INTDIM': 4, 'INTCNN': 5120},
-                 {'ellmax' : 5000, 'MLA': 'CNN', 'INTDIM': 4, 'INTCNN': 5120}, 
-                 None]
-  emulbaosn:
-    path: ./cobaya/cobaya/theories/
-    stop_at_error: True
-    extra_args:
-      device: "cuda"
-      file:  [None, 'external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_H.pt']
-      extra: [None, 'external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_H.npy']    
-      ord: [None, ['omegam','H0']]
-      extrapar: [{'MLA': 'INT', 'ZMIN' : 0.0001, 'ZMAX' : 3, 'NZ' : 600},
-                 {'MLA': 'ResMLP', 'offset' : 0.0, 'INTDIM' : 1, 'NLAYER' : 1,
-                  'TMAT': 'external_modules/data/emultrf/BAO_SN_RES/PCA_lcdm_H.npy',
-                  'ZLIN': 'external_modules/data/emultrf/BAO_SN_RES/z_lin_lcdm.npy'}]
   emul_cosmic_shear:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True

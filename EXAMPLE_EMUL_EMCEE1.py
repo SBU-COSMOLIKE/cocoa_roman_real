@@ -137,16 +137,9 @@ params:
     proposal: 0.02
     latex: \Omega_\mathrm{m}
     drop: true
-  mnu:
-    value: 0.06
-  omegabh2:
-    value: 'lambda omegab, H0: omegab*(H0/100)**2'
-    latex: \Omega_\mathrm{b} h^2
-  omegach2:
-    value: 'lambda omegam, omegab, mnu, H0: (omegam-omegab)*(H0/100)**2-(mnu*(3.046/3)**0.75)/94.0708'
-    latex: \Omega_\mathrm{c} h^2
-  logA:
-    value: 'lambda As_1e9: np.log(10*As_1e9)'
+  As:
+    derived: 'lambda As_1e9: 1e-9 * As_1e9'
+    latex: A_\mathrm{s}
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)

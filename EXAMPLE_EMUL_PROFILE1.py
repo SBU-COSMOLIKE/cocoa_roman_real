@@ -377,9 +377,9 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.pt']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.h5']
-      ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
+      file:  ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.h5']
+      ord: [['As_1e9','ns','H0','omegab', 'omegam',
              'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
              'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
              'roman_A1_1','roman_A1_2']]
