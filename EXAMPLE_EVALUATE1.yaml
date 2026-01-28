@@ -398,7 +398,7 @@ theory:
     stop_at_error: False
     use_renames: True
     extra_args:
-      halofit_version: mead2020
+      halofit_version: takahashi
       AccuracyBoost: 1.05
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
@@ -408,7 +408,7 @@ sampler:
   evaluate:
     N: 1
     override:
-      As_1e9: 2.05
+      As_1e9: 2.1
       ns: 0.96605
       H0: 67.32
       omegab: 0.04
