@@ -106,7 +106,7 @@ and
   - Linux
 
         mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
-           --bind-to core:overload-allowed --mca mpi_yield_when_idle 1 --report-bindings  \
+           --bind-to core:overload-allowed --report-bindings  \
            --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
            cobaya-run ./projects/roman_real/EXAMPLE_EVALUATE1.yaml -f
 
@@ -119,7 +119,7 @@ and
   - Linux
 
         mpirun -n 4 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
-           --bind-to core:overload-allowed --mca mpi_yield_when_idle 1 --report-bindings  \
+           --bind-to core:overload-allowed --report-bindings  \
            --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
            cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
 
@@ -161,7 +161,7 @@ Now, users must follow all the steps below.
   - Linux
     
         mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
-           --bind-to core:overload-allowed --mca mpi_yield_when_idle 1 --report-bindings  \
+           --bind-to core:overload-allowed --report-bindings  \
            --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
            cobaya-run ./projects/roman_real/EXAMPLE_EMUL2_EVALUATE1.yaml -f
 
@@ -174,7 +174,7 @@ Now, users must follow all the steps below.
   - Linux
     
         mpirun -n 4 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
-            --bind-to core:overload-allowed --map-by slot --mca mpi_yield_when_idle 1 \
+            --bind-to core:overload-allowed --map-by slot \
             cobaya-run ./projects/roman_real/EXAMPLE_EMUL_EMUL2_MCMC1.yaml -r
 
   - macOS (arm)
