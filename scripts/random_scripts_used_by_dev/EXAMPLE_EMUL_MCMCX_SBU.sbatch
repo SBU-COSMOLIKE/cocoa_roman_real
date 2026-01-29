@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=RY1_MC1
-#SBATCH --output=RY1_MC1-%A_%a.out
-#SBATCH -e RY1_MC1-%A_%a.out.err
+#SBATCH --job-name=MC
+#SBATCH --output=MC-%A_%a.out
+#SBATCH -e MC-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --cpus-per-task=7
-#SBATCH --partition=extended-28core
-#SBATCH --time=135:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=10
+#SBATCH --partition=medium-40core
+#SBATCH --time=10:00:00
 
 # Clear the environment from any previously loaded modules
 module purge > /dev/null 2>&1
@@ -22,8 +22,8 @@ echo Number of task is $SLURM_NTASKS
 echo Number of cpus per task is $SLURM_CPUS_PER_TASK
 
 cd $SLURM_SUBMIT_DIR
-conda activate cocoapy38
-source start_cocoa
+conda activate cocoa
+source start_cocoa.sh
 
 export OMP_PROC_BIND=close
 if [ -n "$SLURM_CPUS_PER_TASK" ]; then
