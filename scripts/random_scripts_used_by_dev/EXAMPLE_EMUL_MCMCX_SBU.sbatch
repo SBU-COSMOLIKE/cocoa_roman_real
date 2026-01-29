@@ -4,10 +4,10 @@
 #SBATCH --output=MC-%A_%a.out
 #SBATCH -e MC-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
-#SBATCH --partition=medium-40core
-#SBATCH --time=12:00:00
+#SBATCH --ntasks=8
+#SBATCH --cpus-per-task=1
+#SBATCH --partition=long-40core-shared
+#SBATCH --time=15:00:00
 
 # Clear the environment from any previously loaded modules
 module purge > /dev/null 2>&1

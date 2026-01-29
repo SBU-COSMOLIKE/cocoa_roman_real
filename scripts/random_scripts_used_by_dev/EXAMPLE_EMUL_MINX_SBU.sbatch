@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=NAU
-#SBATCH --output=NAU-%A_%a.out
-#SBATCH -e NAU-%A_%a.out.err
+#SBATCH --job-name=MIN
+#SBATCH --output=MIN-%A_%a.out
+#SBATCH -e MIN-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=75
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=hbm-long-96core
-#SBATCH --time=24:00:00
+#SBATCH --partition=hbm-medium-96core
+#SBATCH --time=12:00:00
 
 # Clear the environment from any previously loaded modules
 module purge > /dev/null 2>&1
@@ -34,11 +34,6 @@ fi
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=1
 
-$CONDA_PREFIX/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
-  --mca btl vader,tcp,self --bind-to core:overload-allowed \
-  --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run \
-  python -m mpi4py.futures \
-  ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS${SLURM_ARRAY_TASK_ID}.py \
-    --root ./projects/roman_real/ \
-    --outroot "EXAMPLE_EMUL_NAUTILUS${SLURM_ARRAY_TASK_ID}" \
-    --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
+mpirun -n ${SLURM_NTASKS} --oversubscribe --mca btl vader,tcp,self \
+  --bind-to core:overload-allowed --map-by numa:pe=${OMP_NUM_THREADS} \
+  cobaya-run ./projects/roman_real/EXAMPLE_MIN${SLURM_ARRAY_TASK_ID}.yaml -f

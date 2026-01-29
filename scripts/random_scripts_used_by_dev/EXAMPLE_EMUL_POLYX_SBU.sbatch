@@ -4,7 +4,7 @@
 #SBATCH --output=POLY-%A_%a.out
 #SBATCH -e POLY-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=94
+#SBATCH --ntasks=75
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=hbm-long-96core
 #SBATCH --time=24:00:00
