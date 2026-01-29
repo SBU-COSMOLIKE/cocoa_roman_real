@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=MC
-#SBATCH --output=MC-%A_%a.out
-#SBATCH -e MC-%A_%a.out.err
+#SBATCH --job-name=POLY
+#SBATCH --output=POLY-%A_%a.out
+#SBATCH -e POLY-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
-#SBATCH --partition=medium-40core
-#SBATCH --time=12:00:00
+#SBATCH --ntasks=94
+#SBATCH --cpus-per-task=1
+#SBATCH --partition=hbm-long-96core
+#SBATCH --time=24:00:00
 
 # Clear the environment from any previously loaded modules
 module purge > /dev/null 2>&1
@@ -36,5 +36,5 @@ export OMP_NUM_THREADS=1
 
 $CONDA_PREFIX/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
   --mca btl vader,tcp,self --bind-to core:overload-allowed \
-  --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run \
-  ./projects/roman_real/EXAMPLE_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r
+  --map-by numa:pe=${OMP_NUM_THREADS} \
+  cobaya-run ./projects/example/EXAMPLE_EMUL_POLY1.yaml -r

@@ -272,6 +272,37 @@ params:
     latex: \Delta z_\mathrm{s,roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+  # Intrinsic alignment
+  roman_A1_1:
+    prior:
+      min: -5
+      max:  5
+    ref:
+      dist: norm
+      loc: 0.7
+      scale: 0.5
+    proposal: 0.5
+    latex: A_\mathrm{1-IA,roman}^1
+  roman_A1_2:
+    prior:
+      min: -5
+      max:  5
+    ref:
+      dist: norm
+      loc: -1.7
+      scale: 0.5
+    proposal: 0.5
+  roman_A2_1:
+    value: 0.0
+    latex: A_\mathrm{2-IA,Roman}^1
+  roman_A2_2:
+    value: 0.0
+    latex: A_\mathrm{2-IA,Roman}^2
+  roman_BTA_1:
+    value: 0.0
+    latex: A_\mathrm{BTA-IA,Roman}^1
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
   roman_M1:
     prior:
       dist: norm
@@ -360,37 +391,6 @@ params:
       scale: 0.005
     proposal: 0.005
     latex: m_\mathrm{roman}^8
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
-  # Intrinsic alignment
-  roman_A1_1:
-    prior:
-      min: -5
-      max:  5
-    ref:
-      dist: norm
-      loc: 0.7
-      scale: 0.5
-    proposal: 0.5
-    latex: A_\mathrm{1-IA,roman}^1
-  roman_A1_2:
-    prior:
-      min: -5
-      max:  5
-    ref:
-      dist: norm
-      loc: -1.7
-      scale: 0.5
-    proposal: 0.5
-  roman_A2_1:
-    value: 0.0
-    latex: A_\mathrm{2-IA,Roman}^1
-  roman_A2_2:
-    value: 0.0
-    latex: A_\mathrm{2-IA,Roman}^2
-  roman_BTA_1:
-    value: 0.0
-    latex: A_\mathrm{BTA-IA,Roman}^1
 theory:
   emul_cosmic_shear:
     path: ./cobaya/cobaya/theories/

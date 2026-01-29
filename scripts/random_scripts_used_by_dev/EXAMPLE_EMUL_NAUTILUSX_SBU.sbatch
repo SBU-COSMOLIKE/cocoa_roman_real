@@ -7,7 +7,11 @@
 #SBATCH --ntasks=94
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=hbm-long-96core
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
+
+# Clear the environment from any previously loaded modules
+module purge > /dev/null 2>&1
+module load slurm
 
 echo Running on host `hostname`
 echo Time is `date`
@@ -18,17 +22,17 @@ echo Number of task is $SLURM_NTASKS
 echo Number of cpus per task is $SLURM_CPUS_PER_TASK
 
 cd $SLURM_SUBMIT_DIR
-
-source /home/u8/vivianmiranda/miniconda/etc/profile.d/conda.sh
-conda activate cocoa
-source start_cocoa.sh
+if [ -z "${ROOTDIR}" ]; then
+  sleep $(( 5 + SLURM_ARRAY_TASK_ID*15 )) # help avoid different scripts running start_cocoa.sh simultaneously
+                                          # clash can still happen when one script runs start_cocoa.sh, the other
+                                          # script is reading a file (start_cocoa.sh invokes stop_cocoa.sh)
+                                          # which delete links and ROOTDIR so the running script can find file/likelihood
+  conda activate cocoa
+  source start_cocoa.sh
+fi
 
 export OMP_PROC_BIND=close
-if [ -n "$SLURM_CPUS_PER_TASK" ]; then
-  export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-else
-  export OMP_NUM_THREADS=1
-fi
+export OMP_NUM_THREADS=1
 
 $CONDA_PREFIX/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
   --mca btl vader,tcp,self --bind-to core:overload-allowed \
