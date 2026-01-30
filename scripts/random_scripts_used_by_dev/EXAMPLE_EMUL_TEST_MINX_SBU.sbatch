@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=MIN
-#SBATCH --output=MIN-%A_%a.out
-#SBATCH -e MIN-%A_%a.out.err
+#SBATCH --job-name=TMIN
+#SBATCH --output=TMIN-%A_%a.out
+#SBATCH -e TMIN-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=75
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=hbm-short-96core
-#SBATCH --time=04:00:00
+#SBATCH --partition=hbm-long-96core
+#SBATCH --time=24:00:00
 
 # Clear the environment from any previously loaded modules
 module purge > /dev/null 2>&1
@@ -34,8 +34,12 @@ fi
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=1
 
-mpirun -n ${SLURM_NTASKS} --oversubscribe --mca btl vader,tcp,self \
-  --bind-to core:overload-allowed --map-by numa:pe=${OMP_NUM_THREADS} \
-  python ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE${SLURM_ARRAY_TASK_ID}.py \
-  --nstw 350 --root ./projects/roman_real/ \
-  --outroot "example_minimize${SLURM_ARRAY_TASK_ID}"
+for ((i=0; i<12; i++)); do
+  declare -i nstw=$((100+50*$i))
+
+  mpirun -n ${SLURM_NTASKS} --oversubscribe --mca btl vader,tcp,self \
+    --bind-to core:overload-allowed --map-by numa:pe=${OMP_NUM_THREADS} \
+    python ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE${SLURM_ARRAY_TASK_ID}.py \
+    --nstw nstw --root ./projects/roman_real/ \
+    --outroot "example_emul_minimize${SLURM_ARRAY_TASK_ID}_test_${i}"
+done
