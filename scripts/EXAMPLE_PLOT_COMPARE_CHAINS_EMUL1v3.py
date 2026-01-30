@@ -27,8 +27,9 @@ matplotlib.rcParams['legend.labelspacing'] = 0.77
 matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
-parameter = [u'wa', u'w', u'As_1e9', u'ns', u'H0', u'omegam', u'omegab', 
-             u'roman_A1_1', u'roman_A1_2', u'chi2']
+parameter = [u'As_1e9', u'ns', u'roman_M1', u'roman_M2', u'roman_M3', 
+             u'roman_M4', u'roman_M5', u'roman_M6', u'roman_M7',
+             u'roman_M8']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25, 
@@ -46,20 +47,20 @@ analysissettings2={'smooth_scale_1D':0.25,
                    'fine_bins_1D': 1024}
 
 root_chains = (
-  'EXAMPLE_EMUL_MCMC2',
-  'EXAMPLE_EMUL_MCMC1'
+  'EXAMPLE_EMUL_MCMC1',
+  'EXAMPLE_EMUL2_MCMC1',
 )
 
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
-samples.saveAsText(chaindir + '/.VM_P4_TMP1')
+samples.saveAsText(chaindir + '/.VM_P1v3_TMP1')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[1],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
-samples.saveAsText(chaindir + '/.VM_P4_TMP2')
+samples.saveAsText(chaindir + '/.VM_P1v3_TMP2')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -78,8 +79,8 @@ g.legend_labels=False
 
 g.triangle_plot(
   params=parameter,
-  roots=[chaindir + '/.VM_P4_TMP1',
-         chaindir + '/.VM_P4_TMP2'],
+  roots=[chaindir + '/.VM_P1v3_TMP1',
+         chaindir + '/.VM_P1v3_TMP2'],
   plot_3d_with_param=None,
   line_args=[ {'lw': 1.0,'ls': 'solid', 'color': 'cornflowerblue'},
               {'lw': 2.1,'ls': '--', 'color': 'maroon'},
@@ -93,8 +94,8 @@ g.triangle_plot(
   filled=[True,False,True,False,True],
   shaded=False,
   legend_labels=[
-    'Full cosmic shear data vector emul (Halofit), MH, w0wa',
-    'Full cosmic shear data vector emul (Halofit), MH, LCDM',
+    'Full cosmic shear data vector emul (Halofit), MH',
+    'Hybrid-emul (baseline analytical-syren w/o corrections), MH',
   ],
   legend_loc=(0.32, 0.875))
 
@@ -106,4 +107,4 @@ axarr[2,0].set_xlim([1.3,2.8])
 # ----------------------------------------------------
 # ----------------------------------------------------
 
-g.export(os.path.join(chaindir,"example_compare_chains_emul4.pdf"))
+g.export(os.path.join(chaindir,"example_compare_chains_emul1v3.pdf"))

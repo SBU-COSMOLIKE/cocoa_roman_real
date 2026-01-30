@@ -27,8 +27,9 @@ matplotlib.rcParams['legend.labelspacing'] = 0.77
 matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
-parameter = [u'As_1e9', u'ns', u'H0', u'omegam', u'omegab', 
-             u'roman_A1_1', u'roman_A1_2', u'chi2']
+parameter = [u'As_1e9', u'ns', u'roman_DZ_S1', u'roman_DZ_S2', u'roman_DZ_S3', 
+             u'roman_DZ_S4', u'roman_DZ_S5', u'roman_DZ_S6', u'roman_DZ_S7',
+             u'roman_DZ_S8']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25, 
@@ -54,12 +55,12 @@ root_chains = (
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
-samples.saveAsText(chaindir + '/.VM_P3_TMP1')
+samples.saveAsText(chaindir + '/.VM_P2v2_TMP1')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[1],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
-samples.saveAsText(chaindir + '/.VM_P3_TMP2')
+samples.saveAsText(chaindir + '/.VM_P2v2_TMP2')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -78,8 +79,8 @@ g.legend_labels=False
 
 g.triangle_plot(
   params=parameter,
-  roots=[chaindir + '/.VM_P3_TMP1',
-         chaindir + '/.VM_P3_TMP2'],
+  roots=[chaindir + '/.VM_P2v2_TMP1',
+         chaindir + '/.VM_P2v2_TMP2'],
   plot_3d_with_param=None,
   line_args=[ {'lw': 1.0,'ls': 'solid', 'color': 'cornflowerblue'},
               {'lw': 2.1,'ls': '--', 'color': 'maroon'},
@@ -106,4 +107,4 @@ axarr[2,0].set_xlim([1.3,2.8])
 # ----------------------------------------------------
 # ----------------------------------------------------
 
-g.export(os.path.join(chaindir,"example_compare_chains_emul3.pdf"))
+g.export(os.path.join(chaindir,"example_compare_chains_emul2v2.pdf"))
