@@ -53,7 +53,7 @@ root_chains = (
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
-samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
+samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2_{\\rm post}}')
 samples.saveAsText(chaindir + '/.VM_P2_TMP1')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[1],settings=analysissettings)
@@ -65,7 +65,7 @@ samples.saveAsText(chaindir + '/.VM_P2_TMP2')
 #GET DIST PLOT SETUP
 g=gplot.getSubplotPlotter(chain_dir=chaindir,
                           analysis_settings=analysissettings2,
-                          width_inch=10.5)
+                          width_inch=11.5)
 g.settings.axis_tick_x_rotation=65
 g.settings.lw_contour=1.0
 g.settings.legend_rect_border = False
@@ -93,8 +93,8 @@ g.triangle_plot(
   filled=[True,False,True,False,True],
   shaded=False,
   legend_labels=[
-    'Full cosmic shear data vector emul (Halofit), MH, w0wa',
-    'Full cosmic shear data vector emul (Halofit), MH, LCDM',
+    'Full cosmic shear data vector emul (HMCode), MH, w0wa',
+    'Full cosmic shear data vector emul (HMCode), MH, LCDM',
   ],
   legend_loc=(0.32, 0.875))
 
@@ -102,7 +102,7 @@ g.triangle_plot(
 # ----------------------------------------------------
 axarr = g.subplots
 # ----------------------------------------------------
-axarr[2,0].set_xlim([1.3,2.8])
+axarr[2,2].set_xlim([1.3,2.8])
 # ----------------------------------------------------
 # ----------------------------------------------------
 
