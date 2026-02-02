@@ -7,7 +7,7 @@
 #SBATCH --ntasks=75
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=hbm-long-96core
-#SBATCH --time=24:00:00
+#SBATCH --time=36:00:00
 
 # Clear the environment from any previously loaded modules
 module purge > /dev/null 2>&1

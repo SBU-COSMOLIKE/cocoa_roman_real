@@ -34,7 +34,6 @@ fi
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=1
 
-$CONDA_PREFIX/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
-  --mca btl vader,tcp,self --bind-to core:overload-allowed \
-  --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run \
+"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --map-by slot \
+  --mca btl vader,tcp,self --bind-to core:overload-allowed cobaya-run \
   ./projects/roman_real/EXAMPLE_EMUL_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r
