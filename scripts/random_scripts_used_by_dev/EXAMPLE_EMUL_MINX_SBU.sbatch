@@ -38,4 +38,4 @@ mpirun -n ${SLURM_NTASKS} --oversubscribe --mca btl vader,tcp,self \
   --bind-to core:overload-allowed --map-by numa:pe=${OMP_NUM_THREADS} \
   python ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE${SLURM_ARRAY_TASK_ID}.py \
   --nstw 350 --root ./projects/roman_real/ \
-  --outroot "example_minimize${SLURM_ARRAY_TASK_ID}"
+  --outroot "EXAMPLE_EMUL_MIN${SLURM_ARRAY_TASK_ID}"

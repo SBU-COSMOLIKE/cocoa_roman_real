@@ -63,7 +63,7 @@ declare -a factor2=( "3" "1.0" "1.0" "1.0" "3" "1.0" "1.0"
 declare -a grid=( factor1 factor2 )
 
 declare -i NY=100 # so from 0-99 is all about PROFILE1, 100-199 all about PROFILE2
-declare -i i=$(( $SLURM_ARRAY_TASK_ID / NY ))
+declare -i i=$(( $SLURM_ARRAY_TASK_ID / NY + 1 ))
 declare -i j=$(( $SLURM_ARRAY_TASK_ID % NY ))
 (( i < ${#grid[@]} )) || exit 0 # padding: skip unused slots
 declare -n row="${grid[$i]}"
