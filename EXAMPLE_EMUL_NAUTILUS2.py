@@ -111,8 +111,6 @@ params:
       scale: 0.65
     proposal: 0.4
     latex: 10^9 A_\mathrm{s}
-    drop: true
-    renames: A
   ns:
     prior:
       min: 0.87
@@ -143,7 +141,6 @@ params:
       scale: 0.004
     proposal: 0.004
     latex: \Omega_\mathrm{b}
-    drop: true
   omegam:
     prior:
       min: 0.1
@@ -154,7 +151,6 @@ params:
       scale: 0.02
     proposal: 0.02
     latex: \Omega_\mathrm{m}
-    drop: true
   w0pwa:
     prior:
       min: -5 

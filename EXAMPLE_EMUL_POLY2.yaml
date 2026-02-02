@@ -329,4 +329,4 @@ sampler:
     precision_criterion: 0.05
     boost_posterior: 10
     feedback: 2
-output: ./projects/lsst_y1/chains/EXAMPLE_EMUL_POLY2
+output: ./projects/roman_real/chains/EXAMPLE_EMUL_POLY2

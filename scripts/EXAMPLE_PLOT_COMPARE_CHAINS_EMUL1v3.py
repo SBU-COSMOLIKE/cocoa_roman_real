@@ -32,19 +32,19 @@ parameter = [u'As_1e9', u'ns', u'roman_M1', u'roman_M2', u'roman_M3',
              u'roman_M8']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
-analysissettings={'smooth_scale_1D':0.25, 
+analysissettings={'smooth_scale_1D':0.25,
                   'smooth_scale_2D':0.25,
                   'ignore_rows': u'0.3',
                   'range_confidence' : u'0.005',
                   'fine_bins_2D': 1024,
-                  'fine_bins_1D': 1024}
+                  'fine_bins_1D': 256}
 
 analysissettings2={'smooth_scale_1D':0.25,
                    'smooth_scale_2D':0.25,
                    'ignore_rows': u'0.0',
                    'range_confidence' : u'0.005',
                    'fine_bins_2D': 1024,
-                   'fine_bins_1D': 1024}
+                   'fine_bins_1D': 256}
 
 root_chains = (
   'EXAMPLE_EMUL_MCMC1',

@@ -111,8 +111,6 @@ params:
       scale: 0.65
     proposal: 0.4
     latex: 10^9 A_\mathrm{s}
-    drop: true
-    renames: A
   ns:
     prior:
       min: 0.87
@@ -143,7 +141,6 @@ params:
       scale: 0.004
     proposal: 0.004
     latex: \Omega_\mathrm{b}
-    drop: true
   omegam:
     prior:
       min: 0.1
@@ -154,7 +151,6 @@ params:
       scale: 0.02
     proposal: 0.02
     latex: \Omega_\mathrm{m}
-    drop: true
   As:
     derived: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
@@ -436,6 +432,7 @@ if __name__ == '__main__':
     dim    = model.prior.d()                                      # Cobaya call
     bounds = model.prior.bounds(confidence=0.999999)              # Cobaya call
     names  = list(model.parameterization.sampled_params().keys()) # Cobaya Call
+    print(names)
     for b, name in zip(bounds, names):
       NautilusPrior.add_parameter(name, dist=(b[0], b[1]))
     

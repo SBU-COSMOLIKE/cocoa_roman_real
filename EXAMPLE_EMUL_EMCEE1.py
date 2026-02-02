@@ -93,8 +93,6 @@ params:
       scale: 0.65
     proposal: 0.4
     latex: 10^9 A_\mathrm{s}
-    drop: true
-    renames: A
   ns:
     prior:
       min: 0.87
@@ -125,7 +123,6 @@ params:
       scale: 0.004
     proposal: 0.004
     latex: \Omega_\mathrm{b}
-    drop: true
   omegam:
     prior:
       min: 0.1
@@ -136,7 +133,6 @@ params:
       scale: 0.02
     proposal: 0.02
     latex: \Omega_\mathrm{m}
-    drop: true
   As:
     derived: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
@@ -437,7 +433,7 @@ def chain(x0,
                                     backend=backend)
     sampler.run_mcmc(x0, 
                      maxfeval, 
-                     skip_initial_state_check=True, 
+                     skip_initial_state_check=False, 
                      progress=args.progress)
     
     tau = sampler.get_autocorr_time(quiet=True, has_walkers=True)
@@ -478,6 +474,7 @@ if __name__ == '__main__':
               f"nwalkers={nwalkers}, "
               f"maxfeval per walker = {maxevals}"
               f"\n\n\n")
+        
         # get initial points ---------------------------------------------------
         x0 = [] # Initial point x0
         for j in range(nwalkers):
@@ -486,7 +483,7 @@ if __name__ == '__main__':
                                                 logposterior_as_dict=True)
           x0.append(tmp_x0[0:dim])
         x0 = np.array(x0, dtype='float64')
-        
+
         # get covariance -------------------------------------------------------
         cov = model.prior.covmat(ignore_external=False) # cov from prior
         
@@ -510,7 +507,7 @@ if __name__ == '__main__':
         np.savetxt(f"{args.root}chains/{args.outroot}.1.txt",
                    res[0],
                    fmt="%.7e",
-                   header=hd + ' '.join(names),
+                   header=hd + ' '.join(["weights","lnp"] + names),
                    comments="# ")
         # Now we need to save a range files ----------------------------------------
         hd = ["weights","lnp"] + names + ["chi2*"]

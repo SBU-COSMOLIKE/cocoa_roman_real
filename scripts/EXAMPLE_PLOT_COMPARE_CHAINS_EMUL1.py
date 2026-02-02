@@ -31,23 +31,24 @@ parameter = [u'As_1e9', u'ns', u'H0', u'omegam', u'omegab',
              u'roman_A1_1', u'roman_A1_2', u'chi2']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
-analysissettings={'smooth_scale_1D':0.25, 
+analysissettings={'smooth_scale_1D':0.25,
                   'smooth_scale_2D':0.25,
                   'ignore_rows': u'0.3',
                   'range_confidence' : u'0.005',
                   'fine_bins_2D': 1024,
-                  'fine_bins_1D': 1024}
+                  'fine_bins_1D': 256}
 
 analysissettings2={'smooth_scale_1D':0.25,
                    'smooth_scale_2D':0.25,
                    'ignore_rows': u'0.0',
                    'range_confidence' : u'0.005',
                    'fine_bins_2D': 1024,
-                   'fine_bins_1D': 1024}
+                   'fine_bins_1D': 256}
 
 root_chains = (
   'EXAMPLE_EMUL_MCMC1',
   'EXAMPLE_EMUL2_MCMC1',
+  'EXAMPLE_MCMC1',
 )
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
@@ -59,6 +60,11 @@ samples=loadMCSamples(chaindir + root_chains[1],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
 samples.saveAsText(chaindir + '/.VM_P1_TMP2')
+# --------------------------------------------------------------------------------
+samples=loadMCSamples(chaindir + root_chains[2],settings=analysissettings)
+p = samples.getParams()
+samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
+samples.saveAsText(chaindir + '/.VM_P1_TMP3')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -78,7 +84,8 @@ g.legend_labels=False
 g.triangle_plot(
   params=parameter,
   roots=[chaindir + '/.VM_P1_TMP1',
-         chaindir + '/.VM_P1_TMP2'],
+         chaindir + '/.VM_P1_TMP2',
+         chaindir + '/.VM_P1_TMP3'],
   plot_3d_with_param=None,
   line_args=[ {'lw': 1.0,'ls': 'solid', 'color': 'cornflowerblue'},
               {'lw': 2.1,'ls': '--', 'color': 'maroon'},
@@ -94,6 +101,7 @@ g.triangle_plot(
   legend_labels=[
     'Full cosmic shear data vector emul (HMCode), MH',
     'Hybrid-emul (baseline analytical-syren w/o corrections), MH',
+    'Cosmolike+CAMB (Halofit), MH',
   ],
   legend_loc=(0.32, 0.875))
 

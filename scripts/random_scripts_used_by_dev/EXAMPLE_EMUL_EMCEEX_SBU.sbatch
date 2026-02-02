@@ -4,7 +4,7 @@
 #SBATCH --output=EMC-%A_%a.out
 #SBATCH -e EMC-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=75
+#SBATCH --ntasks=85
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=hbm-long-96core
 #SBATCH --time=24:00:00
@@ -23,7 +23,7 @@ echo Number of cpus per task is $SLURM_CPUS_PER_TASK
 
 cd $SLURM_SUBMIT_DIR
 if [ -z "${ROOTDIR}" ]; then
-  sleep $(( 5 + SLURM_ARRAY_TASK_ID*15 )) # help avoid different scripts running start_cocoa.sh simultaneously
+  sleep $(( 5 + SLURM_ARRAY_TASK_ID*25 )) # help avoid different scripts running start_cocoa.sh simultaneously
                                           # clash can still happen when one script runs start_cocoa.sh, the other
                                           # script is reading a file (start_cocoa.sh invokes stop_cocoa.sh)
                                           # which delete links and ROOTDIR so the running script can find file/likelihood
@@ -36,8 +36,7 @@ export OMP_NUM_THREADS=1
 
 $CONDA_PREFIX/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
   --mca btl vader,tcp,self --bind-to core:overload-allowed \
-  --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run \
-  python -m mpi4py.futures \
+  --map-by numa:pe=${OMP_NUM_THREADS} python \
   ./projects/roman_real/EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}.py \
     --root ./projects/roman_real/ \
     --outroot "EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}" --maxfeval 1000000
