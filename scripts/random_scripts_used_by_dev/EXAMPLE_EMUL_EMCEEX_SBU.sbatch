@@ -38,4 +38,4 @@ export OMP_NUM_THREADS=1
   --mca btl vader,tcp,self --bind-to core:overload-allowed python \
   ./projects/roman_real/EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}.py \
     --root ./projects/roman_real/ \
-    --outroot "EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}" --maxfeval 1000000
+    --outroot "EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}" --maxfeval 2000000
