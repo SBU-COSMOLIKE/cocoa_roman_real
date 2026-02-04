@@ -27,7 +27,7 @@ matplotlib.rcParams['legend.labelspacing'] = 0.77
 matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
-parameter = [u'As_1e9', u'omegam', u'ns', u'H0', u'omegab', u'chi2v2']
+parameter = [u'wa',u'w',u'As_1e9', u'omegam', u'ns', u'H0', u'omegab', u'chi2v2']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25,
@@ -45,32 +45,34 @@ analysissettings2={'smooth_scale_1D':0.25,
                    'fine_bins_1D': 256}
 
 root_chains = (
-  'EXAMPLE_EMUL_MCMC1',
-  'EXAMPLE_EMUL_NAUTILUS1',
-  'EXAMPLE_EMUL_EMCEE1',
-  'EXAMPLE_EMUL_POLY1',
+  'EXAMPLE_EMUL_MCMC2',
+  'EXAMPLE_EMUL_NAUTILUS2',
+  'EXAMPLE_EMUL_EMCEE2',
+  'EXAMPLE_EMUL_POLY2',
 )
 
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P3_TMP1')
+samples.saveAsText(chaindir + '/.VM_P4_TMP1')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir+ root_chains[1], settings=analysissettings2)
 p = samples.getParams()
 samples.addDerived(p.chi2,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P3_TMP2')
+samples.addDerived(p.w0pwa-p.w,name='wa',label='{w_a}')
+samples.saveAsText(chaindir + '/.VM_P4_TMP2')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir+ root_chains[2],settings=analysissettings2)
 p = samples.getParams()
 samples.addDerived(p.chi2,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P3_TMP3')
+samples.addDerived(p.w0pwa-p.w,name='wa',label='{w_a}')
+samples.saveAsText(chaindir + '/.VM_P4_TMP3')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir+ root_chains[3],settings=analysissettings2)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P3_TMP4')
+samples.saveAsText(chaindir + '/.VM_P4_TMP4')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -89,10 +91,10 @@ g.legend_labels=False
 
 g.triangle_plot(
   params=parameter,
-  roots=[chaindir + '/.VM_P3_TMP1',
-         chaindir + '/.VM_P3_TMP2',
-         chaindir + '/.VM_P3_TMP3',
-         chaindir + '/.VM_P3_TMP4'],
+  roots=[chaindir + '/.VM_P4_TMP1',
+         chaindir + '/.VM_P4_TMP2',
+         chaindir + '/.VM_P4_TMP3',
+         chaindir + '/.VM_P4_TMP4'],
   plot_3d_with_param=None,
   line_args=[{'lw': 1.0,'ls': 'solid', 'color':'lightcoral'},
               {'lw': 1.2,'ls': '--', 'color':'black'},
@@ -111,4 +113,4 @@ g.triangle_plot(
     'PolyChord $n_{\\rm live}=512$, $n_{\\rm repeat}=3D$',
   ],
   legend_loc=(0.3, 0.85))
-g.export(os.path.join(chaindir,"example_compare_chains_emul3.pdf"))
+g.export(os.path.join(chaindir,"example_compare_chains_emul4.pdf"))
