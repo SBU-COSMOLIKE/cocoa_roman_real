@@ -45,7 +45,7 @@ analysissettings2={'smooth_scale_1D':0.25,
                    'fine_bins_1D': 256}
 
 root_chains = (
-  'EXAMPLE_EMUL_MCMC1',
+  'EXAMPLE_EMUL_MCMC3',
   'EXAMPLE_EMUL_NAUTILUS1',
   'EXAMPLE_EMUL_EMCEE1',
   'EXAMPLE_EMUL_POLY1',

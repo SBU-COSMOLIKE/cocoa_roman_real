@@ -1,9 +1,9 @@
 timing: True
-debug: True
+debug: False
 stop_at_error: False
 
 likelihood:
-  roman_real.combo_3x2pt:
+  roman_real.cosmic_shear:
     use_emulator: 1
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
@@ -79,10 +79,6 @@ params:
       scale: 0.05
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
-  rdrag:
-    value: 144 # it does not matter given we are not computing BAO chi2
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
@@ -297,208 +293,25 @@ params:
   roman_BTA_1:
     value: 0.0
     latex: A_\mathrm{BTA-IA,Roman}^1
-# Bin bias parameters
-  roman_B1_1:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.24
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^1
-  roman_B1_2:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.36
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^2
-  roman_B1_3:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.47
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^3
-  roman_B1_4:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.60
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^4
-  roman_B1_5:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.76
-      scale: 0.1
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^5
-  roman_B1_6:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.47
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^6
-  roman_B1_7:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.60
-      scale: 0.15
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^7
-  roman_B1_8:
-    prior:
-      min: 0.4
-      max: 4
-    ref:
-      dist: norm
-      loc: 1.76
-      scale: 0.1
-    proposal: 0.1
-    latex: b_\mathrm{1-Roman}^8
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
-  # Point Mass parameters
-  roman_PM1:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^1
-  roman_PM2:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^2
-  roman_PM3:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^3
-  roman_PM4:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^4
-  roman_PM5:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^5
-  roman_PM6:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^6
-  roman_PM7:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^7
-  roman_PM8:
-    value: 0.0
-    latex: PM_\mathrm{Roman}^8
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
-  # implementing lens = source
-  roman_DZ_L1:
-    value: 'lambda roman_DZ_S1: roman_DZ_S1'
-    latex: \Delta z_\mathrm{l,Roman}^1
-  roman_DZ_L2:
-    value: 'lambda roman_DZ_S2: roman_DZ_S2'
-    latex: \Delta z_\mathrm{l,Roman}^2
-  roman_DZ_L3:
-    value: 'lambda roman_DZ_S3: roman_DZ_S3'
-    latex: \Delta z_\mathrm{l,Roman}^3
-  roman_DZ_L4:
-    value: 'lambda roman_DZ_S4: roman_DZ_S4'
-    latex: \Delta z_\mathrm{l,Roman}^4
-  roman_DZ_L5:
-    value: 'lambda roman_DZ_S5: roman_DZ_S5'
-    latex: \Delta z_\mathrm{l,Roman}^5
-  roman_DZ_L6:
-    value: 'lambda roman_DZ_S6: roman_DZ_S6'
-    latex: \Delta z_\mathrm{l,Roman}^6
-  roman_DZ_L7:
-    value: 'lambda roman_DZ_S7: roman_DZ_S7'
-    latex: \Delta z_\mathrm{l,Roman}^7
-  roman_DZ_L8:
-    value: 'lambda roman_DZ_S8: roman_DZ_S8'
-    latex: \Delta z_\mathrm{l,Roman}^8
 theory:
   emul_cosmic_shear:
     path: ./cobaya/cobaya/theories/
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_halofittaka_nobaryon_cs_CNN.pt']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_halofittaka_nobaryon_cs_CNN.h5']
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
-        'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
-        'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
-        'roman_A1_1','roman_A1_2']]
-      fast_params: [['roman_M1','roman_M2','roman_M3','roman_M4','roman_M5','roman_M6','roman_M7','roman_M8']]
-      extrapar: [{'MLA': 'CNN', 
-        'INT_DIM_RES': 256, 
-        'CNN_DIM': 576, 
-        'KERNEL_DIM': 21,
-        'OUTPUT_DIM': 1080}]
-  emul_ggl:
-    path: ./cobaya/cobaya/theories/
-    stop_at_error: True
-    extra_args: 
-      device: 'cuda'
-      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_w0wa_halofittaka_nobaryon_ggl_CNN.pt']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_ggl_cnn/roman_real_w0wa_halofittaka_nobaryon_ggl_CNN.h5']
-      ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
-        'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
-        'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
-        'roman_A1_1','roman_A1_2',
-        'roman_B1_1','roman_B1_2','roman_B1_3','roman_B1_4',
-        'roman_B1_5','roman_B1_6','roman_B1_7','roman_B1_8']]
+             'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
+             'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
+             'roman_A1_1','roman_A1_2']]
       fast_params: [['roman_M1','roman_M2','roman_M3','roman_M4',
                      'roman_M5','roman_M6','roman_M7','roman_M8']]
       extrapar: [{'MLA': 'CNN', 
-        'INT_DIM_RES': 256, 
-        'CNN_DIM': 576, 
-        'KERNEL_DIM': 21,
-        'OUTPUT_DIM': 915}]
-  emul_wtheta:
-    path: ./cobaya/cobaya/theories/
-    stop_at_error: True
-    extra_args: 
-      device: 'cuda'
-      file: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_w0wa_halofittaka_nobaryon_gc_CNN.pt']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_wtheta_cnn/roman_real_w0wa_halofittaka_nobaryon_gc_CNN.h5']
-      ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
-        'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
-        'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
-        'roman_B1_1','roman_B1_2','roman_B1_3','roman_B1_4',
-        'roman_B1_5','roman_B1_6','roman_B1_7','roman_B1_8']]
-      extrapar: [{'MLA': 'CNN', 
-        'INT_DIM_RES': 256, 
-        'CNN_DIM': 576, 
-        'KERNEL_DIM': 21,
-        'OUTPUT_DIM': 120}]
-  emulbaosn:
-    path: ./cobaya/cobaya/theories/
-    stop_at_error: True
-    extra_args:
-      device: "cuda"
-      file:  [None, 'external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_H.pt']
-      extra: [None, 'external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_H.npy']    
-      ord: [None, ['omegam','H0']]
-      extrapar: [{'MLA': 'INT', 'ZMIN' : 0.0001, 'ZMAX' : 3, 'NZ' : 600},
-                 {'MLA': 'ResMLP', 'offset' : 0.0, 'INTDIM' : 1, 'NLAYER' : 1,
-                  'TMAT': 'external_modules/data/emultrf/BAO_SN_RES/PCA_lcdm_H.npy',
-                  'ZLIN': 'external_modules/data/emultrf/BAO_SN_RES/z_lin_lcdm.npy'}]
+                  'INT_DIM_RES': 256, 
+                  'CNN_DIM': 576, 
+                  'KERNEL_DIM': 21,
+                  'OUTPUT_DIM': 1080}]
 sampler:
   evaluate:
     N: 1
@@ -526,14 +339,7 @@ sampler:
       roman_M8: 0.0
       roman_A1_1: 0.6
       roman_A1_2: -1.5
-      roman_B1_1: 1.18
-      roman_B1_2: 1.40
-      roman_B1_3: 1.55
-      roman_B1_4: 1.71
-      roman_B1_5: 1.90
-      roman_B1_6: 2.15
-      roman_B1_7: 2.52
-      roman_B1_8: 2.44
       w0pwa: -1.0
       w: -1.0
-output: ./projects/roman_real/chains/EXAMPLE_EMUL_EVALUATE2
+
+output: ./projects/roman_real/chains/EXAMPLE_EMUL_EVALUATE3
