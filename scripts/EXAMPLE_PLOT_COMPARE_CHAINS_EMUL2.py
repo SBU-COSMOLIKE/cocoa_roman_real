@@ -47,7 +47,9 @@ analysissettings2={'smooth_scale_1D':0.25,
 
 root_chains = (
   'EXAMPLE_EMUL_MCMC2',
-  'EXAMPLE_EMUL_MCMC4'
+  'EXAMPLE_EMUL_MCMC4',
+  'EXAMPLE_EMUL_MCMC1',
+  'EXAMPLE_EMUL_MCMC3'
 )
 
 # --------------------------------------------------------------------------------
@@ -60,6 +62,17 @@ samples=loadMCSamples(chaindir + root_chains[1],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
 samples.saveAsText(chaindir + '/.VM_P2_TMP2')
+# --------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+samples=loadMCSamples(chaindir + root_chains[2],settings=analysissettings)
+p = samples.getParams()
+samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2_{\\rm post}}')
+samples.saveAsText(chaindir + '/.VM_P2_TMP3')
+# --------------------------------------------------------------------------------
+samples=loadMCSamples(chaindir + root_chains[3],settings=analysissettings)
+p = samples.getParams()
+samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
+samples.saveAsText(chaindir + '/.VM_P2_TMP4')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -79,7 +92,10 @@ g.legend_labels=False
 g.triangle_plot(
   params=parameter,
   roots=[chaindir + '/.VM_P2_TMP1',
-         chaindir + '/.VM_P2_TMP2'],
+         chaindir + '/.VM_P2_TMP2',
+         chaindir + '/.VM_P2_TMP3',
+         chaindir + '/.VM_P2_TMP4',
+        ],
   plot_3d_with_param=None,
   line_args=[ {'lw': 1.0,'ls': 'solid', 'color': 'cornflowerblue'},
               {'lw': 2.1,'ls': '--', 'color': 'maroon'},
@@ -95,6 +111,8 @@ g.triangle_plot(
   legend_labels=[
     'Full cosmic shear data vector emul (Halofit), MH, w0wa',
     'Full cosmic shear data vector emul (HMCode), MH, w0wa',
+    'Full cosmic shear data vector emul (Halofit), MH, LCDM',
+    'Full cosmic shear data vector emul (HMCode), MH, LCDM',
   ],
   legend_loc=(0.32, 0.875))
 
