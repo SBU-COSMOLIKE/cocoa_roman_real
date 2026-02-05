@@ -73,9 +73,10 @@ declare nstw="${nstws[$i]}"
 (( j < ${#row[@]} )) || exit 0  # padding: skip unused slots
 declare factor="${row[$j]}"
 
-mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
-  --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
-  python ./projects/roman_real/EXAMPLE_EMUL_PROFILE$((i+1)).py \
+"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
+  --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot \
+  --map-by slot:pe=${OMP_NUM_THREADS} python \
+  ./projects/roman_real/EXAMPLE_EMUL_PROFILE$((i+1)).py \
     --root ./projects/roman_real/ --cov "chains/EXAMPLE_EMUL_MCMC$((i+1)).covmat" \
     --outroot "EXAMPLE_EMUL_PROFILE$((i+1))" --factor "$factor" \
     --nstw $nstw --numpts 15 --profile "${j}" \

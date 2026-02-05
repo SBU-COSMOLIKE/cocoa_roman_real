@@ -34,8 +34,9 @@ fi
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=1
 
-"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --map-by slot \
-  --mca btl vader,tcp,self --bind-to core:overload-allowed python \
+"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
+  --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot \
+  --map-by slot:pe=${OMP_NUM_THREADS} python \
   ./projects/roman_real/EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}.py \
     --root ./projects/roman_real/ \
     --outroot "EXAMPLE_EMUL_EMCEE${SLURM_ARRAY_TASK_ID}" --maxfeval 2000000
