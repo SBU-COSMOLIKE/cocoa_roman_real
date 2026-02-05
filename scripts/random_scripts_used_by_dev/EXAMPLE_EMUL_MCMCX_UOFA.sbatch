@@ -2,13 +2,12 @@
 
 #SBATCH --job-name=MC
 #SBATCH --output=MC-%A-%a.out
-#SBATCH -e=MC-%A-%a.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --ntasks-per-node=4
-#SBATCH --ntasks-per-socket=4   # trying to reserve the socket that has 48 cores
-#SBATCH --cpus-per-task=12      # trying to reserve the socket that has 48 cores
-#SBATCH --time=72:00:00
+#SBATCH --ntasks=6
+#SBATCH --ntasks-per-node=6
+#SBATCH --ntasks-per-socket=6   
+#SBATCH --cpus-per-task=1      
+#SBATCH --time=15:00:00
 #SBATCH --partition=high_priority
 #SBATCH --qos=user_qos_timeifler
 #SBATCH --account=timeifler
@@ -32,14 +31,8 @@ if [ -z "${ROOTDIR}" ]; then
 fi
 
 export OMP_PROC_BIND=close
-export OMP_PROC_BIND=close
-if [ -n "$SLURM_CPUS_PER_TASK" ]; then
-  export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-else
-  export OMP_NUM_THREADS=1
-fi
+export OMP_NUM_THREADS=1
 
-$CONDA_PREFIX/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
-  --mca btl vader,tcp,self --bind-to core:overload-allowed \
-  --map-by numa:pe=${OMP_NUM_THREADS} cobaya-run \
-  ./projects/roman_real/EXAMPLE_EMUL2_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r
+"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --map-by slot \
+  --mca btl vader,tcp,self --bind-to core:overload-allowed cobaya-run \
+  ./projects/roman_real/EXAMPLE_EMUL_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r

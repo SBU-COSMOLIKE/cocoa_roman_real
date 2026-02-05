@@ -1,17 +1,17 @@
 #!/bin/bash
 
 #SBATCH --job-name=MC
-#SBATCH --output=MC-%A-%a.out
-#SBATCH -e=MC-%A-%a.err
+#SBATCH --output=MC-%A_%a.out
+#SBATCH -e MC-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --ntasks-per-node=4
-#SBATCH --ntasks-per-socket=4   # trying to reserve the socket that has 48 cores
-#SBATCH --cpus-per-task=12      # trying to reserve the socket that has 48 cores
-#SBATCH --time=72:00:00
-#SBATCH --partition=high_priority
-#SBATCH --qos=user_qos_timeifler
-#SBATCH --account=timeifler
+#SBATCH --ntasks=5
+#SBATCH --cpus-per-task=8
+#SBATCH --partition=long-40core
+#SBATCH --time=48:00:00
+
+# Clear the environment from any previously loaded modules
+module purge > /dev/null 2>&1
+module load slurm
 
 echo Running on host `hostname`
 echo Time is `date`
