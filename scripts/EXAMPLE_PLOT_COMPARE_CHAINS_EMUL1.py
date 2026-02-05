@@ -29,6 +29,12 @@ matplotlib.rcParams['savefig.format'] = 'pdf'
 
 parameter = [u'As_1e9', u'ns', u'H0', u'omegam', u'omegab', 
              u'roman_A1_1', u'roman_A1_2', u'chi2']
+#parameter = [u'As_1e9', u'ns', u'roman_DZ_S1', u'roman_DZ_S2', u'roman_DZ_S3', 
+#             u'roman_DZ_S4', u'roman_DZ_S5', u'roman_DZ_S6', u'roman_DZ_S7',
+#             u'roman_DZ_S8']
+#parameter = [u'As_1e9', u'ns', u'roman_M1', u'roman_M2', u'roman_M3', 
+#             u'roman_M4', u'roman_M5', u'roman_M6', u'roman_M7',
+#             u'roman_M8']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25,
@@ -48,7 +54,7 @@ analysissettings2={'smooth_scale_1D':0.25,
 root_chains = (
   'EXAMPLE_EMUL_MCMC1',
   'EXAMPLE_EMUL2_MCMC1',
-  'EXAMPLE_MCMC1',
+  'EXAMPLE_MCMC1'
 )
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)

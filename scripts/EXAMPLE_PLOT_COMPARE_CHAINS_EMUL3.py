@@ -27,8 +27,8 @@ matplotlib.rcParams['legend.labelspacing'] = 0.77
 matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
-parameter = [u'omegach2', u'logA', u'ns', u'omegabh2', u'tau', u'chi2v2']
-chaindir  = os.environ['ROOTDIR'] + "/projects/example/chains/"
+parameter = [u'As_1e9', u'omegam', u'ns', u'H0', u'omegab', u'chi2v2']
+chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25,
                   'smooth_scale_2D':0.25,
@@ -45,7 +45,7 @@ analysissettings2={'smooth_scale_1D':0.25,
                    'fine_bins_1D': 256}
 
 root_chains = (
-  'EXAMPLE_EMUL_MCMC1',
+  'EXAMPLE_EMUL_MCMC3',
   'EXAMPLE_EMUL_NAUTILUS1',
   'EXAMPLE_EMUL_EMCEE1',
   'EXAMPLE_EMUL_POLY1',
@@ -55,22 +55,22 @@ root_chains = (
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P1_TMP1')
+samples.saveAsText(chaindir + '/.VM_P3_TMP1')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir+ root_chains[1], settings=analysissettings2)
 p = samples.getParams()
 samples.addDerived(p.chi2,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P1_TMP2')
+samples.saveAsText(chaindir + '/.VM_P3_TMP2')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir+ root_chains[2],settings=analysissettings2)
 p = samples.getParams()
 samples.addDerived(p.chi2,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P1_TMP3')
+samples.saveAsText(chaindir + '/.VM_P3_TMP3')
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir+ root_chains[3],settings=analysissettings2)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
-samples.saveAsText(chaindir + '/.VM_P1_TMP4')
+samples.saveAsText(chaindir + '/.VM_P3_TMP4')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -89,10 +89,10 @@ g.legend_labels=False
 
 g.triangle_plot(
   params=parameter,
-  roots=[chaindir + '/.VM_P1_TMP1',
-         chaindir + '/.VM_P1_TMP2',
-         chaindir + '/.VM_P1_TMP3',
-         chaindir + '/.VM_P1_TMP4'],
+  roots=[chaindir + '/.VM_P3_TMP1',
+         chaindir + '/.VM_P3_TMP2',
+         chaindir + '/.VM_P3_TMP3',
+         chaindir + '/.VM_P3_TMP4'],
   plot_3d_with_param=None,
   line_args=[{'lw': 1.0,'ls': 'solid', 'color':'lightcoral'},
               {'lw': 1.2,'ls': '--', 'color':'black'},
@@ -105,9 +105,9 @@ g.triangle_plot(
   filled=[True,False,False,True],
   shaded=False,
   legend_labels=[
-    'MH, 4-walkers, burn-in=0.3',
+    'MH, 4-walkers, burn-in=0.3 (HMCODE)',
     'Nautilus, $n_{\\rm live}=1024$, $n_{\\rm eff} \\sim 15,000$',
-    'EMCEE $n_{\\rm walkers}=3 \\times ndim$, $n_{\\rm eval} \\sim 1,000,000$',
+    'EMCEE $n_{\\rm walkers}=3 \\times ndim$, $n_{\\rm eval} \\sim 2,000,000$',
     'PolyChord $n_{\\rm live}=512$, $n_{\\rm repeat}=3D$',
   ],
   legend_loc=(0.3, 0.85))

@@ -1,17 +1,16 @@
 #!/bin/bash
 
-#SBATCH --job-name=MIN
-#SBATCH --output=MIN-%A_%a.out
-#SBATCH -e MIN-%A_%a.out.err
+#SBATCH --job-name=MC
+#SBATCH --output=MC-%A-%a.out
 #SBATCH --nodes=1
-#SBATCH --ntasks=75
-#SBATCH --cpus-per-task=1
-#SBATCH --partition=hbm-short-96core
-#SBATCH --time=04:00:00
-
-# Clear the environment from any previously loaded modules
-module purge > /dev/null 2>&1
-module load slurm
+#SBATCH --ntasks=4
+#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-socket=4   
+#SBATCH --cpus-per-task=10    
+#SBATCH --time=90:00:00
+#SBATCH --partition=high_priority
+#SBATCH --qos=user_qos_timeifler
+#SBATCH --account=timeifler
 
 echo Running on host `hostname`
 echo Time is `date`
@@ -32,11 +31,14 @@ if [ -z "${ROOTDIR}" ]; then
 fi
 
 export OMP_PROC_BIND=close
-export OMP_NUM_THREADS=1
+export OMP_PROC_BIND=close
+if [ -n "$SLURM_CPUS_PER_TASK" ]; then
+  export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+else
+  export OMP_NUM_THREADS=1
+fi
 
 "${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
   --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot \
-  --map-by slot:pe=${OMP_NUM_THREADS} python \
-  ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE${SLURM_ARRAY_TASK_ID}.py \
-    --nstw 500 --root ./projects/roman_real/ \
-    --outroot "EXAMPLE_EMUL_MIN${SLURM_ARRAY_TASK_ID}"
+  --map-by slot:pe=${OMP_NUM_THREADS} cobaya-run \
+  ./projects/roman_real/EXAMPLE_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r

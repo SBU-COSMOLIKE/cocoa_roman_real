@@ -122,9 +122,25 @@ params:
     proposal: 0.02
     latex: \Omega_\mathrm{m}
   w0pwa:
-    value: -1
-  w: 
-    value: -1
+    prior:
+      min: -5 
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
+  w:
+    prior:
+      min: -3
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
@@ -345,8 +361,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_halofittaka_nobaryon_cs_CNN.pt']
-      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_halofittaka_nobaryon_cs_CNN.h5']
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_hmcode2020_nobaryon_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
              'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
              'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',

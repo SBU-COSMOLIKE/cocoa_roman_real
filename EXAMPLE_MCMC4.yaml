@@ -41,7 +41,7 @@ params:
     latex: n_\mathrm{s}
   H0:
     prior:
-      min: 45
+      min: 55
       max: 91
     ref:
       dist: norm
@@ -72,11 +72,24 @@ params:
     latex: \Omega_\mathrm{m}
     drop: true
   w0pwa:
-    value: -1.0
+    prior:
+      min: -5 
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
     latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
-    drop: true
   w:
-    value: -1.0
+    prior:
+      min: -3
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
     latex: w_{0,\mathrm{DE}}
   mnu:
     value: 0.06
@@ -375,7 +388,7 @@ theory:
     stop_at_error: False
     use_renames: True
     extra_args:
-      halofit_version: takahashi
+      halofit_version: hmcode2020
       AccuracyBoost: 1.05
       lens_potential_accuracy: 1.0
       num_massive_neutrinos: 1
@@ -426,20 +439,20 @@ sampler:
     blocking:
     - [1,
         [
-          As_1e9, ns, H0, omegab, omegam,
+          As_1e9, ns, H0, omegab, omegam, w, w0pwa
         ]
       ]
     - [6,
         [
-          roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, roman_DZ_S5,
-          roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
-          roman_A1_1, roman_A1_2,
+          roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, 
+          roman_DZ_S5, roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
+          roman_A1_1, roman_A1_2
         ]
       ]
     - [25,
         [
-          roman_M1, roman_M2, roman_M3, roman_M4, roman_M5,
-          roman_M6, roman_M7, roman_M8,
+          roman_M1, roman_M2, roman_M3, roman_M4, 
+          roman_M5, roman_M6, roman_M7, roman_M8,
         ]
       ]
     learn_every: 10d
@@ -460,4 +473,4 @@ sampler:
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
-output: ./projects/roman_real/chains/EXAMPLE_MCMC1
+output: ./projects/roman_real/chains/EXAMPLE_MCMC4

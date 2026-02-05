@@ -389,7 +389,7 @@ theory:
     use_renames: True
     extra_args:
       halofit_version: takahashi
-      AccuracyBoost: 1.1
+      AccuracyBoost: 1.05
       lens_potential_accuracy: 1.0
       num_massive_neutrinos: 1
       nnu: 3.046

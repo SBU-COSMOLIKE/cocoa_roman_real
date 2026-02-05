@@ -1,17 +1,17 @@
 #!/bin/bash
 
-#SBATCH --job-name=MIN
-#SBATCH --output=MIN-%A_%a.out
-#SBATCH -e MIN-%A_%a.out.err
+#SBATCH --job-name=NAU
+#SBATCH --output=NAU-%A_%a.out
+#SBATCH -e NAU-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=75
-#SBATCH --cpus-per-task=1
-#SBATCH --partition=hbm-short-96core
-#SBATCH --time=04:00:00
-
-# Clear the environment from any previously loaded modules
-module purge > /dev/null 2>&1
-module load slurm
+#SBATCH --ntasks=86
+#SBATCH --ntasks-per-node=86
+#SBATCH --ntasks-per-socket=43  
+#SBATCH --cpus-per-task=1      
+#SBATCH --time=24:00:00
+#SBATCH --partition=high_priority
+#SBATCH --qos=user_qos_timeifler
+#SBATCH --account=timeifler
 
 echo Running on host `hostname`
 echo Time is `date`
@@ -33,10 +33,12 @@ fi
 
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=1
+ulimit -u 2000000 # require line when nmpi is high
 
 "${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
   --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot \
-  --map-by slot:pe=${OMP_NUM_THREADS} python \
-  ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE${SLURM_ARRAY_TASK_ID}.py \
-    --nstw 500 --root ./projects/roman_real/ \
-    --outroot "EXAMPLE_EMUL_MIN${SLURM_ARRAY_TASK_ID}"
+  --map-by slot:pe=${OMP_NUM_THREADS} python -m mpi4py.futures \
+  ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS${SLURM_ARRAY_TASK_ID}.py \
+    --root ./projects/roman_real/ \
+    --outroot "EXAMPLE_EMUL_NAUTILUS${SLURM_ARRAY_TASK_ID}" \
+    --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5

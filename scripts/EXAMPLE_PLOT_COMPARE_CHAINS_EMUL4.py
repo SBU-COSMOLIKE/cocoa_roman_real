@@ -27,9 +27,7 @@ matplotlib.rcParams['legend.labelspacing'] = 0.77
 matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
-parameter = [u'As_1e9', u'ns', u'roman_DZ_S1', u'roman_DZ_S2', u'roman_DZ_S3', 
-             u'roman_DZ_S4', u'roman_DZ_S5', u'roman_DZ_S6', u'roman_DZ_S7',
-             u'roman_DZ_S8']
+parameter = [u'wa',u'w',u'As_1e9', u'omegam', u'ns', u'H0', u'omegab', u'chi2v2']
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
 analysissettings={'smooth_scale_1D':0.25,
@@ -47,20 +45,34 @@ analysissettings2={'smooth_scale_1D':0.25,
                    'fine_bins_1D': 256}
 
 root_chains = (
-  'EXAMPLE_EMUL_MCMC1',
-  'EXAMPLE_EMUL2_MCMC1',
+  'EXAMPLE_EMUL_MCMC4',
+  'EXAMPLE_EMUL_NAUTILUS2',
+  'EXAMPLE_EMUL_EMCEE2',
+  'EXAMPLE_EMUL_POLY2',
 )
 
 # --------------------------------------------------------------------------------
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
-samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
-samples.saveAsText(chaindir + '/.VM_P2v2_TMP1')
+samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
+samples.saveAsText(chaindir + '/.VM_P4_TMP1')
 # --------------------------------------------------------------------------------
-samples=loadMCSamples(chaindir + root_chains[1],settings=analysissettings)
+samples=loadMCSamples(chaindir+ root_chains[1], settings=analysissettings2)
 p = samples.getParams()
-samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
-samples.saveAsText(chaindir + '/.VM_P2v2_TMP2')
+samples.addDerived(p.chi2,name='chi2v2',label='{\\chi^2}')
+samples.addDerived(p.w0pwa-p.w,name='wa',label='{w_a}')
+samples.saveAsText(chaindir + '/.VM_P4_TMP2')
+# --------------------------------------------------------------------------------
+samples=loadMCSamples(chaindir+ root_chains[2],settings=analysissettings2)
+p = samples.getParams()
+samples.addDerived(p.chi2,name='chi2v2',label='{\\chi^2}')
+samples.addDerived(p.w0pwa-p.w,name='wa',label='{w_a}')
+samples.saveAsText(chaindir + '/.VM_P4_TMP3')
+# --------------------------------------------------------------------------------
+samples=loadMCSamples(chaindir+ root_chains[3],settings=analysissettings2)
+p = samples.getParams()
+samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
+samples.saveAsText(chaindir + '/.VM_P4_TMP4')
 # --------------------------------------------------------------------------------
 
 #GET DIST PLOT SETUP
@@ -72,39 +84,33 @@ g.settings.lw_contour=1.0
 g.settings.legend_rect_border = False
 g.settings.figure_legend_frame = False
 g.settings.axes_fontsize = 15.0
-g.settings.legend_fontsize = 20.5
+g.settings.legend_fontsize = 15.5
 g.settings.alpha_filled_add = 0.85
 g.settings.lab_fontsize=15.5
 g.legend_labels=False
 
 g.triangle_plot(
   params=parameter,
-  roots=[chaindir + '/.VM_P2v2_TMP1',
-         chaindir + '/.VM_P2v2_TMP2'],
+  roots=[chaindir + '/.VM_P4_TMP1',
+         chaindir + '/.VM_P4_TMP2',
+         chaindir + '/.VM_P4_TMP3',
+         chaindir + '/.VM_P4_TMP4'],
   plot_3d_with_param=None,
-  line_args=[ {'lw': 1.0,'ls': 'solid', 'color': 'cornflowerblue'},
-              {'lw': 2.1,'ls': '--', 'color': 'maroon'},
-              {'lw': 1.0,'ls': 'solid', 'color': 'lightcoral'},
-              {'lw': 1.2,'ls': 'dotted', 'color': 'black'},
+  line_args=[{'lw': 1.0,'ls': 'solid', 'color':'lightcoral'},
+              {'lw': 1.2,'ls': '--', 'color':'black'},
+              {'lw': 2.1,'ls': 'dotted', 'color': 'maroon'},
               {'lw': 1.6,'ls': '-.', 'color': 'indigo'}
             ],
-  contour_colors=['cornflowerblue','maroon','lightcoral', 'black','indigo'],
-  contour_ls=['solid', '--', 'solid','dotted','-.'], 
-  contour_lws=[1.0,2.1,1.0,1.2,1.6],
-  filled=[True,False,True,False,True],
+  contour_colors=['lightcoral','black','maroon', 'indigo'],
+  contour_ls=['solid','--','dotted','-.'],
+  contour_lws=[1.0,1.2,2.1,1.6],
+  filled=[True,False,False,True],
   shaded=False,
   legend_labels=[
-    'Full cosmic shear data vector emul (Halofit), MH',
-    'Hybrid-emul (baseline analytical-syren w/o corrections), MH',
+    'MH, 4-walkers, burn-in=0.3 (HMCODE)',
+    'Nautilus, $n_{\\rm live}=1024$, $n_{\\rm eff} \\sim 15,000$',
+    'EMCEE $n_{\\rm walkers}=3 \\times ndim$, $n_{\\rm eval} \\sim 2,000,000$',
+    'PolyChord $n_{\\rm live}=512$, $n_{\\rm repeat}=3D$',
   ],
-  legend_loc=(0.32, 0.875))
-
-# ----------------------------------------------------
-# ----------------------------------------------------
-axarr = g.subplots
-# ----------------------------------------------------
-axarr[2,0].set_xlim([1.3,2.8])
-# ----------------------------------------------------
-# ----------------------------------------------------
-
-g.export(os.path.join(chaindir,"example_compare_chains_emul2v2.pdf"))
+  legend_loc=(0.3, 0.85))
+g.export(os.path.join(chaindir,"example_compare_chains_emul4.pdf"))

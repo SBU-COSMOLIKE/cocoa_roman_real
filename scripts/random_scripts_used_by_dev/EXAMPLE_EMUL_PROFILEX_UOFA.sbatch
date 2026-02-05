@@ -4,14 +4,14 @@
 #SBATCH --output=PR-%A_%a.out
 #SBATCH -e PR-%A_%a.out.err
 #SBATCH --nodes=1
-#SBATCH --ntasks=75
+#SBATCH --ntasks=94
+#SBATCH --ntasks-per-node=94
+#SBATCH --ntasks-per-socket=47
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=hbm-long-96core
 #SBATCH --time=15:00:00
-
-# Clear the environment from any previously loaded modules
-module purge > /dev/null 2>&1
-module load slurm
+#SBATCH --partition=high_priority
+#SBATCH --qos=user_qos_timeifler
+#SBATCH --account=timeifler
 
 echo Running on host `hostname`
 echo Time is `date`
@@ -35,6 +35,7 @@ fi
 
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=1
+ulimit -u 2000000 # require line when nmpi is high
 
 # the parameters are 
 # As_1e9    ns        H0      omegab  omegam  
