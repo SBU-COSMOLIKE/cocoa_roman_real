@@ -75,5 +75,5 @@ mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx --mca btl vader,tcp,sel
   python ./projects/roman_real/EXAMPLE_EMUL_PROFILE1.py \
     --root ./projects/roman_real/ --cov "chains/EXAMPLE_EMUL_MCMC${i}.covmat" \
     --outroot "EXAMPLE_EMUL_PROFILE$i" --factor "$factor" \
-    --nstw 400 --numpts 15 --profile "${j}" \
+    --nstw 450 --numpts 15 --profile "${j}" \
     --minfile="./projects/roman_real/chains/EXAMPLE_EMUL_MIN${i}.txt"

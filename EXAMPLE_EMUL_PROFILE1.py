@@ -157,6 +157,10 @@ params:
       scale: 0.02
     proposal: 0.02
     latex: \Omega_\mathrm{m}
+  w0pwa:
+    value: -1
+  w: 
+    value: -1
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
@@ -377,9 +381,9 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.pt']
-      extra: ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear_cnn/roman_real_lcdm_hmcode2020_nobaryon_cs_CNN.h5']
-      ord: [['As_1e9','ns','H0','omegab', 'omegam',
+      file:  ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_halofittaka_nobaryon_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/w0wa_nla_halofit_cosmic_shear_cnn/roman_real_w0wa_halofittaka_nobaryon_cs_CNN.h5']
+      ord: [['As_1e9','ns','H0','omegab', 'omegam', 'w', 'w0pwa',
              'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
              'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',
              'roman_A1_1','roman_A1_2']]
@@ -510,19 +514,6 @@ def prf(x0, nstw, cov, fixed=-1, nwalkers=5, pool=None):
                     nwalkers=nwalkers,
                     pool=pool)
     return res
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-from cobaya.theories.emultheta.emultheta2 import emultheta
-etheta = emultheta(extra_args={ 
-    'device': "cuda",
-    'file': ['external_modules/data/emultrf/CMB_TRF/emul_lcdm_thetaH0_GP.joblib'],
-    'extra':['external_modules/data/emultrf/CMB_TRF/extra_lcdm_thetaH0.npy'],
-    'ord':  [['omegabh2','omegach2','thetastar']],
-    'extrapar': [{'MLA' : "GP"}]})
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------

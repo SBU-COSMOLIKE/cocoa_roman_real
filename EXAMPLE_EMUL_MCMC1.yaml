@@ -63,9 +63,9 @@ params:
     derived: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
   w0pwa:
-    value: 1
+    value: -1
   w: 
-    value: 1
+    value: -1
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)

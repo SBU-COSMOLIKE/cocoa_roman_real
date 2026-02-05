@@ -107,7 +107,7 @@ g.triangle_plot(
   filled=[True,False,False,True],
   shaded=False,
   legend_labels=[
-    'MH, 4-walkers, burn-in=0.3',
+    'MH, 4-walkers, burn-in=0.3 (HMCODE)',
     'Nautilus, $n_{\\rm live}=1024$, $n_{\\rm eff} \\sim 15,000$',
     'EMCEE $n_{\\rm walkers}=3 \\times ndim$, $n_{\\rm eval} \\sim 2,000,000$',
     'PolyChord $n_{\\rm live}=512$, $n_{\\rm repeat}=3D$',

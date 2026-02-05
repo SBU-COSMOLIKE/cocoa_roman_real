@@ -47,7 +47,7 @@ analysissettings2={'smooth_scale_1D':0.25,
 
 root_chains = (
   'EXAMPLE_EMUL_MCMC2',
-  'EXAMPLE_EMUL_MCMC1'
+  'EXAMPLE_EMUL_MCMC4'
 )
 
 # --------------------------------------------------------------------------------
@@ -93,8 +93,8 @@ g.triangle_plot(
   filled=[True,False,True,False,True],
   shaded=False,
   legend_labels=[
+    'Full cosmic shear data vector emul (Halofit), MH, w0wa',
     'Full cosmic shear data vector emul (HMCode), MH, w0wa',
-    'Full cosmic shear data vector emul (HMCode), MH, LCDM',
   ],
   legend_loc=(0.32, 0.875))
 
