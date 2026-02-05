@@ -41,7 +41,7 @@ linestyles = ['solid',
               (0,(3,5,1,5)), 
               (0,(1,10)), 
               (0,(5,1))]
-sz=12
+sz=15
 rt = os.environ['ROOTDIR']+"/projects/roman_real/chains/EXAMPLE_EMUL_MIN1_test_"
 data = np.array([[100+25*i,np.loadtxt(f"{rt}{i}.txt")[-1]] for i in range(sz)])
 plt.plot(data[1:sz-1,0], 
