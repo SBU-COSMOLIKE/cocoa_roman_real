@@ -41,4 +41,4 @@ fi
 "${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
   --mca btl vader,tcp,self --bind-to core:overload-allowed --rank-by slot \
   --map-by slot:pe=${OMP_NUM_THREADS} cobaya-run \
-  ./projects/roman_real/EXAMPLE_EMUL2_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r
+  ./projects/roman_real/EXAMPLE_MCMC${SLURM_ARRAY_TASK_ID}.yaml -r
