@@ -191,6 +191,14 @@ Now, users must follow all the steps below.
 
         mpirun -n 4 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EMUL_MCMC1.yaml -r
 
+- **Halofit Comparison**
+
+  The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL[1-4].py`.
+
+  <p align="center">
+  <img width="750" height="750" alt="project_roman_real_plot_halofit_comparison_1" src="https://github.com/user-attachments/assets/e9779555-e27c-4d19-a1f0-0533267762ab" />
+  </p>
+
 - **PolyChord**:
 
   - Linux
