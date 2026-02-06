@@ -257,6 +257,10 @@ Now, users must follow all the steps below.
 
   The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL[1-4].py`.
 
+  <p align="center">
+  <img width="750" height="750" alt="project_roman_real_plot_sampler_comparison_1" src="https://github.com/user-attachments/assets/bad7e26a-fc2b-4370-a11a-1b6aefd0bab9" />
+  </p>
+  
 - **Global Minimizer**:
 
   Our minimizer is a reimplementation of `Procoli`, developed by Karwal et al (arXiv:2401.14225) 
@@ -278,8 +282,12 @@ Now, users must follow all the steps below.
   The minimum number of total evaluations is $3n_{\\rm params} \times n_{\rm T} \times n_{\\rm stw}$, which can be distributed among $n_{\\rm MPI} = 3n_{\\rm params}$ MPI processes for faster results.
     
   The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_MIN_COMPARE_CONV[1-2].py`
-    
-  In our testing, $n_{\\rm stw} \sim 350$ worked reasonably well up to $n_{\rm param} \sim \mathcal{O}(10)$.
+
+  <p align="center">
+  <img width="750" height="750" alt="compare_min_roman_real" src="https://github.com/user-attachments/assets/1db89ed7-c186-4967-85a6-1f9b59e1f3ce" />
+  </p>
+
+  In our testing, $n_{\\rm stw} \sim 250$ worked reasonably well up to $n_{\rm param} \sim \mathcal{O}(10)$.
 
 - **Profile**: 
 
@@ -374,3 +382,12 @@ Details on the matter power spectrum emulator designs will be presented in the [
 > Users can decide not to correct the *syren-new* formula for the linear power spectrum (flag in the yaml). Although we have not conducted extensive studies of the caveats of the syren-new approximation, it appears sufficient for w0waCDM forecasts when combined with the Euclid Emulator to compute the nonlinear boost.
 >
 > For back-of-the-envelope LCDM calculations (e.g., to test cosmolike features), users can also choose not to correct the *syren-Halofit* formula for the LCDM nonlinear boost (see figure below). In this case, the overhead on top of cosmolike computations is minimum, at the order of $0.01$ seconds on a macOS M2Pro laptop. 
+
+- **Emulator Comparison**
+
+  The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL[1-4].py`.
+
+  <p align="center">
+  <img width="750" height="750" alt="project_roman_real_plot_sampler_comparison_1" src="https://github.com/user-attachments/assets/da34d718-2e20-44dc-98e7-57187da39ba7" />
+  </p>
+ 
