@@ -114,7 +114,7 @@ g.triangle_plot(
     'Full cosmic shear data vector emul (Halofit), MH, LCDM',
     'Full cosmic shear data vector emul (HMCode), MH, LCDM',
   ],
-  legend_loc=(0.32, 0.875))
+  legend_loc=(0.37, 0.8))
 
 # ----------------------------------------------------
 # ----------------------------------------------------
