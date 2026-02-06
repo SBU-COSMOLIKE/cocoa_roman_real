@@ -329,7 +329,7 @@ Now, users must follow all the steps below.
   Profile 1: `LSST-Y1 Cosmic Shear only`
 
   <p align="center">
-  <img width="1156" height="858" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/2fea9d3c-524a-49d9-ae89-cb2bb26594e9" />
+  <img width="750" height="750" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/2fea9d3c-524a-49d9-ae89-cb2bb26594e9" />
   </p>
 
 > [!Warning]
@@ -340,8 +340,8 @@ Now, users must follow all the steps below.
 > In the lot below, we allow priors to be flat, and as a consequence, we are hitting the boundary. The validation set of our emulators has a temperature $T=256$.
 >
 > <p align="center">
->  <img width="1156" height="858" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/d3a224fa-1e1a-4428-be04-64e44f66763b" />
->  </p>
+> <img width="750" height="750" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/d3a224fa-1e1a-4428-be04-64e44f66763b" />
+> </p>
 
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
