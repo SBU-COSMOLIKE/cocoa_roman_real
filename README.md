@@ -400,6 +400,5 @@ Details on the matter power spectrum emulator designs will be presented in the [
   The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL[1-4].py`.
 
   <p align="center">
-  <img width="750" height="750" alt="project_roman_real_plot_sampler_comparison_1" src="https://github.com/user-attachments/assets/da34d718-2e20-44dc-98e7-57187da39ba7" />
+  <img width="750" height="750" alt="project_roman_real_plot_sampler_comparison_1" src="https://github.com/user-attachments/assets/a85b3fcc-d82c-4c4a-9341-677445a03dd0" />
   </p>
- 
