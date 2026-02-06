@@ -127,6 +127,102 @@ and
      
           mpirun -n 4 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
 
+# Running ML emulators <a name="cobaya_base_code_examples_emul"></a>
+
+Cocoa contains a few transformer- and CNN-based neural network emulators capable of simulating the CMB, cosmolike outputs, matter power spectrum, and distances. We provide a few scripts that exemplify their API. To run them, users ensure the following lines are commented out in `set_installation_options.sh` before running the `setup_cocoa.sh` and `compile_cocoa.sh`. By default, these lines should be commented out, but it is worth checking.
+
+      [Adapted from Cocoa/set_installation_options.sh shell script] 
+      # insert the # symbol (i.e., unset these environmental keys  on `set_installation_options.sh`)
+      #export IGNORE_EMULTRF_CODE=1              #SaraivanovZhongZhu (SZZ) transformer/CNN-based emulators
+      #export IGNORE_EMULTRF_DATA=1            
+      #export IGNORE_LIPOP_LIKELIHOOD_CODE=1     # to run EXAMPLE_EMUL_(EVALUATE/MCMC/NAUTILUS/EMCEE1).yaml
+      #export IGNORE_LIPOP_CMB_DATA=1           
+      #export IGNORE_ACTDR6_CODE=1               # to run EXAMPLE_EMUL_(EVALUATE/MCMC/NAUTILUS/EMCEE1).yaml
+      #export IGNORE_ACTDR6_DATA=1         
+      #export IGNORE_NAUTILUS_SAMPLER_CODE=1     # to run PROJECTS/EXAMPLE/EXAMPLE_EMUL_NAUTILUS1.py
+      #export IGNORE_POLYCHORD_SAMPLER_CODE=1    # to run PROJECTS/EXAMPLE/EXAMPLE_EMUL_POLY1.yaml
+      #export IGNORE_GETDIST_CODE=1              # to run EXAMPLE_TENSION_METRICS.ipynb
+      #export IGNORE_TENSIOMETER_CODE=1          # to run EXAMPLE_TENSION_METRICS.ipynb
+      
+> [!TIP]
+> What if users have not configured ML-related keys before sourcing `setup_cocoa.sh`?
+> 
+> Answer: Comment the keys below before rerunning `setup_cocoa.sh`.
+> 
+>     [Adapted from Cocoa/set_installation_options.sh shell script]
+>     # These keys are only relevant if you run setup_cocoa multiple times
+>     #export OVERWRITE_EXISTING_ALL_PACKAGES=1    
+>     #export OVERWRITE_EXISTING_COSMOLIKE_CODE=1 
+>     #export REDOWNLOAD_EXISTING_ALL_DATA=1
+
+Now, users must follow all the steps below.
+
+ **Step :one:**: Activate the private Python environment by sourcing the script `start_cocoa.sh`
+
+    source start_cocoa.sh
+
+ **Step :two:**: Ensure OpenMP is **OFF**.
+    
+    export OMP_NUM_THREADS=1
+    
+ **Step :three:** Run `cobaya-run` on the first emulator example following the commands below.
+
+ - **One model evaluation**:
+
+  - Linux
+    
+        mpirun -n 1 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            cobaya-run ./projects/roman_real/EXAMPLE_EMUL_EVALUATE1.yaml -f
+
+  - macOS (arm)
+ 
+         mpirun -n 1 --oversubscribe  cobaya-run ./projects/roman_real/EXAMPLE_EMUL_EVALUATE1.yaml -f
+
+- **MCMC (Metropolis-Hastings Algorithm)**:
+
+  - Linux
+    
+        mpirun -n 4 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            cobaya-run ./projects/roman_real/EXAMPLE_EMUL_MCMC1.yaml -r
+
+  - macOS (arm)
+
+        mpirun -n 4 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EMUL_MCMC1.yaml -r
+
+- **PolyChord**:
+
+  - Linux
+    
+        mpirun -n 90 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
+
+  - macOS (arm)
+
+        mpirun -n 12 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
+
+> [!Note]
+> When running `PolyChord` or any of our scripts in more than one node, replace `--mca btl vader,tcp,self` by `--mca btl tcp,self`.
+
+- **Nautilus**:
+
+  - Linux
+    
+        mpirun -n 90 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            python -m mpi4py.futures ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
+                --root ./projects/lsst_y1/ --outroot "EXAMPLE_EMUL_NAUTILUS1"  \
+                --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
+
+  - macOS (arm)
+
+        mpirun -n 12 --oversubscribe python -m mpi4py.futures ./projects/lsst_y1/EXAMPLE_EMUL_NAUTILUS1.py \
+                --root ./projects/roman_real/ --outroot "EXAMPLE_EMUL_NAUTILUS1"  \
+                --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
+
+
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
 > [!Warning]
