@@ -334,8 +334,9 @@ Now, users must follow all the steps below.
 
 > [!Warning]
 > When running Profiles, you should never set flat priors on parameters that are not well constrained by the data. 
-> By doing that, you then risk having the profile selecting values near the boundary of parameter space (a  big problem, especially when using emulators)
-> You can convert a flat prior to a Gaussian one by setting the standard deviation to be $\sigma^2 = (hi - lo)^2/12$, where $(lo, hi)$ are the flat prior boundaries
+> By doing that, you then risk having the minimizer select values near the boundary of parameter space. This is a big problem when using emulators, as volume near the
+> boundary will be inevitable outside the training range. You can convert a flat prior to a Gaussian one by setting the standard deviation to be $\sigma^2 = (hi - lo)^2/12$,
+> where $(lo, hi)$ are the flat prior boundaries
 
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
