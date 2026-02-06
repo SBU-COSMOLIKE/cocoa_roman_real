@@ -321,7 +321,11 @@ Now, users must follow all the steps below.
   The script of the plot below is provided at `projects/roman_real/scripts/EXAMPLE_PLOT_PROFILE[1-2].py`
 
   Profile 1: `LSST-Y1 Cosmic Shear only`
-  
+
+  <p align="center">
+  <img width="1156" height="858" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/2fea9d3c-524a-49d9-ae89-cb2bb26594e9" />
+  </p>
+
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
 > [!Warning]
