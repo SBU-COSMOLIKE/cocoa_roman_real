@@ -213,16 +213,107 @@ Now, users must follow all the steps below.
         mpirun -n 90 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
             --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
             python -m mpi4py.futures ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
-                --root ./projects/lsst_y1/ --outroot "EXAMPLE_EMUL_NAUTILUS1"  \
+                --root ./projects/roman_real/ --outroot "EXAMPLE_EMUL_NAUTILUS1"  \
                 --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
 
   - macOS (arm)
 
-        mpirun -n 12 --oversubscribe python -m mpi4py.futures ./projects/lsst_y1/EXAMPLE_EMUL_NAUTILUS1.py \
+        mpirun -n 12 --oversubscribe python -m mpi4py.futures ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
                 --root ./projects/roman_real/ --outroot "EXAMPLE_EMUL_NAUTILUS1"  \
                 --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
 
+- **Emcee**:
 
+  - Linux
+    
+        mpirun -n 51 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            python ./projects/roman_real/EXAMPLE_EMUL_EMCEE1.py --root ./projects/roman_real/ \
+                --outroot "EXAMPLE_EMUL_EMCEE1" --maxfeval 1000000
+
+  - macOS (arm)
+
+        mpirun -n 12 --oversubscribe python ./projects/roman_real/EXAMPLE_EMUL_EMCEE1.py \
+            --root ./projects/roman_real/ --outroot "EXAMPLE_EMUL_EMCEE1" --maxfeval 1000000
+
+  The number of steps per MPI worker is $n_{\\rm sw} =  {\\rm maxfeval}/n_{\\rm w}$,
+  with the number of walkers being $n_{\\rm w}={\\rm max}(3n_{\\rm params},n_{\\rm MPI})$.
+  For proper convergence, each walker should traverse 50 times the autocorrelation length ($\tau$),
+  which is provided in the header of the output chain file. A reasonable rule of thumb is to assume
+  $\tau > 200$ and therefore set ${\\rm maxfeval} > 10,000 \times n_{\\rm w}$.
+  Finally, our code sets burn-in (per walker) at $5 \times \tau$.
+
+  With these numbers, users may ask when `Emcee` is preferable to `Metropolis-Hastings`?
+  Here are a few numbers based on our `Planck CMB (l < 396) + SN + BAO + LSST-Y1` test case.
+  1) `MH` achieves convergence with $n_{\\rm sw} \sim 150,000$ (number of steps per walker), but only requires four walkers.
+  2) `Emcee` has $\tau \sim 300$, so it requires $n_{\\rm sw} \sim 15,000$ when running with $n_{\\rm w}=114$.
+  
+  Conclusion: `Emcee` requires $\sim 3$ more evaluations in this case, but the number of evaluations per MPI worker (assuming one MPI worker per walker) is reduced by $\sim 10$.
+  Therefore, `Emcee` seems well-suited for chains where the evaluation of a single cosmology is time-consuming (and there is no slow/fast decomposition).
+
+  What if the user runs an `Emcee` chain with `maxeval` insufficient for convergence? `Emcee` saves the chain checkpoint at `chains/outroot.h5`.
+
+- **Sampler Comparison**
+
+  The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL[1-4].py`.
+
+- **Global Minimizer**:
+
+  Our minimizer is a reimplementation of `Procoli`, developed by Karwal et al (arXiv:2401.14225) 
+
+  - Linux
+    
+        mpirun -n 51 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self --rank-by slot \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            python ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE1.py --root ./projects/roman_real/ \
+                --outroot "EXAMPLE_EMUL_MIN1" --nstw 450
+
+  - macOS (arm)
+
+        mpirun -n 12 python ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE1.py --root ./projects/roman_real/ \
+              --outroot "EXAMPLE_EMUL_MIN1" --nstw 450
+
+  The number of steps per Emcee walker per temperature is $n_{\\rm stw}$,
+  and the number of walkers is $n_{\\rm w}={\\rm max}(3n_{\\rm params},n_{\\rm MPI})$.
+  The minimum number of total evaluations is $3n_{\\rm params} \times n_{\rm T} \times n_{\\rm stw}$, which can be distributed among $n_{\\rm MPI} = 3n_{\\rm params}$ MPI processes for faster results.
+    
+  The scripts that generated the plots below are provided at `scripts/EXAMPLE_PLOT_MIN_COMPARE_CONV[1-2].py`
+    
+  In our testing, $n_{\\rm stw} \sim 350$ worked reasonably well up to $n_{\rm param} \sim \mathcal{O}(10)$.
+
+- **Profile**: 
+
+  - Linux
+    
+          mpirun -n 51 --oversubscribe --mca pml ^ucx --mca btl vader,tcp,self \
+            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+            python ./projects/roman_real/EXAMPLE_EMUL_PROFILE1.py \
+              --root ./projects/roman_real/ --cov 'chains/EXAMPLE_EMUL_MCMC1.covmat' \
+              --outroot "EXAMPLE_EMUL_PROFILE1" --factor 3 --nstw 450 --numpts 10 \
+              --profile ${SLURM_ARRAY_TASK_ID} \
+              --minfile="./projects/roman_real/chains/EXAMPLE_EMUL_MIN1.txt"
+
+  -  macOS (arm)
+
+          mpirun -n 51 --oversubscribe python ./projects/roman_real/EXAMPLE_EMUL_PROFILE1.py \
+              --root ./projects/roman_real/ --cov 'chains/EXAMPLE_EMUL_MCMC1.covmat' \
+              --outroot "EXAMPLE_EMUL_PROFILE1" --factor 3 --nstw 450 --numpts 10 \
+              --profile ${SLURM_ARRAY_TASK_ID} \
+              --minfile="./projects/roman_real/chains/EXAMPLE_EMUL_MIN1.txt"
+
+  The argument `factor` specifies the start and end of the parameter being profiled:
+
+      start value ~ mininum value - factor*np.sqrt(np.diag(cov))
+      end   value ~ mininum value + factor*np.sqrt(np.diag(cov))
+
+  We advise ${\rm factor} \sim 3$ for parameters that are well constrained by the data when a covariance matrix is provided.
+  If `cov` is not supplied, the code estimates one internally from the prior.
+  If a parameter is poorly constrained or `cov` is not given, we recommend ${\rm factor} \ll 1$.
+
+  The script of the plot below is provided at `projects/roman_real/scripts/EXAMPLE_PLOT_PROFILE[1-2].py`
+
+  Profile 1: `LSST-Y1 Cosmic Shear only`
+  
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
 > [!Warning]
