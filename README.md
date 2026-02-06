@@ -332,6 +332,11 @@ Now, users must follow all the steps below.
   <img width="1156" height="858" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/2fea9d3c-524a-49d9-ae89-cb2bb26594e9" />
   </p>
 
+> [!Warning]
+> When running Profiles, you should never set flat priors on parameters that are not well constrained by the data. 
+> By doing that, you then risk the profile to select values near the boundary of parameter space (a  big problem, especially when using emulators)
+> You can convert a flat prior to a Gaussian one by setting the standard deviation to be $\sigma = (hi - lo)^2/12$, where (lo, hi) are the prior boundaries
+
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
 > [!Warning]
