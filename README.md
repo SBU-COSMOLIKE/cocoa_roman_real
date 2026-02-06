@@ -333,10 +333,15 @@ Now, users must follow all the steps below.
   </p>
 
 > [!Warning]
-> When running Profiles, you should never set flat priors on parameters that are not well constrained by the data. 
+> When running Profiles, you should not set flat priors on parameters that are not well constrained by the data. 
 > By doing that, you then risk having the minimizer select values near the boundary of parameter space. This is a big problem when using emulators, as volume near the
 > boundary will be inevitable outside the training range. You can convert a flat prior to a Gaussian one by setting the standard deviation to be $\sigma^2 = (hi - lo)^2/12$,
-> where $(lo, hi)$ are the flat prior boundaries
+> where $(lo, hi)$ are the flat prior boundaries. Running Profile also requires emulators trained on larger volumes of the parameter space. 
+> In the lot below, we allow priors to be flat, and as a consequence, we are hitting the boundary. The validation set of our emulators has a temperature $T=256$.
+>
+> <p align="center">
+>  <img width="1156" height="858" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/d3a224fa-1e1a-4428-be04-64e44f66763b" />
+>  </p>
 
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
