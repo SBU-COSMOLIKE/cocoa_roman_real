@@ -105,7 +105,7 @@ g.triangle_plot(
   filled=[True,False,True,False,True],
   shaded=False,
   legend_labels=[
-    'Full cosmic shear data vector emul (HMCode), MH',
+    'Full cosmic shear data vector emul (Halofit), MH',
     'Hybrid-emul (baseline analytical-syren w/o corrections), MH',
     'Cosmolike+CAMB (Halofit), MH',
   ],
