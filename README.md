@@ -326,7 +326,7 @@ Now, users must follow all the steps below.
 
   The script of the plot below is provided at `projects/roman_real/scripts/EXAMPLE_PLOT_PROFILE[1-2].py`
 
-  Profile 1: `Cosmic Shear only`
+  Profile 1: `Cosmic Shear only (plus weak Gaussian priors)`
 
   <p align="center">
   <img width="750" height="750" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/2fea9d3c-524a-49d9-ae89-cb2bb26594e9" />
@@ -336,12 +336,22 @@ Now, users must follow all the steps below.
 > When running Profiles, you should not set flat priors on parameters that are not well constrained by the data. 
 > By doing that, you then risk having the minimizer select values near the boundary of parameter space. This is a big problem when using emulators, as volume near the
 > boundary will be inevitable outside the training range. You can convert a flat prior to a Gaussian one by setting the standard deviation to be $\sigma^2 = (hi - lo)^2/12$,
-> where $(lo, hi)$ are the flat prior boundaries. Running Profile also requires emulators trained on larger volumes of the parameter space. 
-> In the lot below, we allow priors to be flat, and as a consequence, we are hitting the boundary. The validation set of our emulators has a temperature $T=256$ (and training $T=512$).
+> where $(lo, hi)$ are the flat prior boundaries. In our scripts, we implement a truncated Gaussian prior by adding the following prior block
 >
-> <p align="center">
-> <img width="750" height="750" alt="example_lssty1_profile1" src="https://github.com/user-attachments/assets/d3a224fa-1e1a-4428-be04-64e44f66763b" />
-> </p>
+>      prior:
+>        # These priors are meant to prevent the sampler to wander far off training
+>        g1: "lambda As_1e9: stats.norm.logpdf(As_1e9, loc=2.35, scale=1.6)"
+>        g2: "lambda ns: stats.norm.logpdf(ns, loc=0.96, scale=0.05)"
+>        g3: "lambda H0: stats.norm.logpdf(H0, loc=70, scale=10.0)"
+>        g4: "lambda omegab: stats.norm.logpdf(omegab, loc=0.045, scale=0.012)"
+>        g5: "lambda omegam: stats.norm.logpdf(omegam, loc=0.3 , scale=0.25)"
+>        g6: "lambda w0pwa: stats.norm.logpdf(w0pwa, loc=-1.0 , scale=1.44)"
+>        g7: "lambda w: stats.norm.logpdf(w, loc=-1.0, scale=1.44)"
+>        g8: "lambda roman_A1_1: stats.norm.logpdf(roman_A1_1, loc=0, scale=2.5)"
+>        g9: "lambda roman_A1_2: stats.norm.logpdf(roman_A1_2, loc=-1.7, scale=2.5)" 
+>
+> Running Profile also requires emulators trained on larger volumes of the parameter space. 
+
 
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
@@ -350,9 +360,9 @@ Now, users must follow all the steps below.
 
 Our main line of research involves emulators that simulate the entire Cosmolike data vectors, and each project (LSST, Roman, DES) contains its own README with emulator examples. The speed of such emulators is incredible, especially when GPUs are available, and our emulators do take advantage of the CPU-GPU integration on Apple MX chips. For example, the average timing of lsst-y1 cosmic shear data vector emulation is around 0.005s ($\sim$ 200828 evaluations in $\sim$ 850.5 seconds) on a macOS M2 Pro.
 
-While the data vector emulators are incredibly fast, there is an intermediate approach that emulates only the Boltzmann outputs (comoving distance, linear and nonlinear matter power spectrum). This hybrid-ML case can offer greater flexibility, especially in the initial phases of a research project, as changes to the modeling of nuisance parameters or to the assumed galaxy distributions do not require retraining of the network. 
+While the data vector emulators are incredibly fast, there is an intermediate approach that emulates only the Boltzmann outputs (comoving distance and linear and nonlinear matter power spectra). This hybrid-ML approach can offer greater flexibility, especially in the initial phases of a research project, because changes to the modeling of nuisance parameters or to the assumed galaxy distributions do not require retraining the network. 
 
-Examples in the hybrid case all have the prefix **EXAMPLE_EMUL2** (note the `2`). The required flags on `set_installation_options.sh` are similar to what we showed in the previous emulator section.
+Examples in the hybrid case all have the prefix **EXAMPLE_EMUL2** (note the `2`). The required flags in `set_installation_options.sh` are similar to those shown in the previous emulator section.
 
 Now, users must follow all the steps below.
 
