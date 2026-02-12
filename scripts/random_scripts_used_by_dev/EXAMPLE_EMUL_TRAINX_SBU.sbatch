@@ -3,8 +3,8 @@
 #SBATCH --job-name=TREMUL
 #SBATCH --output=TREMUL-%A_%a.out
 #SBATCH --error TREMUL-%A_%a.out.err
-#SBATCH --nodes=6
-#SBATCH --ntasks=48
+#SBATCH --nodes=5
+#SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=5
 #SBATCH --partition=long-40core
@@ -32,7 +32,7 @@ if [ -z "${ROOTDIR}" ]; then
   conda activate cocoa
   source start_cocoa.sh
 else
-  cd ${ROOTDIR} # just to be sure
+  cd "${ROOTDIR}" # just to be sure
 fi
 
 export OMP_PROC_BIND=close
@@ -59,10 +59,12 @@ declare -i j=$(( AID % NY ))
 
 export rootprog="external_modules/code/emulators/emultrf/emultraining"
 
-"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
+"${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} \
+   -x PATH -x LD_LIBRARY_PATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \
+  --oversubscribe --mca pml ^ucx \
   --mca btl tcp,self --bind-to core:overload-allowed --rank-by slot \
   --map-by slot:pe=${OMP_NUM_THREADS} \
-  python ${rootprog}/dataset_generator_lensing.py \
+  ${ROOTDIR}/.local/bin/python ${rootprog}/dataset_generator_lensing.py \
     --root projects/roman_real/  \
     --fileroot "${fileroot[$i]}" \
     --nparams "${nparams[$j]}" \
