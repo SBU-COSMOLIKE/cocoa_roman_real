@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=MC
 #SBATCH --output=MC-%A_%a.out
-#SBATCH -e MC-%A_%a.out.err
+#SBATCH --error MC-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=8
 #SBATCH --cpus-per-task=1

@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=MC
 #SBATCH --output=MC-%A-%a.out
-#SBATCH -e=MC-%A-%a.err
+#SBATCH --error=MC-%A-%a.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=4
 #SBATCH --ntasks-per-node=4

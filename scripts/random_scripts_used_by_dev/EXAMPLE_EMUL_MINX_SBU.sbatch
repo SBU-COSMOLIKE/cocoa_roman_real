@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=MIN
 #SBATCH --output=MIN-%A_%a.out
-#SBATCH -e MIN-%A_%a.out.err
+#SBATCH --error MIN-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=75
 #SBATCH --cpus-per-task=1

@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=NAU
 #SBATCH --output=NAU-%A_%a.out
-#SBATCH -e NAU-%A_%a.out.err
+#SBATCH --error NAU-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=85
 #SBATCH --cpus-per-task=1

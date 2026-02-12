@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=TMIN
 #SBATCH --output=TMIN-%A_%a.out
-#SBATCH -e TMIN-%A_%a.out.err
+#SBATCH --error TMIN-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=85
 #SBATCH --cpus-per-task=1

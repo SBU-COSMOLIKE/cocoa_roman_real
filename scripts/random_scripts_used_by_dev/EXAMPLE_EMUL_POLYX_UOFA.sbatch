@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=POLY
 #SBATCH --output=POLY-%A_%a.out
-#SBATCH -e POLY-%A_%a.out.err
+#SBATCH --error POLY-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=86
 #SBATCH --ntasks-per-node=86

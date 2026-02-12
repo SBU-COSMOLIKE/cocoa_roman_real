@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=PR
 #SBATCH --output=PR-%A_%a.out
-#SBATCH -e PR-%A_%a.out.err
+#SBATCH --error PR-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=75
 #SBATCH --cpus-per-task=1
@@ -64,8 +64,9 @@ declare -a factor2=( "3" "1.0" "1.0" "1.0" "3" "1.0" "1.0"
                      "3" "3" "3" "3 ")
 declare -a grid=( factor1 factor2 )
 declare -a nstws=( "400" "450" )
-declare -i i=$(( $SLURM_ARRAY_TASK_ID / NY ))
-declare -i j=$(( $SLURM_ARRAY_TASK_ID % NY ))
+declare -i AID=${SLURM_ARRAY_TASK_ID:-0}
+declare -i i=$(( AID / NY ))
+declare -i j=$(( AID % NY ))
 (( i < ${#grid[@]} )) || exit 0 # padding: skip unused slots
 declare -n row="${grid[$i]}"
 declare nstw="${nstws[$i]}"

@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=EMC
 #SBATCH --output=EMC-%A_%a.out
-#SBATCH -e EMC-%A_%a.out.err
+#SBATCH --error EMC-%A_%a.out.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=86
 #SBATCH --ntasks-per-node=86
