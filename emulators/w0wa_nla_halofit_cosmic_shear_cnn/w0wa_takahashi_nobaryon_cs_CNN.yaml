@@ -25,7 +25,7 @@ params:
       loc: 2.1
       scale: 0.65
     proposal: 0.4
-    latex: 10^9 A_\mathrm{s})
+    latex: 10^9 A_\mathrm{s}
   ns:
     prior:
       min: 0.87
@@ -296,7 +296,6 @@ theory:
       accurate_massive_neutrino_transfers: false
       k_per_logint: 10
       kmax: 10
-
 train_args:
   probe: 'cs'
   ord: [['As_1e9','ns','H0','omegab', 'omegam','w0pwa','w',
