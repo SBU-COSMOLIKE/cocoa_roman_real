@@ -46,6 +46,7 @@ declare -a datavsfile=( 'w0wa_takahashi_nobaryon_dvs_' )
 declare -a paramfile=( 'w0wa_params_' )
 declare -a failfile=( 'w0wa_params_failed_' )
 declare -a yaml=( 'w0wa_takahashi_nobaryon_cs_CNN.yaml' )
+declare -a fileroot=( 'emulators/w0wa_nla_halofit_cosmic_shear_cnn' )
 
 declare -i NY=3
 declare -i AID=${SLURM_ARRAY_TASK_ID:-0}
@@ -58,7 +59,7 @@ declare -i j=$(( AID % NY ))
   --map-by slot:pe=${OMP_NUM_THREADS} \
   python external_modules/code/emulators/emultrf/emultraining/dataset_generator_lensing.py \
     --root projects/roman_real/  \
-    --fileroot emulators/w0wa_nla_halofit_cosmic_shear_cnn/ \
+    --fileroot "${fileroot[$i]}" \
     --nparams "${nparams[$i]}" \
     --temp "${temp[$j]}" \
     --yaml "${yaml[$i]}" \
