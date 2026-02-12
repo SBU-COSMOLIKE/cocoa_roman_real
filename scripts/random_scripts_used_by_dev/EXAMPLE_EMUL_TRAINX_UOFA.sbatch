@@ -31,6 +31,8 @@ if [ -z "${ROOTDIR}" ]; then
                           # which delete links and ROOTDIR so the running script can find file/likelihood
   conda activate cocoa
   source start_cocoa.sh
+else
+  cd ${ROOTDIR} # just to be sure
 fi
 
 export OMP_PROC_BIND=close
@@ -55,10 +57,12 @@ declare -i i=$(( AID / NY ))
 declare -i j=$(( AID % NY ))
 (( i < ${#datavsfile[@]} )) || exit 0 # padding: skip unused slots
 
+export rootprog="external_modules/code/emulators/emultrf/emultraining"
+
 "${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe --mca pml ^ucx \
   --mca btl tcp,self --bind-to core:overload-allowed --rank-by slot \
   --map-by slot:pe=${OMP_NUM_THREADS} \
-  python external_modules/code/emulators/emultrf/emultraining/dataset_generator_lensing.py \
+  python ${rootprog}/dataset_generator_lensing.py \
     --root projects/roman_real/  \
     --fileroot "${fileroot[$i]}" \
     --nparams "${nparams[$j]}" \
