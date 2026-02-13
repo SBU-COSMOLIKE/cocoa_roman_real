@@ -77,4 +77,6 @@ export rootprog="external_modules/code/emulators/emultrf/emultraining"
     --paramfile "${paramfile[$i]}""${mode[$j]}" \
     --failfile "${failfile[$i]}""${mode[$j]}" \
     --chain 0 \
-    --maxcorr 0.15
+    --maxcorr 0.15 \
+    --loadchk 1 \
+    --freqchk 10000
