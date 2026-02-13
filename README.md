@@ -349,7 +349,6 @@ Now, users must follow all the steps below.
 >
 > Running Profile also requires emulators trained on larger volumes of the parameter space. 
 
-
 > [!Warning]
 > Some of the samplers above require so many MPI processes that, assuming here an HPC environment, it can be advantageous to 
 > run Cocoa on more than one compute node. This is not required, as we have the `--oversubscribe` flag, which allows multiple MPI processes to 
@@ -363,16 +362,9 @@ Now, users must follow all the steps below.
 > - Add the line `-x PATH -x LD_LIBRARY_PATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \` so `MPIRUN` can distribute these critical
 >   flags across all the nodes
 > - replace cobaya-run (or python) by full path ${ROOTDIR}/.local/bin/cobaya-run (or ${ROOTDIR}/.local/bin/python)
->
-> For example, the full Polychord command inside the SLURM script would be
->
->         mpirun -n ${SLURM_NTASKS} \
->            -x PATH -x LD_LIBRARY_PATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \
->            --oversubscribe --mca pml ^ucx --mca btl tcp,self \
->            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
->            ${ROOTDIR}/.local/bin/cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
+> - replace mpirun by full path "${CONDA_PREFIX}"/bin/mpirun
 > 
-> 
+> The slurm script [scripts/random_scripts_used_by_dev/EXAMPLE_EMUL_TRAINX_SBU.sbatch](scripts/random_scripts_used_by_dev/EXAMPLE_EMUL_TRAINX_SBU.sbatch]) exemplify these changes
 
  
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
