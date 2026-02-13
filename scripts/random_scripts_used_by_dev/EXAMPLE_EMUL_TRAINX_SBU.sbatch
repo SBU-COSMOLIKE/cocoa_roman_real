@@ -3,8 +3,8 @@
 #SBATCH --job-name=TREMUL
 #SBATCH --output=TREMUL-%A_%a.out
 #SBATCH --error TREMUL-%A_%a.out.err
-#SBATCH --nodes=5
-#SBATCH --ntasks=40
+#SBATCH --nodes=6
+#SBATCH --ntasks=48
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=5
 #SBATCH --partition=long-40core
