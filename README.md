@@ -452,9 +452,9 @@ Training requires an input covariance, specified in the `params_covmat_file` key
 selects the Fisher-based 'w0wa_fisher_covmat.txt' covariance matrix. The `--maxcorr` parameter then reduces the two-dimensional parameter correlations of the input covariance matrix.
 
 For simplicity, we reduced the requested number of data vectors (`--nparams 10000`) and the temperature of the parameter distribution (`--temp 64`).
-For visualization purposes, setting `--chain 1` sets the script to generate the training parameters without computing the data vectors. The output files would be
+For visualization purposes, setting `--chain 1` sets the script to generate the training parameters without computing the data vectors. The output files are
 
-      # Distribution of training points ready to be plotted be GetDist
+      # Distribution of training points ready to be plotted by GetDist
       w0wa_params_train_cs_64.1.txt
       w0wa_params_train_cs_64.covmat
       w0wa_params_train_cs_64.paramnames
