@@ -209,9 +209,6 @@ Now, users must follow all the steps below.
 
         mpirun -n 12 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
 
-> [!Note]
-> When running `PolyChord` or any of our scripts in more than one node, replace `--mca btl vader,tcp,self` by `--mca btl tcp,self`.
-
 - **Nautilus**:
 
   - Linux
@@ -353,6 +350,31 @@ Now, users must follow all the steps below.
 > Running Profile also requires emulators trained on larger volumes of the parameter space. 
 
 
+> [!Warning]
+> Some of the samplers above require so many MPI processes that, assuming here an HPC environment, it can be advantageous to 
+> run Cocoa on more than one compute node. This is not required, as we have the `--oversubscribe` flag, which allows multiple MPI processes to 
+> assigned to a single core. Heavy CPU oversubscription is perfectly fine as long as the compute node has access to a GPU. 
+> For example, a Google Colab A100 instance has only two CPU cores. In the absence of GPUs, we recommend assigning each MPI task to one compute core.
+>
+> Running Cocoa on more than one node requires a few tweaks to the MPI command. This is in addition to a proper setup of the PBS/SLURM scripts so the user can request
+> multiple compute nodes on the supercomputing. Below we list them:
+>
+> - Replace `--mca btl vader,tcp,self` with `--mca btl tcp,self` (vader is a fast communication protocol that only works in a single node)
+> - Add the line `-x PATH -x LD_LIBRARY_PATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \` so `MPIRUN` can distribute these critical
+>   flags across all the nodes
+> - replace cobaya-run (or python) by full path ${ROOTDIR}/.local/bin/cobaya-run (or ${ROOTDIR}/.local/bin/python)
+>
+> For example, the full Polychord command inside the SLURM script would be
+>
+>         mpirun -n ${SLURM_NTASKS} \
+>            -x PATH -x LD_LIBRARY_PATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \
+>            --oversubscribe --mca pml ^ucx --mca btl tcp,self \
+>            --bind-to core:overload-allowed --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
+>            ${ROOTDIR}/.local/bin/cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
+> 
+> 
+
+ 
 # Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
 
 > [!Warning]
