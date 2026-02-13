@@ -105,6 +105,15 @@ likelihood:
     use_emulator: 1
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
+prior:
+  # These priors are meant to prevent the sampler to wander far off training
+  g1: "lambda As_1e9: stats.norm.logpdf(As_1e9, loc=2.35, scale=1.6)"
+  g2: "lambda ns: stats.norm.logpdf(ns, loc=0.96, scale=0.05)"
+  g3: "lambda H0: stats.norm.logpdf(H0, loc=70, scale=10.0)"
+  g4: "lambda omegab: stats.norm.logpdf(omegab, loc=0.045, scale=0.012)"
+  g5: "lambda omegam: stats.norm.logpdf(omegam, loc=0.3 , scale=0.25)"
+  g8: "lambda roman_A1_1: stats.norm.logpdf(roman_A1_1, loc=0, scale=2.5)"
+  g9: "lambda roman_A1_2: stats.norm.logpdf(roman_A1_2, loc=-1.7, scale=2.5)" 
 params:
   As_1e9:
     prior:
@@ -377,8 +386,8 @@ theory:
     stop_at_error: True
     extra_args: 
       device: 'cuda'
-      file:  ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear/lcdm_hmcode2020_nobaryon_cs_CNN.pt']
-      extra: ['./projects/roman_real/emulators/lcdm_nla_halofit_cosmic_shear/lcdm_hmcode2020_nobaryon_cs_CNN.h5']
+      file:  ['./projects/roman_real/emulators/nla_cosmic_shear/w0wa_hmcode2020_cs_CNN.pt']
+      extra: ['./projects/roman_real/emulators/nla_cosmic_shear/w0wa_hmcode2020_cs_CNN.h5']
       ord: [['As_1e9','ns','H0','omegab', 'omegam',
              'roman_DZ_S1','roman_DZ_S2','roman_DZ_S3','roman_DZ_S4',
              'roman_DZ_S5','roman_DZ_S6','roman_DZ_S7','roman_DZ_S8',

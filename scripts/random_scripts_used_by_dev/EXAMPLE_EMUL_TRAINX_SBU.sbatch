@@ -54,7 +54,7 @@ declare -a paramfile=( 'w0wa_params_takahashi_nobaryon_cs_'
 declare -a failfile=( 'w0wa_params_failed_takahashi_nobaryon_cs_'
                       'w0wa_params_failed_hmcode2020_nobaryon_cs_' )
 declare -a yaml=( 'w0wa_takahashi_nobaryon_cs_CNN.yaml' )
-declare -a fileroot=( 'emulators/w0wa_nla_halofit_cosmic_shear_cnn' )
+declare -a fileroot=( 'emulators/w0wa_nla_halofit_cosmic_shear' )
 
 declare -i i=$(( AID / NY ))
 declare -i j=$(( AID % NY ))
