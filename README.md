@@ -1,4 +1,4 @@
-## Running Cosmolike projects (Basic instructions) <a name="running_cosmolike_projects"></a> 
+## Running Cosmolike projects (Basic instructions) <a name="roman_running_cosmolike_projects"></a> 
 
 From `Cocoa/Readme` instructions:
 
@@ -125,7 +125,7 @@ and
      
           mpirun -n 4 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_MCMC1.yaml -f
 
-# Running ML emulators <a name="cobaya_base_code_examples_emul"></a>
+# Running ML emulators <a name="roman_examples_emul"></a>
 
 Cocoa contains a few transformer- and CNN-based neural network emulators capable of simulating the CMB, cosmolike outputs, matter power spectrum, and distances. We provide a few scripts that exemplify their API. To run them, users ensure the following lines are commented out in `set_installation_options.sh` before running the `setup_cocoa.sh` and `compile_cocoa.sh`. By default, these lines should be commented out, but it is worth checking.
 
@@ -208,9 +208,6 @@ Now, users must follow all the steps below.
   - macOS (arm)
 
         mpirun -n 12 --oversubscribe cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
-
-> [!Note]
-> When running `PolyChord` or any of our scripts in more than one node, replace `--mca btl vader,tcp,self` by `--mca btl tcp,self`.
 
 - **Nautilus**:
 
@@ -352,8 +349,7 @@ Now, users must follow all the steps below.
 >
 > Running Profile also requires emulators trained on larger volumes of the parameter space. 
 
-
-# Running Hybrid Cosmolike-ML emulators <a name="cobaya_base_code_examples_emul2"></a>
+# Running Hybrid Cosmolike-ML emulators <a name="roman_examples_emul2"></a>
 
 > [!Warning]
 > The code and examples associated with this section are still in alpha stage
@@ -420,3 +416,65 @@ Details on the matter power spectrum emulator designs will be presented in the [
   <p align="center">
   <img width="750" height="750" alt="project_roman_real_plot_sampler_comparison_1" src="https://github.com/user-attachments/assets/a85b3fcc-d82c-4c4a-9341-677445a03dd0" />
   </p>
+
+# Training Roman ML emulators <a name="roman_train__emul"></a>
+
+Emulators for Roman are stored on `emulators/`, we usually provide the YAML filed used to train them. For example, datavectors required to train an emulator 
+with settings similar to
+
+    nla_cosmic_shear/w0wa_takahashi_cs_CNN.h5
+    nla_cosmic_shear/w0wa_takahashi_cs_CNN.h5
+
+can be found at
+
+    nla_cosmic_shear/w0wa_takahashi_cs_CNN.yaml
+
+The repository `emulators_code` provides the script `dataset_generator_lensing.py` that can generate data vectors for any cosmological project. 
+
+ - **Compute data vectors for cosmic shear**
+
+   The script below computes data vectors for cosmic shear (NLA, $w_0w_a$ model and Halofit.
+
+       mpirun -n 10 --oversubscribe \
+         python external_modules/code/emulators/emultrf/emultraining/dataset_generator_lensing.py \
+           --root projects/roman_real/  \
+           --fileroot emulators/nla_cosmic_shear/ \
+           --nparams 10000 \
+           --temp 64 \
+           --yaml 'w0wa_takahashi_cs_CNN.yaml' \
+           --datavsfile 'w0wa_takahashi_dvs_train' \
+           --paramfile 'w0wa_takahashi_params_train' \
+           --failfile  'w0wa_takahashi_params_failed_train' \
+           --chain 0 \
+           --maxcorr 0.15 
+
+Training requires an input covariance, specified in the `params_covmat_file` keyword defined in the YAML file. For example, the YAML `w0wa_takahashi_cs_CNN.yaml` 
+selects the Fisher-based 'w0wa_fisher_covmat.txt' covariance matrix. The `--maxcorr` parameter then reduces the two-dimensional parameter correlations of the input covariance matrix.
+
+For simplicity, we reduced the requested number of data vectors (`--nparams 10000`) and the temperature of the parameter distribution (`--temp 64`).
+For visualization purposes, setting `--chain 1` sets the script to generate the training parameters without computing the data vectors. The output files are
+
+      # Distribution of training points ready to be plotted by GetDist
+      w0wa_params_train_cs_64.1.txt
+      w0wa_params_train_cs_64.covmat
+      w0wa_params_train_cs_64.paramnames
+      w0wa_params_train_cs_64.ranges
+
+      #Corresponding data vectors
+      w0wa_takahashi_nobaryon_dvs_train_cs_64.npy
+      # Training parameters in which the data vector computation failed
+      w0wa_params_failed_train_cs_64.txt
+
+   
+> [!Warning]
+> Computing data vectors for training requires so many MPI processes that, assuming here an HPC environment, it is advantageous to 
+> distribute the job among multiple compute nodes. Running Cocoa on multiple nodes requires a few modifications to the MPI command, as indicated below:
+>
+> - Replace `--mca btl vader,tcp,self` with `--mca btl tcp,self` (vader is a fast communication protocol that only works in a single node)
+> - Add the line `-x PATH -x LD_LIBRARY_PATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \` 
+> - replace `python` by full path `${ROOTDIR}/.local/bin/python`
+> - replace mpirun by full path "${CONDA_PREFIX}"/bin/mpirun
+> 
+> The SLURM script [scripts/random_scripts_used_by_dev/EXAMPLE_EMUL_TRAINX_SBU.sbatch](scripts/random_scripts_used_by_dev/EXAMPLE_EMUL_TRAINX_SBU.sbatch]) exemplify such changes
+
+ 
