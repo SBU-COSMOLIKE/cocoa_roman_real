@@ -47,9 +47,12 @@ declare -a temp=( "256" "128" "128" )
 declare -a mode=( 'train' 'val' 'test' )
 declare -a nparams=( '1500000' '50000' '50000' )
 
-declare -a datavsfile=( 'w0wa_takahashi_nobaryon_dvs_' )
-declare -a paramfile=( 'w0wa_params_' )
-declare -a failfile=( 'w0wa_params_failed_' )
+declare -a datavsfile=( 'w0wa_takahashi_nobaryon_cs_dvs_'
+                        'w0wa_hmcode2020_nobaryon_cs_dvs_' )
+declare -a paramfile=( 'w0wa_params_takahashi_nobaryon_cs_'
+                       'w0wa_params_hmcode2020_nobaryon_cs_' )
+declare -a failfile=( 'w0wa_params_failed_takahashi_nobaryon_cs_'
+                      'w0wa_params_failed_hmcode2020_nobaryon_cs_' )
 declare -a yaml=( 'w0wa_takahashi_nobaryon_cs_CNN.yaml' )
 declare -a fileroot=( 'emulators/w0wa_nla_halofit_cosmic_shear_cnn' )
 
