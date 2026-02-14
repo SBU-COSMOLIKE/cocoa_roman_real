@@ -59,8 +59,8 @@ declare -a paramfile=( 'w0wa_params_takahashi_cs_'
                        'w0wa_params_hmcode2020_cs_' )
 declare -a failfile=( 'w0wa_params_failed_takahashi_cs_'
                       'w0wa_params_failed_hmcode2020_cs_' )
-declare -a yaml=( 'w0wa_takahashi_cs_CNN.yaml'
-                  'w0wa_hmcode2020_cs_CNN.yaml' )
+declare -a yaml=( 'w0wa_takahashi_cs_cnn.yaml'
+                  'w0wa_hmcode2020_cs_cnn.yaml' )
 declare -a fileroot=( 'emulators/nla_cosmic_shear'
                       'emulators/nla_cosmic_shear' )
 
