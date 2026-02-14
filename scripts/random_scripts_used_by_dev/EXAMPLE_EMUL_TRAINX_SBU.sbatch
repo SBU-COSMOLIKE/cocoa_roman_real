@@ -42,19 +42,27 @@ else
   export OMP_NUM_THREADS=1
 fi
 
+# ---------------------------------------------------------------------------
+# index j = int(SLURM_ARRAY_TASK_ID / 3)
+# ---------------------------------------------------------------------------
 declare -i NY=3
 declare -a temp=( "256" "128" "128" )
 declare -a mode=( 'train' 'val' 'test' )
 declare -a nparams=( '1500000' '50000' '50000' )
 
+# ---------------------------------------------------------------------------
+# index j = SLURM_ARRAY_TASK_ID % 3
+# ---------------------------------------------------------------------------
 declare -a datavsfile=( 'w0wa_takahashi_cs_dvs_'
                         'w0wa_hmcode2020_cs_dvs_' )
 declare -a paramfile=( 'w0wa_params_takahashi_cs_'
                        'w0wa_params_hmcode2020_cs_' )
 declare -a failfile=( 'w0wa_params_failed_takahashi_cs_'
                       'w0wa_params_failed_hmcode2020_cs_' )
-declare -a yaml=( 'w0wa_takahashi_cs_CNN.yaml' )
-declare -a fileroot=( 'emulators/nla_cosmic_shear' )
+declare -a yaml=( 'w0wa_takahashi_cs_CNN.yaml'
+                  'w0wa_hmcode2020_cs_CNN.yaml' )
+declare -a fileroot=( 'emulators/nla_cosmic_shear'
+                      'emulators/nla_cosmic_shear' )
 
 declare -i i=$(( AID / NY ))
 declare -i j=$(( AID % NY ))
