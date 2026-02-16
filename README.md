@@ -473,7 +473,7 @@ For visualization purposes, setting `--chain 1` sets the script to generate the 
 The flags `--freqchk`, `--loadchk`, and `--append` are related to checkpoints. 
 
 - The option `--freqchk` sets the frequency at which the code saves checkpoints (chk).
-- The options `--loadchk` and `--append` mandate the code to load the parameters and data vectors from a checkpoint.
+- The options `--loadchk` and `--append` specify whether the code loads the parameters and data vectors from a checkpoint.
   In all cases below, the code determines which remaining data vectors to compute based on the flags saved in the `--failfile` file.
   - Case 1 (`--loadchk 1` and `--append 1`): the code loads params from the chk and appends `~nparams` models to it. 
   - Case 2 (`--loadchk 1` and `--append 0`): the code loads the params.
