@@ -445,13 +445,18 @@ The repository `emulators_code` provides the script `dataset_generator_lensing.p
            --datavsfile 'w0wa_takahashi_dvs_train' \
            --paramfile 'w0wa_takahashi_params_train' \
            --failfile  'w0wa_takahashi_params_failed_train' \
-           --chain 0 \
-           --maxcorr 0.15 
+           --chain 0 \ 
+           --maxcorr 0.15 \
+           --freqchk 2000 \
+           --loadchk 0 \
+           --append 1 
 
 Training requires an input covariance, specified in the `params_covmat_file` keyword defined in the YAML file. For example, the YAML `w0wa_takahashi_cs_CNN.yaml` 
 selects the Fisher-based 'w0wa_fisher_covmat.txt' covariance matrix. The `--maxcorr` parameter then reduces the two-dimensional parameter correlations of the input covariance matrix.
 
-For simplicity, we reduced the requested number of data vectors (`--nparams 10000`) and the temperature of the parameter distribution (`--temp 64`).
+For simplicity, we reduced the requested number of data vectors (`--nparams 10000`) and the temperature of the parameter distribution (`--temp 64`). 
+The actual number of data vectors is not exactly `--nparams`, but it is quite close. 
+
 For visualization purposes, setting `--chain 1` sets the script to generate the training parameters without computing the data vectors. The output files are
 
       # Distribution of training points ready to be plotted by GetDist
@@ -465,7 +470,15 @@ For visualization purposes, setting `--chain 1` sets the script to generate the 
       # Training parameters in which the data vector computation failed
       w0wa_params_failed_train_cs_64.txt
 
-   
+The flags `--freqchk`, `--loadchk`, and `--append` are related to checkpoints. 
+
+- The option `--freqchk` sets the frequency at which the code saves checkpoints (chk).
+- The options `--loadchk` and `--append` mandate the code to load the parameters and data vectors from a checkpoint.
+  In all cases below, the code determines which remaining data vectors to compute based on the flags saved in the `--failfile` file.
+  - Case 1 (`--loadchk 1` and `--append 1`): the code loads params from the chk and appends `~nparams` models to it. 
+  - Case 2 (`--loadchk 1` and `--append 0`): the code loads the params.
+  
+        
 > [!Warning]
 > Computing data vectors for training requires so many MPI processes that, assuming here an HPC environment, it is advantageous to 
 > distribute the job among multiple compute nodes. Running Cocoa on multiple nodes requires a few modifications to the MPI command, as indicated below:
