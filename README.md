@@ -459,7 +459,7 @@ The repository `emulators_code` provides the script `dataset_generator_lensing.p
   - The option `--unif 0` sets the sampling to follow a Gaussian distribution with the following options
     -  The covariance matrix is set in the YAML file (keyword `params_covmat_file` inside the `train_args` block).
        For example, our provided YAML selects the Fisher-based *w0wa_fisher_covmat.txt* covariance matrix
-    -  Temperature parameter reduces the curvaure of the likelihood (`cov = cov/T`) and is set by `--temp` flag 
+    -  Temperature reduces the curvature of the likelihood (`cov = cov/T`) and is set by `--temp` flag 
     -  The correlations of the original covariance matrix are reduced to be less than `--maxcorr`.
 
 - For visualization purposes, setting `--chain 1` sets the script to generate the training parameters without computing the data vectors.
