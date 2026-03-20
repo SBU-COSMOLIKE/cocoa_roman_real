@@ -540,12 +540,13 @@ theory:
     use_renames: True
     extra_args:
       halofit_version: takahashi
-      AccuracyBoost: 1.0
+      AccuracyBoost: 1.1
+      lens_potential_accuracy: 1.0
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
-      k_per_logint: 15
+      k_per_logint: 20
       kmax: 15
-
+      
 sampler:
   evaluate:
     N: 1

@@ -516,11 +516,10 @@ theory:
       halofit_version: takahashi
       AccuracyBoost: 1.1
       lens_potential_accuracy: 1.0
-      num_massive_neutrinos: 1
-      nnu: 3.046
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
       k_per_logint: 20
+      kmax: 15
 
 sampler:
   mcmc:

@@ -291,10 +291,10 @@ theory:
     use_renames: True
     extra_args:
       halofit_version: takahashi
-      AccuracyBoost: 1.05
+      AccuracyBoost: 1.1
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
-      k_per_logint: 10
+      k_per_logint: 15
       kmax: 10
 train_args:
   probe: 'cs'

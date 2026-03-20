@@ -49,6 +49,7 @@ declare -i NY=3
 declare -a temp=( "256" "128" "128" )
 declare -a mode=( 'train' 'val' 'test' )
 declare -a nparams=( '1500000' '50000' '50000' )
+declare -a boundary=( '1.0' '0.975' '0.975' )
 
 # ---------------------------------------------------------------------------
 # index j = SLURM_ARRAY_TASK_ID % 3
@@ -79,12 +80,15 @@ export rootprog="external_modules/code/emulators/emultrf/emultraining"
     --root projects/roman_real/  \
     --fileroot "${fileroot[$i]}" \
     --nparams "${nparams[$j]}" \
-    --temp "${temp[$j]}" \
     --yaml "${yaml[$i]}" \
     --datavsfile "${datavsfile[$i]}""${mode[$j]}" \
     --paramfile "${paramfile[$i]}""${mode[$j]}" \
     --failfile "${failfile[$i]}""${mode[$j]}" \
     --chain 0 \
+    --unif 0 \
+    --temp "${temp[$j]}" \
     --maxcorr 0.15 \
+    --freqchk 10000 \
     --loadchk 1 \
-    --freqchk 10000
+    --append 0 \
+    --boundary "${boundary[$j]}"

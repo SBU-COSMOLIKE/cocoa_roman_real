@@ -402,7 +402,7 @@ theory:
       AccuracyBoost: 1.05
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
-      k_per_logint: 10
+      k_per_logint: 12
       kmax: 10
 sampler:
   evaluate:
