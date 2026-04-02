@@ -6,7 +6,7 @@ likelihood:
   roman_real.cosmic_shear:
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
-    lmax: 70000 # lmax computed for real space correlation function
+    lmax: 75000 # lmax computed for real space correlation function
     accuracyboost: 1.0
     integration_accuracy: 0
     kmax_boltzmann: 7.5
@@ -28,7 +28,7 @@ params:
       loc: 2.1
       scale: 0.65
     proposal: 0.4
-    latex: 10^9 A_\mathrm{s})
+    latex: 10^9 A_\mathrm{s}
     drop: true
     renames: A
   ns:
@@ -402,9 +402,8 @@ theory:
       AccuracyBoost: 1.05
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
-      k_per_logint: 10
+      k_per_logint: 12
       kmax: 10
-
 sampler:
   evaluate:
     N: 1
@@ -435,5 +434,4 @@ sampler:
       roman_A1_2: -1.5
       w0pwa: -1.0
       w: -1.0
-
 output: ./projects/roman_real/chains/EXAMPLE_EVALUATE1

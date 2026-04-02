@@ -38,6 +38,7 @@ namespace py = pybind11;
 #include <armadillo>
 #include "cosmolike/generic_interface.hpp"
 #include "cosmolike/cosmo2D_wrapper.hpp"
+#include "cosmolike/cosmo2D_scuts_wrapper.hpp"
 
 PYBIND11_MODULE(cosmolike_roman_real_interface, m)
 {
@@ -483,7 +484,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("a").none(false).noconvert(),
       py::arg("l").none(false).noconvert(),
       py::arg("ni").none(false).noconvert(),
-      py::arg("ni").none(false).noconvert()
+      py::arg("nj").none(false).noconvert()
     );
 
   m.def("int_for_C_ss_tomo_limber",
@@ -552,12 +553,97 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("C_gg_tomo",
-      py::overload_cast<arma::Col<double>>(
-        &cosmolike_interface::C_gg_tomo_cpp
-      ),
+      py::overload_cast<arma::Col<double>>(&cosmolike_interface::C_gg_tomo_cpp),
       "Compute position-position (fourier - non-limber/limber) data vector"
       " at all tomographic bins and many ell (vectorized)",
       py::arg("l").none(false),
+      py::return_value_policy::move
+    );
+
+  // --------------------------------------------------------------------
+  // Derivative
+  // --------------------------------------------------------------------
+
+  m.def("dlnC_ss_dlnk_tomo_limber",
+      py::overload_cast<const double, const double, const int, const int>(
+        &cosmolike_interface::dlnC_ss_dlnk_tomo_limber_cpp
+      ),
+      "Compute dlnC_ss_dlnk (fourier - limber) derivative of the data vector",
+      py::arg("k").none(false).noconvert(),
+      py::arg("l").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert(),
+      py::arg("nj").none(false).noconvert(),
+      py::return_value_policy::move
+    );
+
+  m.def("dlnC_ss_dlnk_tomo_limber",
+      py::overload_cast<const arma::Col<double>, const arma::Col<double>>(
+        &cosmolike_interface::dlnC_ss_dlnk_tomo_limber_cpp
+      ),
+      "Compute dlnC_ss_dlnk (fourier - limber) derivative of the data vector",
+      py::arg("k").none(false),
+      py::arg("l").none(false),
+      py::return_value_policy::move
+    );
+
+  m.def("rf_C_ss_tomo_limber",
+      py::overload_cast<const double, const double, const int, const int>(
+        &cosmolike_interface::RF_C_ss_tomo_limber_cpp
+      ),
+      "Compute int from -infty to k of |dlnC_ss_dlnk| (fourier - limber)",
+      py::arg("k").none(false).noconvert(),
+      py::arg("l").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert(),
+      py::arg("nj").none(false).noconvert(),
+      py::return_value_policy::move
+    );
+
+  m.def("rf_C_ss_tomo_limber",
+      py::overload_cast<const arma::Col<double>, const arma::Col<double>>(
+        &cosmolike_interface::RF_C_ss_tomo_limber_cpp
+      ),
+      "Compute int from -infty to k of |dlnC_ss_dlnk| (fourier - limber)",
+      py::arg("k").none(false),
+      py::arg("l").none(false),
+      py::return_value_policy::move
+    );
+
+  m.def("dlnxi_dlnk_pm_tomo_limber",
+      py::overload_cast<const double>(
+        &cosmolike_interface::dlnxi_dlnk_pm_tomo_limber_cpp
+      ),
+      "Compute dlnxi_dlnk (real - limber) derivative of the data vector",
+      py::arg("k").none(false),
+      py::return_value_policy::move
+    );
+
+  m.def("dlnxi_dlnk_pm_tomo_limber",
+      py::overload_cast<const arma::Col<double>>(
+        &cosmolike_interface::dlnxi_dlnk_pm_tomo_limber_cpp
+      ),
+      "Compute dlnxi_dlnk (real - limber) derivative of the data vector",
+      py::arg("k").none(false),
+      py::return_value_policy::move
+    );
+
+  m.def("rf_xi_tomo_limber",
+      py::overload_cast<const double, const int, const int, const int>(
+        &cosmolike_interface::RF_xi_tomo_limber_cpp
+      ),
+      "Compute int from -infty to k of |dlnxi_dlnk| (fourier - limber)",
+      py::arg("k").none(false),
+      py::arg("nt").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert(),
+      py::arg("nj").none(false).noconvert(),
+      py::return_value_policy::move
+    );
+  
+  m.def("rf_xi_tomo_limber",
+      py::overload_cast<const arma::Col<double>>(
+        &cosmolike_interface::RF_xi_tomo_limber_cpp
+      ),
+      "Compute int from -infty to k of |dlnxi_dlnk| (fourier - limber)",
+      py::arg("k").none(false),
       py::return_value_policy::move
     );
 
