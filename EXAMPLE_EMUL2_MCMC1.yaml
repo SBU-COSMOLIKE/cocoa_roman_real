@@ -4,6 +4,7 @@ stop_at_error: False
 
 likelihood:
   roman_real.cosmic_shear:
+    use_emulator: 2
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
     lmax: 70000 # gg in Roman that requires higher lmax
@@ -24,10 +25,9 @@ params:
     ref:
       dist: norm
       loc: 2.1
-      scale: 0.2
+      scale: 0.25
     proposal: 0.2
     latex: 10^9 A_\mathrm{s}
-    drop: true
     renames: A
   ns:
     prior:
@@ -41,12 +41,12 @@ params:
     latex: n_\mathrm{s}
   H0:
     prior:
-      min: 45
+      min: 55
       max: 91
     ref:
       dist: norm
       loc: 67.32
-      scale: 3
+      scale: 5
     proposal: 3
     latex: H_0
   omegab:
@@ -59,7 +59,6 @@ params:
       scale: 0.004
     proposal: 0.004
     latex: \Omega_\mathrm{b}
-    drop: true
   omegam:
     prior:
       min: 0.1
@@ -67,10 +66,9 @@ params:
     ref:
       dist: norm
       loc: 0.316
-      scale: 0.015
-    proposal: 0.015
+      scale: 0.01
+    proposal: 0.01
     latex: \Omega_\mathrm{m}
-    drop: true
   w0pwa:
     value: -1.0
     latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
@@ -78,63 +76,27 @@ params:
   w:
     value: -1.0
     latex: w_{0,\mathrm{DE}}
-  mnu:
-    value: 0.06
-  tau:
-    value: 0.0697186
-    latex: \tau_\mathrm{reio}
-  # ---------------------------------------------------------------------------------------
-  # ------------------------------------- DERIVED PARAMETERS ------------------------------
-  # ---------------------------------------------------------------------------------------
-  # WARNING: DO NOT REMOVE omegabh2/omegach2/omegamh2/wa/As/ FROM DERIVED PARAMETERS
-  # SEE: github.com/CosmoLike/cocoa#warning-warning-warning-weak-lensing-yaml-files-in-cobaya-
-  # --------------------------------------------------------------------------------------- 
+  wa:
+    value: 'lambda w0pwa, w: w0pwa - w'
+    derived: false
+    latex: 'w_{a,\mathrm{DE}}'
   As:
     value: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
-  wa:
-    value: 'lambda w0pwa, w: w0pwa - w'
-    latex: w_{a,\mathrm{DE}}
+  mnu:
+    value: 0.06
   omegabh2:
     value: 'lambda omegab, H0: omegab*(H0/100)**2'
     latex: \Omega_\mathrm{b} h^2
   omegach2:
     value: 'lambda omegam, omegab, mnu, H0: (omegam-omegab)*(H0/100)**2-(mnu*(3.046/3)**0.75)/94.0708'
     latex: \Omega_\mathrm{c} h^2
-  omegal:
-    latex: \Omega_\Lambda
-  omegamh2:
-    derived: 'lambda omegam, H0: omegam*(H0/100)**2'
-    latex: \Omega_\mathrm{m} h^2
-  sigma8:
-    latex: \sigma_8
-  s8h5:
-    derived: 'lambda sigma8, H0: sigma8*(H0*1e-2)**(-0.5)'
-    latex: \sigma_8/h^{0.5}
-  s8omegamp5:
-    derived: 'lambda sigma8, omegam: sigma8*omegam**0.5'
-    latex: \sigma_8 \Omega_\mathrm{m}^{0.5}
-  s8omegamp25:
-    derived: 'lambda sigma8, omegam: sigma8*omegam**0.25'
-    latex: \sigma_8 \Omega_\mathrm{m}^{0.25}
-  age:
-    latex: '{\rm{Age}}/\mathrm{Gyr}'
-  rdrag:
-    latex: r_\mathrm{drag}
-  yheused:
-    latex: Y_P^\mathrm{BBN}
-  omegan2:
-    latex: \Omega_\mathrm{\\nu} h^2
-  omegan:
-    derived: 'lambda omegan2, H0: omegan2/((H0/100)**2)'
-    latex: \Omega_\mathrm{\\nu}
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
-  # Default settings in likelihood/roman_real_params_lens.yaml
-  # Default settings in likelihood/roman_real_params_source.yaml
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+  # WL photo-z errors
   roman_DZ_S1:
     prior:
       dist: norm
@@ -224,6 +186,62 @@ params:
     proposal: 0.002
     latex: \Delta z_\mathrm{s,roman}^8
   # ------------------------------------------------------------------------
+  # Intrinsic alignment
+  # ------------------------------------------------------------------------
+  roman_A1_1:
+    prior:
+      min: -5
+      max:  5
+    ref:
+      dist: norm
+      loc: 0.7
+      scale: 0.5
+    proposal: 0.5
+    latex: A_\mathrm{1-IA,roman}^1
+  roman_A1_2:
+    prior:
+      min: -5
+      max:  5
+    ref:
+      dist: norm
+      loc: -1.7
+      scale: 0.5
+    proposal: 0.5
+  roman_A2_1:
+    value: 0.0
+    #prior:
+    #  min: -5
+    #  max:  5
+    #ref:
+    #  dist: norm
+    #  loc: -1.36
+    #  scale: 0.5
+    #proposal: 0.5
+    latex: A_\mathrm{2-IA,Roman}^1
+  roman_A2_2:
+    value: 0.0
+    #prior:
+    #  min: -5
+    #  max:  5
+    #ref:
+    #  dist: norm
+    #  loc: -2.5
+    #  scale: 0.5
+    #proposal: 0.5
+    latex: A_\mathrm{2-IA,Roman}^2
+  roman_BTA_1:
+    value: 0.0
+    #prior:
+    #  min: 0
+    #  max: 2
+    #ref:
+    #  dist: norm
+    #  loc: 1
+    #  scale: 0.15
+    #proposal: 0.1
+    latex: A_\mathrm{BTA-IA,Roman}^1
+  # ------------------------------------------------------------------------
+  # Shear calibration parameters
   # ------------------------------------------------------------------------
   roman_M1:
     prior:
@@ -313,142 +331,79 @@ params:
       scale: 0.005
     proposal: 0.005
     latex: m_\mathrm{roman}^8
-  # ------------------------------------------------------------------------
-  # ------------------------------------------------------------------------
-  # Intrinsic alignment
-  roman_A1_1:
-    prior:
-      min: -5
-      max:  5
-    ref:
-      dist: norm
-      loc: 0.7
-      scale: 0.5
-    proposal: 0.5
-    latex: A_\mathrm{1-IA,roman}^1
-  roman_A1_2:
-    prior:
-      min: -5
-      max:  5
-    ref:
-      dist: norm
-      loc: -1.7
-      scale: 0.5
-    proposal: 0.5
-  roman_A2_1:
-    value: 0.0
-    #prior:
-    #  min: -5
-    #  max:  5
-    #ref:
-    #  dist: norm
-    #  loc: -1.36
-    #  scale: 0.5
-    #proposal: 0.5
-    latex: A_\mathrm{2-IA,Roman}^1
-  roman_A2_2:
-    value: 0.0
-    #prior:
-    #  min: -5
-    #  max:  5
-    #ref:
-    #  dist: norm
-    #  loc: -2.5
-    #  scale: 0.5
-    #proposal: 0.5
-    latex: A_\mathrm{2-IA,Roman}^2
-  roman_BTA_1:
-    value: 0.0
-    #prior:
-    #  min: 0
-    #  max: 2
-    #ref:
-    #  dist: norm
-    #  loc: 1
-    #  scale: 0.15
-    #proposal: 0.1
-    latex: A_\mathrm{BTA-IA,Roman}^1
-
 theory:
-  camb:
-    path: ./external_modules/code/CAMB
-    stop_at_error: False
-    use_renames: True
+  emulrdrag:
+    path: ./cobaya/cobaya/theories/
+    provides: ['rdrag']
     extra_args:
-      halofit_version: takahashi
-      AccuracyBoost: 1.05
-      lens_potential_accuracy: 1.0
-      num_massive_neutrinos: 1
-      nnu: 3.046
-      dark_energy_model: ppf
-      accurate_massive_neutrino_transfers: false
-      k_per_logint: 15
-
+      file: ['external_modules/data/emultrf/BAO_SN_RES/emul_lcdm_rdrag_GP.joblib'] 
+      extra: ['external_modules/data/emultrf/BAO_SN_RES/extra_lcdm_rdrag.npy'] 
+      ord: [['omegabh2','omegach2']]
+  emulbaosn:
+    path: ./cobaya/cobaya/theories/
+    stop_at_error: True
+    provides: ['comoving_radial_distance', 'angular_diameter_distance', 'Hubble']
+    extra_args:
+      device: "cuda"
+      file:  [None, 'external_modules/data/emultrf/BAO_SN_RES/w0wa/emul_w0wa_H.pt']
+      extra: [None, 'external_modules/data/emultrf/BAO_SN_RES/w0wa/extra_w0wa_H.npy']    
+      ord: [None, ['omegam','H0','w','wa']]
+      extrapar: [{'MLA': 'INT', 'ZMIN' : 0.0001, 'ZMAX' : 3, 'NZ' : 600},
+                 {'MLA': 'ResMLP', 'offset' : 0.0, 'INTDIM' : 4, 'NLAYER' : 6,
+                  'TMAT': 'external_modules/data/emultrf/BAO_SN_RES/w0wa/PCA_w0wa_H.npy',
+                  'ZLIN': 'external_modules/data/emultrf/BAO_SN_RES/w0wa/z_lin_w0wa.npy'}]
+  emulmps:
+    path: ./cobaya/cobaya/theories/
+    stop_at_error: True
+    extra_args:
+      use_syren: True
+      param_order: ["As_1e9", "ns", "H0", "omegab", "omegam", 'w', 'wa']
 sampler:
   mcmc:
     # ---------------------------------------------------------------------
     # File (w/ path) or matrix defining a covariance matrix for the proposal:
     # - null (default): will be generated from params info (prior and proposal)
     # - matrix: remember to set `covmat_params` to the parameters in the matrix
-    covmat: 
+    covmat:
     covmat_params:
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     # Proposal covariance matrix learning
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     learn_proposal: True
     # Don't learn if convergence better than...
     learn_proposal_Rminus1_min: 0.03
     # Don't learn if convergence is worse than...
-    learn_proposal_Rminus1_max: 100.
+    learn_proposal_Rminus1_max: 150
     # (even earlier if a param is not in the given covariance matrix)
     learn_proposal_Rminus1_max_early: 500.
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     # Convergence and stopping
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     # Maximum number of posterior evaluations
     max_samples: .inf
-    Rminus1_stop: 0.015
-    Rminus1_cl_stop: 0.17
+    # Gelman-Rubin R-1 on means
+    Rminus1_stop: 0.02
+    # Gelman-Rubin R-1 on std deviations
+    Rminus1_cl_stop: 0.2
     Rminus1_cl_level: 0.95
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     # Exploiting speed hierarchy
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     measure_speeds: False
+    oversample_power: 0.0
     drag: False
-    oversample_power: 0.2
-    oversample_thin: True
-    blocking:
-    - [1,
-        [
-          As_1e9, ns, H0, omegab, omegam,
-        ]
-      ]
-    - [6,
-        [
-          roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, roman_DZ_S5,
-          roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
-          roman_A1_1, roman_A1_2,
-        ]
-      ]
-    - [25,
-        [
-          roman_M1, roman_M2, roman_M3, roman_M4, roman_M5,
-          roman_M6, roman_M7, roman_M8,
-        ]
-      ]
-    learn_every: 10d
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
+    # --------------------------------------
+    # --------------------------------------
     # Avoid chain getting suck forever
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
-    max_tries: 10000
+    # --------------------------------------
+    # --------------------------------------
+    max_tries: .inf
     burn_in: 0
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
@@ -456,8 +411,4 @@ sampler:
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
     Rminus1_single_split: 4
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
-    # ---------------------------------------------------------------------
-output: ./projects/roman_real/chains/EXAMPLE_MCMC1
+output: ./projects/roman_real/chains/EXAMPLE_EMUL2_MCMC1
