@@ -107,10 +107,11 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("init_IA",
-      &cosmolike_interface::init_IA,
+      &cosmolike_interface::init_IA_fastpt,
       "Init IA related options",
       py::arg("ia_model").none(false).noconvert(),
-      py::arg("ia_redshift_evolution").none(false).noconvert()
+      py::arg("ia_redshift_evolution").none(false).noconvert(),
+      py::arg("ia_code").none(false).noconvert()
     );
 
   m.def("init_probes",
@@ -150,6 +151,27 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     py::arg("source_ntomo").none(false).noconvert(),
     py::return_value_policy::move
   );
+  
+  m.def("set_IA_PS",
+      &cosmolike_interface::set_IA_PS,
+      "Set FPTIA if FASTPT is called",
+      py::arg("IA_PS").none(false),
+      py::arg("IA_k_min").none(false),
+      py::arg("IA_k_max").none(false),
+      py::arg("IA_k_cutoff").none(false),
+      py::arg("N").none(false)
+    );
+
+  m.def("set_bias_PS",
+      &cosmolike_interface::set_bias_PS,
+      "Set FPTbias if FASTPT is called",
+      py::arg("bias_PS").none(false),
+      py::arg("bias_k_min").none(false),
+      py::arg("bias_k_max").none(false),
+      py::arg("bias_k_cutoff").none(false),
+      py::arg("sigma4").none(false),
+      py::arg("N").none(false)
+    );
 
   m.def("init_lens_sample_size",
       &cosmolike_interface::set_lens_sample_size,
@@ -239,11 +261,13 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("set_nuisance_bias",
-      &cosmolike_interface::set_nuisance_bias,
+      &cosmolike_interface::set_nuisance_bias_fastpt,
       "Set nuisance Bias Parameters",
       py::arg("B1").none(false),
       py::arg("B2").none(false),
-      py::arg("B_MAG").none(false)
+      py::arg("B_MAG").none(false),
+      py::arg("B3nl").none(false),
+      py::arg("BK").none(false)
     );
 
   m.def("set_nuisance_shear_calib",

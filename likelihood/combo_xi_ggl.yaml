@@ -14,6 +14,8 @@ debug: False
 IA_redshift_evolution: 3
 # IA_MODEL: 0 = NLA, 1 = TATT
 IA_model: 0 
+# IA_code: 0 = C FASTPT, 1 = Python PAST-PT
+IA_code: 1
 external_nz_modeling: 0
 use_emulator: False
 

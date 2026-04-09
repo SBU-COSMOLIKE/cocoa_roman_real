@@ -96,9 +96,13 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       
       ci.init_data_real(self.cov_file, self.mask_file, self.data_vector_file)
 
+      if (self.IA_model == 0) and (self.IA_code == 1):
+   		# Fall back to C FASTPT under NLA
+        self.IA_code = 0
       ci.init_IA(ia_model = int(self.IA_model), 
-                 ia_redshift_evolution = int(self.IA_redshift_evolution))
-     
+                ia_redshift_evolution = int(self.IA_redshift_evolution),
+                ia_code = int(self.IA_code))
+
       if self.probe != "xi":
         # (b1, b2, bs2, b3, bmag). 0 = one amplitude per bin
         ci.init_bias(bias_model=self.bias_model)
@@ -187,7 +191,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
         }, # in Mpc
       }
     else:
-      return {
+      _requirements_ = {
         "As": None,
         "H0": None,
         "omegam": None,
@@ -208,6 +212,11 @@ class _cosmolike_prototype_base(DataSetLikelihood):
           'tt': 0
         }
       }
+      # Also need Python FAST-PT if IA_code == 1
+      if (self.IA_code == 1):
+        _requirements_["IA_PS"] = None
+        _requirements_["bias_PS"] = None
+      return _requirements_
 
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -282,6 +291,15 @@ class _cosmolike_prototype_base(DataSetLikelihood):
         z_1D=self.z_interp_1D,
         chi=self.provider.get_comoving_radial_distance(self.z_interp_1D)*h # convert to Mpc/h
       )
+      # IA power spectra from FAST-PT 
+      # Need to be called after `set_cosmology` because `set_cosmology`` reset random state cosmology.random
+      if int(self.IA_code)==1:
+        FPTIA, FPTIA_kcut  = self.provider.get_IA_PS()
+        FPTbias, sigma4    = self.provider.get_bias_PS()
+        FPT_kmin, FPT_kmax = FPTIA[-2,0], FPTIA[-2,-1] # dimensionless
+        FPT_Ntab = len(FPTIA[0])
+        ci.set_IA_PS(FPTIA.flatten(order='C'), FPT_kmin, FPT_kmax, FPTIA_kcut, FPT_Ntab)
+        ci.set_bias_PS(FPTbias.flatten(order='C'), FPT_kmin, FPT_kmax, FPTIA_kcut, sigma4, FPT_Ntab)
     else:
       ci.set_distances(
         z=self.z_interp_1D,
@@ -340,7 +358,9 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       ci.set_nuisance_bias(
         B1=[params.get(p,1) for p in [survey+"_B1_"+str(i+1) for i in range(ntomo)]],
         B2=[params.get(p,0) for p in [survey+"_B2_"+str(i+1) for i in range(ntomo)]],
-        B_MAG=[params.get(p,0) for p in [survey+"_BMAG_"+str(i+1) for i in range(ntomo)]]
+        B_MAG=[params.get(p,0) for p in [survey+"_BMAG_"+str(i+1) for i in range(ntomo)]],
+        B3nl=[params.get(p,0) for p in [survey+"_B3NL_"+str(i+1) for i in range(ntomo)]],
+        BK=[params.get(p,0) for p in [survey+"_BK_"+str(i+1) for i in range(ntomo)]]
       )
       if self.external_nz_modeling: 
         # here we send n(z) at every point in the chain as the user may
