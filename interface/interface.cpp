@@ -165,10 +165,10 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
   m.def("set_bias_PS",
       &cosmolike_interface::set_bias_PS,
       "Set FPTbias if FASTPT is called",
-      py::arg("bias_PS").none(false),
-      py::arg("bias_k_min").none(false),
-      py::arg("bias_k_max").none(false),
-      py::arg("bias_k_cutoff").none(false),
+      py::arg("PS").none(false),
+      py::arg("kmin").none(false),
+      py::arg("kmax").none(false),
+      py::arg("cutoff").none(false),
       py::arg("sigma4").none(false),
       py::arg("N").none(false)
     );

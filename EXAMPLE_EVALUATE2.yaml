@@ -16,6 +16,7 @@ likelihood:
     # 1 EE2, 2 Halofit
     non_linear_emul: 2
     IA_model: 0
+    IA_code: 0  # CFASTPT (0) or FASTPT (1) (only works if not NLA)
     IA_redshift_evolution: 3
     ggl_exclude: [[6,0],[7,0],[7,1]]
     create_baryon_pca: false
@@ -363,37 +364,34 @@ params:
     proposal: 0.5
     latex: A_\mathrm{1-IA,roman}^2
   roman_A2_1:
-    value: 0.0
-    #prior:
-    #  min: -5
-    #  max:  5
-    #ref:
-    #  dist: norm
-    #  loc: -1.36
-    #  scale: 0.5
-    #proposal: 0.5
+    prior:
+      min: -5
+      max:  5
+    ref:
+      dist: norm
+      loc: -1.36
+      scale: 0.5
+    proposal: 0.5
     latex: A_\mathrm{2-IA,Roman}^1
   roman_A2_2:
-    value: 0.0
-    #prior:
-    #  min: -5
-    #  max:  5
-    #ref:
-    #  dist: norm
-    #  loc: -2.5
-    #  scale: 0.5
-    #proposal: 0.5
+    prior:
+      min: -5
+      max:  5
+    ref:
+      dist: norm
+      loc: -2.5
+      scale: 0.5
+    proposal: 0.5
     latex: A_\mathrm{2-IA,Roman}^2
   roman_BTA_1:
-    value: 0.0
-    #prior:
-    #  min: 0
-    #  max: 2
-    #ref:
-    #  dist: norm
-    #  loc: 1
-    #  scale: 0.15
-    #proposal: 0.1
+    prior:
+      min: 0
+      max: 2
+    ref:
+      dist: norm
+      loc: 1
+      scale: 0.15
+    proposal: 0.1
     latex: A_\mathrm{BTA-IA,Roman}^1
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -546,7 +544,12 @@ theory:
       accurate_massive_neutrino_transfers: false
       k_per_logint: 20
       kmax: 15
-      
+  fastpt:
+    path: ./external_modules/code/FAST-PT
+    #extra_args:
+      #accuracyboost: 5
+      #kmax_boltzmann: 7.5
+      #extrap_kmax: 250.0     
 sampler:
   evaluate:
     N: 1
@@ -585,5 +588,10 @@ sampler:
       roman_B1_8: 2.44
       w0pwa: -1.0
       w: -1.0
-
+      # TATT PARAMETERS
+#      roman_A2_1: 0.6
+#      roman_A2_2: -1.5
+      roman_A2_1: 0.0
+      roman_A2_2: -1.5
+      roman_BTA_1: 0.0
 output: ./projects/roman_real/chains/EXAMPLE_EVALUATE2
