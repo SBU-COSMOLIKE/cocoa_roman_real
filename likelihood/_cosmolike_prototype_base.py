@@ -34,7 +34,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
     self.ntheta = ini.int("n_theta")
     self.theta_min_arcmin = ini.float("theta_min_arcmin")
     self.theta_max_arcmin = ini.float("theta_max_arcmin")
-    
+
     # ------------------------------------------------------------------------   
     tmp=int(1000 + 250*self.accuracyboost)
     self.z_interp_1D = np.concatenate((np.linspace(0.0,3.0,max(100,int(0.80*tmp))),
@@ -44,13 +44,13 @@ class _cosmolike_prototype_base(DataSetLikelihood):
 
     tmp=int(min(120 + 20*self.accuracyboost,250))
     self.z_interp_2D = np.concatenate((np.linspace(0,3.0,max(50,int(0.75*tmp))), 
-                                       np.linspace(3.01,49.99,max(30,int(0.25*tmp)))),axis=0)
+                                       np.linspace(3.01,50.1,max(30,int(0.25*tmp)))),axis=0)
     self.len_z_interp_2D = len(self.z_interp_2D)
     
     self.log10k_interp_2D = np.linspace(-4.99,2.0,int(1250+250*self.accuracyboost))
     self.len_log10k_interp_2D = len(self.log10k_interp_2D)
     # ------------------------------------------------------------------------
-    
+
     ci.initial_setup()
     ci.init_probes(possible_probes=self.probe)
     ci.init_binning(int(self.ntheta), self.theta_min_arcmin, self.theta_max_arcmin)
@@ -106,7 +106,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       if self.probe != "xi":
         # (b1, b2, bs2, b3, bmag). 0 = one amplitude per bin
         ci.init_bias(bias_model=self.bias_model)
-      
+
       if self.non_linear_emul == 1:
         self.emulator = ee2.PyEuclidEmulator()
 
@@ -127,7 +127,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       self.log.info('baryon_pca_file = %s loaded', baryon_pca_file)
     else:
       self.log.info('use_baryon_pca = False')
-  
+
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------

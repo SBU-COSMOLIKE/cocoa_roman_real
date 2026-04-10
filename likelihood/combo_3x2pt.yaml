@@ -6,6 +6,8 @@ lmax: 100000 # lmax computed for real space correlation function
 kmax_boltzmann: 7.5
 speed: 1
 non_linear_emul: 2
+external_nz_modeling: 0
+use_emulator: False
 debug: False
 # IA REDSHIFT EVOLUTION: 0 = NO_IA (AMPLITUDES SET TO ZERO), 
 #                        1 = IA_NLA_LF
@@ -16,8 +18,6 @@ IA_redshift_evolution: 3
 IA_model: 0 
 # IA_code: 0 = C FASTPT, 1 = Python PAST-PT
 IA_code: 1
-external_nz_modeling: 0
-use_emulator: False
 
 # REQUIRE GGL_EXCLUDE TO MATCH THE SIZE OF THE 3x2pt DATA VECTOR
 ggl_exclude: [[6,0],[7,0],[7,1]]  
