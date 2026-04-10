@@ -96,7 +96,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       
       ci.init_data_real(self.cov_file, self.mask_file, self.data_vector_file)
 
-      if (self.IA_model == 0) and (self.IA_code == 1):
+      if (int(self.IA_model) == 0) and (int(self.IA_code) == 1):
    		# Fall back to C FASTPT under NLA
         self.IA_code = 0
       ci.init_IA(ia_model = int(self.IA_model), 
@@ -291,15 +291,26 @@ class _cosmolike_prototype_base(DataSetLikelihood):
         z_1D=self.z_interp_1D,
         chi=self.provider.get_comoving_radial_distance(self.z_interp_1D)*h # convert to Mpc/h
       )
+      
       # IA power spectra from FAST-PT 
-      # Need to be called after `set_cosmology` because `set_cosmology`` reset random state cosmology.random
-      if int(self.IA_code)==1:
+      # Must be called after ci.set_cosmology b/c it resets random state cosmology.random
+      if int(self.IA_code) == 1:
         FPTIA, FPTIA_kcut  = self.provider.get_IA_PS()
         FPTbias, sigma4    = self.provider.get_bias_PS()
-        FPT_kmin, FPT_kmax = FPTIA[-2,0], FPTIA[-2,-1] # dimensionless
-        FPT_Ntab = len(FPTIA[0])
-        ci.set_IA_PS(FPTIA.flatten(order='C'), FPT_kmin, FPT_kmax, FPTIA_kcut, FPT_Ntab)
-        ci.set_bias_PS(FPTbias.flatten(order='C'), FPT_kmin, FPT_kmax, FPTIA_kcut, sigma4, FPT_Ntab)
+        FPT_kmin, FPT_kmax = FPTIA[-2,0], FPTIA[-2,-1]
+        
+        ci.set_IA_PS(PS=FPTIA.flatten(order='C'), 
+                     kmin=FPT_kmin, 
+                     kmax=FPT_kmax, 
+                     cutoff=FPTIA_kcut, 
+                     N=len(FPTIA[0]))
+        
+        ci.set_bias_PS(PS=FPTbias.flatten(order='C'), 
+                       kmin=FPT_kmin, 
+                       kmax=FPT_kmax, 
+                       cutoff=FPTIA_kcut, 
+                       sigma4=sigma4, 
+                       N=len(FPTIA[0]))
     else:
       ci.set_distances(
         z=self.z_interp_1D,

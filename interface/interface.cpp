@@ -155,10 +155,10 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
   m.def("set_IA_PS",
       &cosmolike_interface::set_IA_PS,
       "Set FPTIA if FASTPT is called",
-      py::arg("IA_PS").none(false),
-      py::arg("IA_k_min").none(false),
-      py::arg("IA_k_max").none(false),
-      py::arg("IA_k_cutoff").none(false),
+      py::arg("PS").none(false),
+      py::arg("kmin").none(false),
+      py::arg("kmax").none(false),
+      py::arg("cutoff").none(false),
       py::arg("N").none(false)
     );
 
