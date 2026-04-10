@@ -56,7 +56,7 @@ params:
     ref:
       dist: norm
       loc: 67.32
-      scale: 5
+      scale: 3
     proposal: 3
     latex: H_0
   omegab:
@@ -66,8 +66,8 @@ params:
     ref:
       dist: norm
       loc: 0.0495
-      scale: 0.004
-    proposal: 0.004
+      scale: 0.005
+    proposal: 0.005
     latex: \Omega_\mathrm{b}
     drop: true
   omegam:
@@ -81,15 +81,16 @@ params:
     proposal: 0.015
     latex: \Omega_\mathrm{m}
     drop: true
-  mnu:
+  w:
     prior:
-      min: 0.06
-      max: 0.6
+      min: -3
+      max: -0.01
     ref:
       dist: norm
-      loc: 0.25
-      scale: 0.1
+      loc: -0.99
+      scale: 0.05
     proposal: 0.05
+    latex: w_{0,\mathrm{DE}}
   w0pwa:
     prior:
       min: -5 
@@ -101,16 +102,18 @@ params:
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
     drop: true
-  w:
+  wa:
+    value: 'lambda w0pwa, w: w0pwa - w'
+    latex: w_{a,\mathrm{DE}}
+  mnu:
     prior:
-      min: -3
-      max: -0.01
+      min: 0.06
+      max: 0.6
     ref:
       dist: norm
-      loc: -0.99
-      scale: 0.05
+      loc: 0.25
+      scale: 0.1
     proposal: 0.05
-    latex: w_{0,\mathrm{DE}}
   tau:
     value: 0.0697186
     latex: \tau_\mathrm{reio}
@@ -123,9 +126,6 @@ params:
   As:
     value: 'lambda As_1e9: 1e-9 * As_1e9'
     latex: A_\mathrm{s}
-  wa:
-    value: 'lambda w0pwa, w: w0pwa - w'
-    latex: w_{a,\mathrm{DE}}
   omegabh2:
     value: 'lambda omegab, H0: omegab*(H0/100)**2'
     latex: \Omega_\mathrm{b} h^2
@@ -164,6 +164,9 @@ params:
   # Nuisance parameters below (it overwrites the default settings)
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
+  # WL photo-z errors
   roman_DZ_S1:
     prior:
       dist: norm
@@ -254,6 +257,7 @@ params:
     latex: \Delta z_\mathrm{s,roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+  # Shear calibration parameters
   roman_M1:
     prior:
       dist: norm
@@ -544,8 +548,8 @@ theory:
       lens_potential_accuracy: 1.0
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
-      k_per_logint: 20
-      kmax: 15
+      k_per_logint: 15
+      kmax: 10.0
 #  fastpt:
 #    path: ./external_modules/code/FAST-PT
     #extra_args:

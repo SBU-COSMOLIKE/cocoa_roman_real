@@ -6,17 +6,24 @@ likelihood:
   roman_real.cosmic_shear:
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
-    lmax: 70000 # gg in Roman that requires higher lmax
+    print_datavector: False
+    print_datavector_file: "./projects/roman_real/chains/theory.modelvector"
     accuracyboost: 1.0
     integration_accuracy: 0
+    lmax: 75000 # lmax computed for real space correlation function
     kmax_boltzmann: 7.5
-    # 1 EE2, 2 Halofit
+    # 1 EE2, 2 Halofit (check below on the slow/fast decomposition)
+    # Warning: Euclid Emulator has strict boundaries
     non_linear_emul: 2
-    IA_model: 0
+    IA_model: 0 # NLA (0) or TATT (1)
     IA_code: 0  # CFASTPT (0) or FASTPT (1) (only works if not NLA)
     IA_redshift_evolution: 3
-    print_datavector: False
     ggl_exclude: [[6,0],[7,0],[7,1]]
+    debug: false
+    use_baryon_pca: false
+    create_baryon_pca: false
+    baryon_pca_select_sims: "antilles-2-99/antilles-101-378/antilles-380-400"
+    filename_baryon_pca: "./projects/lsst_y1/chains/pca.txt"
 params:
   As_1e9:
     prior:
@@ -37,8 +44,8 @@ params:
     ref:
       dist: norm
       loc: 0.96605
-      scale: 0.01
-    proposal: 0.01
+      scale: 0.015
+    proposal: 0.015
     latex: n_\mathrm{s}
   H0:
     prior:
@@ -57,8 +64,8 @@ params:
     ref:
       dist: norm
       loc: 0.0495
-      scale: 0.004
-    proposal: 0.004
+      scale: 0.005
+    proposal: 0.005
     latex: \Omega_\mathrm{b}
     drop: true
   omegam:
@@ -92,7 +99,7 @@ params:
       scale: 0.05
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
-	drop: true
+    drop: true
   wa:
     value: 'lambda w0pwa, w: w0pwa - w'
     latex: w_{a,\mathrm{DE}}
@@ -146,8 +153,6 @@ params:
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Nuisance parameters below (it overwrites the default settings)
-  # Default settings in likelihood/roman_real_params_lens.yaml
-  # Default settings in likelihood/roman_real_params_source.yaml
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
@@ -354,6 +359,7 @@ params:
       loc: -1.7
       scale: 0.5
     proposal: 0.5
+    latex: A_\mathrm{1-IA,roman}^2
   roman_A2_1:
     value: 0.0
     #prior:
@@ -394,7 +400,7 @@ theory:
     stop_at_error: False
     use_renames: True
     extra_args:
-      halofit_version: hmcode2020
+      halofit_version: mead2020
       AccuracyBoost: 1.1
       lens_potential_accuracy: 1.0
       dark_energy_model: ppf
@@ -406,7 +412,7 @@ theory:
     #extra_args:
       #accuracyboost: 5
       #kmax_boltzmann: 7.5
-      #extrap_kmax: 250.0  
+      #extrap_kmax: 250.0
 sampler:
   mcmc:
     # ---------------------------------------------------------------------
@@ -449,24 +455,24 @@ sampler:
     oversample_power: 0.2
     oversample_thin: True
     blocking:
-      - [1,
-          [
-            As_1e9, ns, H0, omegab, omegam, w, w0pwa
-          ]
+    - [1,
+        [
+          As_1e9, ns, H0, omegab, omegam, w, w0pwa
         ]
-      - [6,
-          [
-            roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, 
-            roman_DZ_S5, roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
-            roman_A1_1, roman_A1_2
-          ]
+      ]
+    - [6,
+        [
+          roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, 
+          roman_DZ_S5, roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
+          roman_A1_1, roman_A1_2
         ]
-      - [25,
-          [
-            roman_M1, roman_M2, roman_M3, roman_M4, 
-            roman_M5, roman_M6, roman_M7, roman_M8,
-          ]
+      ]
+    - [25,
+        [
+          roman_M1, roman_M2, roman_M3, roman_M4, 
+          roman_M5, roman_M6, roman_M7, roman_M8,
         ]
+      ]
     learn_every: 10d
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------

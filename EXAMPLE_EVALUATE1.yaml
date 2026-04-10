@@ -31,8 +31,8 @@ params:
     ref:
       dist: norm
       loc: 2.1
-      scale: 0.65
-    proposal: 0.4
+      scale: 0.2
+    proposal: 0.2
     latex: 10^9 A_\mathrm{s}
     drop: true
     renames: A
@@ -53,7 +53,7 @@ params:
     ref:
       dist: norm
       loc: 67.32
-      scale: 5
+      scale: 3
     proposal: 3
     latex: H_0
   omegab:
@@ -74,29 +74,9 @@ params:
     ref:
       dist: norm
       loc: 0.316
-      scale: 0.02
-    proposal: 0.02
+      scale: 0.015
+    proposal: 0.015
     latex: \Omega_\mathrm{m}
-    drop: true
-  mnu:
-    prior:
-      min: 0.06
-      max: 0.6
-    ref:
-      dist: norm
-      loc: 0.25
-      scale: 0.1
-    proposal: 0.05
-  w0pwa:
-    prior:
-      min: -5 
-      max: -0.01
-    ref:
-      dist: norm
-      loc: -0.99
-      scale: 0.05
-    proposal: 0.05
-    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
     drop: true
   w:
     prior:
@@ -108,9 +88,29 @@ params:
       scale: 0.05
     proposal: 0.05
     latex: w_{0,\mathrm{DE}}
+  w0pwa:
+    prior:
+      min: -5 
+      max: -0.01
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{0,\mathrm{DE}}+w_{a,\mathrm{DE}}
+    drop: true
   wa:
     value: 'lambda w0pwa, w: w0pwa - w'
     latex: w_{a,\mathrm{DE}}
+  mnu:
+    prior:
+      min: 0.06
+      max: 0.6
+    ref:
+      dist: norm
+      loc: 0.25
+      scale: 0.1
+    proposal: 0.05
   tau:
     value: 0.0697186
     latex: \tau_\mathrm{reio}
@@ -161,6 +161,8 @@ params:
   # Nuisance parameters below (it overwrites the default settings)
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
+  # WL photo-z errors
   roman_DZ_S1:
     prior:
       dist: norm
@@ -251,6 +253,7 @@ params:
     latex: \Delta z_\mathrm{s,roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+  # Shear calibration parameters
   roman_M1:
     prior:
       dist: norm
@@ -400,6 +403,7 @@ theory:
     extra_args:
       halofit_version: takahashi
       AccuracyBoost: 1.05
+      lens_potential_accuracy: 1.0
       dark_energy_model: ppf
       accurate_massive_neutrino_transfers: false
       k_per_logint: 15
