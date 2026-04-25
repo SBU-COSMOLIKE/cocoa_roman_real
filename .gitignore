@@ -5,6 +5,7 @@
 *.pyo
 *.cfg
 chains/
+chains2/
 .ipynb_checkpoints/
 .ipynb_*
 *.sbatch

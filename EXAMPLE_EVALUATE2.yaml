@@ -558,7 +558,7 @@ theory:
       #extrap_kmax: 250.0     
 sampler:
   evaluate:
-    N: 1
+    N: 10
     override:
       As_1e9: 2.1
       ns: 0.96605

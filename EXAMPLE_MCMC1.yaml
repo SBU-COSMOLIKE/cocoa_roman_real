@@ -443,7 +443,7 @@ sampler:
     blocking:
     - [1,
         [
-          As_1e9, ns, H0, omegab, omegam,
+          As_1e9, ns, H0, omegab, omegam
         ]
       ]
     - [6,
