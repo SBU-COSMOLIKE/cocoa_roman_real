@@ -213,7 +213,7 @@ cosmolike_roman_real_interface.so: $(OBJECTC) $(OBJECTCPP)
 test: $(OBJECTC) $(CSOURCES) $(OBJECTCPP) interface.cpp
 	$(CXX) $(CXXFLAGS) -DCOBAYA_SAMPLER -fPIC -o $@ \
 		$(OBJECTC) $(OBJECTCPP) interface.cpp \
-		$(LDFLAGS) $(LDLIBS) 
+		$(LDFLAGS) $(LDLIBS)
 
 clean:
 	@rm -rf test cosmolike_roman_real_interface.so cosmolike_roman_real_interface.so.dSYM  *.o
