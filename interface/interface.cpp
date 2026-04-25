@@ -52,7 +52,7 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "Init accuracy and sampling Boost (may slow down Cosmolike a lot)",
       (py::arg("lmax") = 75000).none(false)
     );
-  
+
   m.def("init_accuracy_boost",
       &cosmolike_interface::init_accuracy_boost,
       "Init accuracy and sampling Boost (may slow down Cosmolike a lot)",
@@ -267,7 +267,8 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("B2").none(false),
       py::arg("B_MAG").none(false),
       py::arg("B3nl").none(false),
-      py::arg("BK").none(false)
+      py::arg("BK").none(false),
+      py::return_value_policy::move
     );
 
   m.def("set_nuisance_shear_calib",
