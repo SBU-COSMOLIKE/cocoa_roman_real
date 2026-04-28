@@ -575,7 +575,7 @@ sampler:
           As_1e9, ns, H0, omegab, omegam,
         ]
       ]
-    - [2,
+    - [4,
         [
           roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4, roman_DZ_S5,
           roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
