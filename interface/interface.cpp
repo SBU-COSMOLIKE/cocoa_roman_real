@@ -143,13 +143,25 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
     );
 
   m.def("read_redshift_distributions",
-    &cosmolike_interface::read_redshift_distributions_from_files,
-    "Read n(z) lens and source from files (same way as old cosmolike)",
-    py::arg("lens_multihisto_file").none(false),
-    py::arg("lens_ntomo").none(false).noconvert(),
-    py::arg("source_multihisto_file").none(false),
-    py::arg("source_ntomo").none(false).noconvert(),
-    py::return_value_policy::move
+      &cosmolike_interface::read_redshift_distributions_from_files,
+      "Read n(z) lens and source from files (same way as old cosmolike)",
+      py::arg("lens_multihisto_file").none(false),
+      py::arg("lens_ntomo").none(false).noconvert(),
+      py::arg("source_multihisto_file").none(false),
+      py::arg("source_ntomo").none(false).noconvert(),
+      py::return_value_policy::move
+  );
+
+  m.def("set_nuisance_halo_model",
+      &cosmolike_interface::set_nuisance_halo_model,
+      py::arg("A_IA_sat"),
+      py::arg("A_IA_cen"),
+      py::arg("eta_IA_cen"),
+      py::arg("M_trans_cen"),
+      py::arg("w_trans_cen"),
+      py::arg("M_trans_sat"),
+      py::arg("w_trans_sat"),
+      "Set satellite IA amplitude (per lens bin), HOD, and red-fraction sigmoid params."
   );
   
   m.def("set_IA_PS",
@@ -708,6 +720,69 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "Get Mask Covariance Matrix",
       py::return_value_policy::move
     );
+  // In your pybind11 module definition, alongside existing bindings:
+
+  m.def("set_nuisance_ia_halo",
+      &cosmolike_interface::set_nuisance_ia_halo,
+      py::arg("A_IA"),
+      py::arg("eta_IA"),
+      py::arg("M_trans_cen"),
+      py::arg("w_trans_cen"),
+      py::arg("M_trans_sat"),
+      py::arg("w_trans_sat"),
+      "Set halo model IA nuisance parameters: IA amplitude/slope per source bin, "
+      "and red fraction sigmoid parameters per lens bin."
+    );
+
+  m.def("compute_n_red_cen",
+      &cosmolike_interface::compute_n_red_cen,
+      py::arg("ni"),
+      py::arg("a"),
+      "Compute red central galaxy number density in lens bin ni at scale factor a."
+    );
+
+  m.def("compute_n_red_sat",
+      &cosmolike_interface::compute_n_red_sat,
+      py::arg("ni"),
+      py::arg("a"),
+      "Compute red satellite galaxy number density in lens bin ni at scale factor a."
+    );
+  m.def("compute_p_II_1h",
+      &cosmolike_interface::compute_p_II_1h,
+      py::arg("ni"),
+      py::arg("k"),
+      py::arg("a"),
+      "1-halo satellite-satellite II power spectrum in lens bin ni "
+      "at wavenumber k [h/Mpc in code units] and scale factor a."
+    );
+  m.def("compute_p_II_2h_cen",
+      &cosmolike_interface::compute_p_II_2h_cen,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "2-halo central II power spectrum (NLA limit) in lens bin ni."
+  );
+
+  m.def("compute_p_dI_2h_cen",
+      &cosmolike_interface::compute_p_dI_2h_cen,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "2-halo central dI (matter-IA) power spectrum (NLA limit) in lens bin ni."
+  );
+
+  m.def("compute_b_red_cen",
+      &cosmolike_interface::compute_b_red_cen,
+      py::arg("ni"), py::arg("a"),
+      "Effective linear bias of the red central population in lens bin ni."
+  );
+  m.def("compute_p_dI_1h",
+      &cosmolike_interface::compute_p_dI_1h,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "1-halo matter-satellite (dI) power spectrum in lens bin ni."
+  );
+  m.def("compute_test_u_ia_sat",
+      &cosmolike_interface::compute_test_u_ia_sat,
+      py::arg("k"), py::arg("m"), py::arg("a"),
+      "Satellite IA Fourier profile gamma_hat(k|M) for a single halo. "
+      "k in code units (k_phys * coverH0), m in Msun/h, a scale factor."
+  );
 }
 
 // ----------------------------------------------------------------------------
