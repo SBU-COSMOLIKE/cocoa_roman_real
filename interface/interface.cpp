@@ -783,6 +783,50 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "Satellite IA Fourier profile gamma_hat(k|M) for a single halo. "
       "k in code units (k_phys * coverH0), m in Msun/h, a scale factor."
   );
+  m.def("compute_p_gg",
+      &cosmolike_interface::compute_p_gg,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "Galaxy-galaxy power spectrum P_gg (1-halo + 2-halo) in lens bin ni "
+      "at wavenumber k and scale factor a. Auto-tomography (ni==nj) only."
+  );
+
+  m.def("compute_p_gg_1h",
+      &cosmolike_interface::compute_p_gg_1h,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "Galaxy-galaxy power spectrum P_gg (1-halo) in lens bin ni "
+      "at wavenumber k and scale factor a. Auto-tomography (ni==nj) only."
+  );
+
+  m.def("compute_p_gg_2h",
+      &cosmolike_interface::compute_p_gg_2h,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "Galaxy-galaxy power spectrum P_gg (2-halo) in lens bin ni "
+      "at wavenumber k and scale factor a. Auto-tomography (ni==nj) only."
+  );
+
+  m.def("compute_ngal",
+      &cosmolike_interface::compute_ngal,
+      py::arg("ni"), py::arg("a"),
+      "ngal"
+  );
+  m.def("compute_bgal",
+      &cosmolike_interface::compute_bgal,
+      py::arg("ni"), py::arg("a"),
+      "bgal"
+  );
+
+  m.def("compute_p_gm",
+      &cosmolike_interface::compute_p_gm,
+      py::arg("ni"), py::arg("k"), py::arg("a"),
+      "Galaxy-matter power spectrum P_gm (1-halo + 2-halo) in lens bin ni "
+      "at wavenumber k and scale factor a."
+  );
+  m.def("compute_p_mm",
+      &cosmolike_interface::compute_p_mm,
+      py::arg("k"), py::arg("a"),
+      "Nonlinear matter power spectrum P_mm (halo model) "
+      "at wavenumber k [code units] and scale factor a."
+  );
 }
 
 // ----------------------------------------------------------------------------
