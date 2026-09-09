@@ -9,15 +9,15 @@ likelihood:
   roman_real.combo_3x2pt:
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
-    print_datavector: False
-    print_datavector_file: "./projects/roman_real/chains/theory.modelvector"
+    print_datavector: True
+    print_datavector_file: "./projects/roman_real/chains/tatt_for_nla_scut.modelvector"
     accuracyboost: 1.0
     integration_accuracy: 0
     lmax: 100000 # lmax computed for real space correlation function
     kmax_boltzmann: 7.5
     # 1 EE2, 2 Halofit
     non_linear_emul: 2
-    IA_model: 0 # NLA (0) or TATT (1)
+    IA_model: 1 # NLA (0) or TATT (1)
     IA_code: 0  # CFASTPT (0) or FASTPT (1) (only works if not NLA)
     IA_redshift_evolution: 3
     ggl_exclude: [[6,0],[7,0],[7,1]]
@@ -391,7 +391,7 @@ params:
     latex: A_\mathrm{2-IA,Roman}^2
   roman_BTA_1:
     prior:
-      min: 0
+      min: -2
       max: 2
     ref:
       dist: norm
@@ -509,6 +509,88 @@ params:
       scale: 0.1
     proposal: 0.1
     latex: b_\mathrm{1-Roman}^8
+
+  # Bin bias parameters
+  roman_B2_1:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.24
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^1
+  roman_B2_2:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.36
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^2
+  roman_B2_3:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.47
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^3
+  roman_B2_4:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.60
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^4
+  roman_B2_5:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.76
+      scale: 0.1
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^5
+  roman_B2_6:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.47
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^6
+  roman_B2_7:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.60
+      scale: 0.15
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^7
+  roman_B2_8:
+    prior:
+      min: 0.4
+      max: 4
+    ref:
+      dist: norm
+      loc: 1.76
+      scale: 0.1
+    proposal: 0.1
+    latex: b_\mathrm{2-Roman}^8
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # Point Mass parameters
@@ -584,8 +666,8 @@ sampler:
       roman_M6: 0.0
       roman_M7: 0.0
       roman_M8: 0.0
-      roman_A1_1: 0.6
-      roman_A1_2: -1.5
+      roman_A1_1: 0.9
+      roman_A1_2: 0.3
       roman_B1_1: 1.18
       roman_B1_2: 1.40
       roman_B1_3: 1.55
@@ -594,9 +676,17 @@ sampler:
       roman_B1_6: 2.15
       roman_B1_7: 2.52
       roman_B1_8: 2.44
+      roman_B2_1: 1.18
+      roman_B2_2: 0.41
+      roman_B2_3: 0.41
+      roman_B2_4: 1.71
+      roman_B2_5: 1.90
+      roman_B2_6: 2.15
+      roman_B2_7: 2.52
+      roman_B2_8: 2.44
       # TATT PARAMETERS
-      roman_A2_1: 0.0
-      roman_BTA_1: 0.0
+      roman_A2_1: 0
+      roman_BTA_1: -0.8
       #roman_A2_1: 0.05
       #roman_BTA_1: 0.05
       roman_A2_2: -1.51541

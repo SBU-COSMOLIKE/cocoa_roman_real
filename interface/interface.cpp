@@ -45,6 +45,58 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
   m.doc() = "CosmoLike Interface for roman-Y1 3x2pt Module";
 
   // --------------------------------------------------------------------
+  // HALO-MODEL IA POWER SPECTRA (inspection / debugging)
+  // --------------------------------------------------------------------
+  // Direct access to the summed 1h+2h halo-model IA spectra, so they can be
+  // plotted in Python without going through the C(ell) pipeline.
+  //
+  // UNITS (you MUST handle these on the Python side):
+  //   k_in  : code units = k_phys[h/Mpc] * coverH0,  coverH0 = 2997.92458
+  //   returns P in code units = P_phys[(Mpc/h)^3] / coverH0^3
+  // So to plot physics units:
+  //   k_code = k_hMpc * 2997.92458
+  //   P_hMpc3 = P_code * 2997.92458**3
+  // ni is a CLUSTERING (lens) bin index.
+  m.def("P_II_halo",
+      [](const double k, const double a, const int ni) {
+        return P_II_halo(k, a, ni);
+      },
+      "Halo-model II power spectrum (1h+2h), code units. k in c/H0 units.",
+      py::arg("k").none(false).noconvert(),
+      py::arg("a").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert()
+    );
+  m.def("P_dI_halo",
+      [](const double k, const double a, const int ni) {
+        return P_dI_halo(k, a, ni);
+      },
+      "Halo-model dI power spectrum (1h+2h), code units. k in c/H0 units.",
+      py::arg("k").none(false).noconvert(),
+      py::arg("a").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert()
+    );
+  // Non-interpolated variants -- bypass the tables, evaluate directly.
+  // Useful to check the interpolation against the raw integrals.
+  m.def("P_II_halo_nointerp",
+      [](const double k, const double a, const int ni) {
+        return P_II_halo_nointerp(k, a, ni, 0);
+      },
+      "Direct (non-tabulated) halo-model II spectrum, code units.",
+      py::arg("k").none(false).noconvert(),
+      py::arg("a").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert()
+    );
+  m.def("P_dI_halo_nointerp",
+      [](const double k, const double a, const int ni) {
+        return P_dI_halo_nointerp(k, a, ni, 0);
+      },
+      "Direct (non-tabulated) halo-model dI spectrum, code units.",
+      py::arg("k").none(false).noconvert(),
+      py::arg("a").none(false).noconvert(),
+      py::arg("ni").none(false).noconvert()
+    );
+
+  // --------------------------------------------------------------------
   // INIT FUNCTIONS
   // --------------------------------------------------------------------
   m.def("init_ntable_lmax",

@@ -6,15 +6,15 @@ likelihood:
   roman_real.cosmic_shear:
     path: ./external_modules/data/roman_real
     data_file: example1.dataset # that assumes lens = source
-    print_datavector: False
-    print_datavector_file: "./projects/roman_real/chains/theory.modelvector"
+    print_datavector: True
+    print_datavector_file: "./projects/roman_real/chains/theory_nla.modelvector"
     accuracyboost: 1.0
     integration_accuracy: 0
     lmax: 75000 # lmax computed for real space correlation function
     kmax_boltzmann: 7.5
     # 1 EE2, 2 Halofit
     non_linear_emul: 2
-    IA_model: 0  # NLA (0) or TATT (1)
+    IA_model: 1  # NLA (0) or TATT (1)
     IA_code: 0    # CFASTPT (0) or FASTPT (1) (only works if not NLA)
     IA_redshift_evolution: 3
     ggl_exclude: [[6,0],[7,0],[7,1]]
@@ -386,7 +386,7 @@ params:
     latex: A_\mathrm{2-IA,Roman}^2
   roman_BTA_1:
     prior:
-      min: 0
+      min: -2
       max: 2
     ref:
       dist: norm
@@ -408,12 +408,12 @@ theory:
       accurate_massive_neutrino_transfers: false
       k_per_logint: 15
       kmax: 7.5
-#  fastpt:
-#    path: ./external_modules/code/FAST-PT
-#    extra_args:
-#      accuracyboost: 5
-#      kmax_boltzmann: 7.5
-#      extrap_kmax: 250.0
+  #fastpt:
+  #  path: ./external_modules/code/FAST-PT
+  #  extra_args:
+  #    accuracyboost: 1
+  #    kmax_boltzmann: 7.5
+  #    extrap_kmax: 250.0
 sampler:
   evaluate:
     N: 1
@@ -442,11 +442,11 @@ sampler:
       roman_M6: 0.0
       roman_M7: 0.0
       roman_M8: 0.0
-      roman_A1_1: 0.6
-      roman_A1_2: -1.5
+      roman_A1_1: 1
+      roman_A1_2: 0.3
       # TATT PARAMETERS
-      roman_A2_1: 0.0
-      roman_BTA_1: 0.0
+      roman_A2_1: 0
+      roman_BTA_1: 0
       #roman_A2_1: 0.05
       #roman_BTA_1: 0.001
       roman_A2_2: -1.51541

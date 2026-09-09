@@ -71,14 +71,16 @@ if [ -z "${IGNORE_COSMOLIKE_ROMAN_REAL_CODE}" ]; then
   rm -rf "${PACKDIR:?}"/interface/*.o
   rm -rf "${PACKDIR:?}"/interface/*.so
   cd "${PACKDIR}"/interface
-  make -f MakefileCosmolike clean >${OUT1:?} 2>${OUT2:?} || { error "${EC2:?}"; return 1; }
+  #make -f MakefileCosmolike clean >${OUT1:?} 2>${OUT2:?} || { error "${EC2:?}"; return 1; }
+  make -f MakefileCosmolike clean 2>&1 | tee ${OUT1:?} || { error "${EC2:?}"; return 1; }
 
   # ---------------------------------------------------------------------------
   cd "${PACKDIR}"/interface
 
   (export LD_LIBRARY_PATH=${CONDA_PREFIX:?}/lib:$LD_LIBRARY_PATH && \
    export LD_LIBRARY_PATH=${ROOTDIR:?}/.local/lib:$LD_LIBRARY_PATH && \
-   make -j $MNT -f MakefileCosmolike all >${OUT1:?} 2>${OUT2:?} || { error "${EC8:?}"; return 1; })
+   #make -j $MNT -f MakefileCosmolike all >${OUT1:?} 2>${OUT2:?} || { error "${EC8:?}"; return 1; })
+   make -j $MNT -f MakefileCosmolike all 2>&1 | tee ${OUT1:?} || { error "${EC8:?}"; return 1; })
 
   cd ${ROOTDIR:?}
 

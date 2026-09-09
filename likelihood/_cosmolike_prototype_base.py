@@ -102,6 +102,14 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       ci.init_IA(ia_model = int(self.IA_model), 
                 ia_redshift_evolution = int(self.IA_redshift_evolution),
                 ia_code = int(self.IA_code))
+      # Simulation-tabulated IA (IA_code == 3). Overrides IA_model/IA_code to
+      # NLA/SIM and loads the measured P(k,z) tables. Must come AFTER init_IA
+      # so it has the final say on nuisance.IA_code.
+      if int(self.IA_code) == 3:
+        ci.init_IA_sim('/xdisk/timeifler/yijiezhu/cocoa_demo/Cocoa/PS_2re_unred_new_2',
+                       [11, 17, 19,25, 28, 33, 37, 40, 42, 47, 50, 53, 55, 59, 63, 67, 72, 78, 84, 91, 98],
+                       [7.01,5,4.43,3.01, 2.58, 2, 1.67, 1.5, 1.36, 1.11, 1, 0.89, 0.82, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.01],
+                       int(1))
 
       if self.probe != "xi":
         # (b1, b2, bs2, b3, bmag). 0 = one amplitude per bin
