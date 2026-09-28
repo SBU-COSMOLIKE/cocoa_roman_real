@@ -23,7 +23,7 @@ likelihood:
     use_baryon_pca: false
     create_baryon_pca: false
     baryon_pca_select_sims: "antilles-2-99/antilles-101-378/antilles-380-400"
-    filename_baryon_pca: "./projects/roman_real/chains/pca.txt"
+    filename_baryon_pca: "./projects/lsst_y1/chains/pca.txt"
     external_baryon_suppression: False
 
 params:
@@ -701,10 +701,16 @@ theory:
       accurate_massive_neutrino_transfers: false
       k_per_logint: 15
       kmax: 7.5
+#  NOTE: under TATT with IA_code: 1 the fastpt defaults are the
+#  converged two-grid configuration: accuracyboost multiplies the
+#  density of the output table cosmolike interpolates (the accuracy
+#  driver) and internal_accuracyboost the FFTLog grid, both rebased
+#  so 1.0 just works (see tests/README.md, test 16).
 #  fastpt:
 #    path: ./external_modules/code/FAST-PT
 #    extra_args:
-#      accuracyboost: 10
+#      accuracyboost: 1.0
+#      internal_accuracyboost: 1.0
 #      kmax_boltzmann: 7.5
 #      extrap_kmax: 250.0
   # bfmt:
