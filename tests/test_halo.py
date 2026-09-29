@@ -166,6 +166,11 @@ U_NFW_A = 0.7                   # unused by the NFW form (halo.c signature)
 U_KS_C = (2.0, 5.0, 10.0)       # inside [halo_uks_cmin, halo_uks_cmax]
 U_KS_RV = 3.0e-4                # c/H0 (0.9 Mpc/h)
 U_KS_K = np.logspace(0.0, 5.0, 6)
+# u_KS against the real-axis integral (ks_u_reference): concentrations
+# across the halo range and z = k r_v on both sides of the table switch
+# at z = 3 (a table of u below, the contour factorization above).
+U_KS_REF_C = (0.3, 1.0, 3.0, 5.0, 8.0, 12.0, 25.0)
+U_KS_REF_Z = (1.0e-3, 0.5, 2.9, 3.1, 10.0, 50.0, 200.0, 800.0)
 HOD_TEST_BINS = (0, 1)          # lens bins probed (mean z 0.32 and 0.55)
 HOD_A_FACTORS = np.linspace(0.98, 1.02, 8)     # times 1/(1 + <z>_bin)
 PK_K = np.logspace(-1.0, 6.0, 20)              # 3.3e-5 to 330 h/Mpc
@@ -284,6 +289,12 @@ CAUCHY_SCHWARZ_RTOL = 1.0e-10
 # u_KS <= u_KS(k -> 0) <= 1 holds node by node; allow the rounding of
 # the table and of the Gauss-Legendre sums.
 U_KS_BOUND_ATOL = 1.0e-8
+# Measured 2026-09-29 against the gas study's reference at 20000 random
+# (c, z): error <= 4.8e-6 of the local envelope of u, 1.8e-5 relative
+# where |u| > 1e-2. Near the zeros of the ringing u only the absolute
+# scale is meaningful, set by the plateau u(c, z -> 0).
+U_KS_REF_RTOL = 1.0e-4
+U_KS_REF_ATOL = 2.0e-5  # times u(c, z -> 0)
 U_KS_K0 = 1.0e-3        # (c/H0)^-1; k rv/c ~ 1e-7, inside the table
 
 # Cache checks: an omegam step of 0.02 moves sigma(M) at the percent
@@ -320,6 +331,35 @@ def tinker_bias(nu):
     big_c = 0.019 + 0.107*y + 0.19*np.exp(-(4.0/y)**4)
     return (1.0 - big_a*nu**small_a/(nu**small_a + DELTA_C**small_a)
             + 0.183*nu**1.5 + big_c*nu**2.4)
+
+
+def ks_u_reference(c, z, gamma):
+    """The KS pressure shape u = F/F0 on the real axis, independent of the
+    complex-contour method halo.c uses above z = 3:
+
+      F0 = int_0^c x^2 theta^q dx,  F = int_0^c x sin(y x)/y theta^p dx,
+      theta = ln(1 + x)/x, p = gamma/(gamma - 1), q = 1/(gamma - 1),
+      y = z/c.
+
+    Composite Gauss-Legendre (24 nodes per panel), panels no wider than
+    0.5 or a quarter period of sin(y x), so every oscillation is resolved.
+
+    Arguments:
+      c = concentration, z = k r_v, gamma = the polytropic index.
+
+    Returns:
+      u(c, z).
+    """
+    p, q = gamma/(gamma - 1.0), 1.0/(gamma - 1.0)
+    y = z/c
+    t, w = np.polynomial.legendre.leggauss(24)
+    width = min(0.5, 0.5*np.pi/y)
+    edges = np.linspace(0.0, c, max(1, int(np.ceil(c/width))) + 1)
+    half = 0.5*np.diff(edges)
+    x = (half[:, None]*(t + 1.0)[None, :] + edges[:-1, None]).ravel()
+    wx = (half[:, None]*w[None, :]).ravel()
+    th = np.log1p(x)/x
+    return np.sum(wx*x*np.sin(y*x)/y*th**p)/np.sum(wx*x*x*th**q)
 
 
 def tinker_shape(nu, a):
@@ -821,6 +861,21 @@ class TestPhysicsInvariants:
                 value = ci.u_KS(c=c, k=float(k), rv=U_KS_RV)
                 assert value <= u0 + U_KS_BOUND_ATOL, (
                     f"u_KS(c={c}, k={k:.2e}) = {value} > u_KS(k->0)")
+
+    def test_u_KS_matches_real_axis_integral(self, halo):
+        """u_KS against ks_u_reference, the real-axis integral: checks the
+        small-z table, the contour factorization above z = 3 and the
+        switch between them."""
+        ci = halo["ci"]
+        gamma = GAS_PARAMS[0]
+        for c in U_KS_REF_C:
+            plateau = ks_u_reference(c, 1.0e-9, gamma)
+            for z in U_KS_REF_Z:
+                np.testing.assert_allclose(
+                    ci.u_KS(c=c, k=z/U_KS_RV, rv=U_KS_RV),
+                    ks_u_reference(c, z, gamma), rtol=U_KS_REF_RTOL,
+                    atol=U_KS_REF_ATOL*plateau,
+                    err_msg=f"u_KS(c={c}, z={z})")
 
     # ---- mass function and bias kernels ------------------------------------
     def test_fnu_matches_tinker2010(self, halo):

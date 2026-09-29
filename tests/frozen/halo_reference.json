@@ -15,7 +15,7 @@
       6.5,
       0.752
     ],
-    "generated_utc": "2026-09-29T06:20:38Z",
+    "generated_utc": "2026-09-29T07:30:12Z",
     "head_defects": {
       "p_my": "cosmology.Omega_b is not wired through the cobaya glue yet: set_cosmological_parameters carries omega_baryon and the set_cosmology binding defaults omegab to 0, so the Compton-y spectra abort until the glue passes a positive value",
       "p_yy": "cosmology.Omega_b is not wired through the cobaya glue yet: set_cosmological_parameters carries omega_baryon and the set_cosmology binding defaults omegab to 0, so the Compton-y spectra abort until the glue passes a positive value"
@@ -1665,24 +1665,24 @@
         ]
       },
       "values": [
-        0.6743265386991525,
-        0.6743261480940296,
-        0.6742871823668062,
-        0.6704045052196895,
-        0.38133646042957575,
-        0.0007459176277892023,
-        0.5420304881969713,
-        0.5420302898596492,
-        0.5420104501471712,
-        0.5400260620051249,
-        0.38264683533730937,
-        0.00599731382816612,
-        0.47033407208289174,
-        0.4703339712342433,
-        0.4703239134828591,
-        0.4693201840198997,
-        0.38590910643414467,
-        0.02566557207176026
+        0.6698197990447715,
+        0.6698194155008271,
+        0.6697810611064001,
+        0.6659504290683853,
+        0.3706301363645793,
+        0.0005378385756085808,
+        0.5410597052915227,
+        0.5410595079619849,
+        0.5410397750082004,
+        0.5390685849878061,
+        0.3807748898737899,
+        0.005771880551000526,
+        0.470166714393435,
+        0.47016661436350604,
+        0.47015661137061376,
+        0.4691572121012944,
+        0.3859601148798933,
+        0.025574498676614186
       ]
     },
     "u_nfw_c": {
