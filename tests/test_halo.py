@@ -32,16 +32,15 @@ parameters pinned below:
      calls, and with 1, 4 or 8 OpenMP threads.
 
 Blocked probes. HEAD_DEFECTS below lists what the current build
-cannot evaluate (today: the Compton-y spectra, waiting on Omega_b
-through the cobaya glue): those tests are marked xfail(run=False) -
-reported, never executed, since halo.c aborts the process - and the
+cannot evaluate (none today): those tests are marked xfail(run=False)
+- reported, never executed, since halo.c aborts the process - and the
 generator leaves them out of the frozen file. The ticket that
 unblocks one removes its entry and regenerates the frozen file.
 
-Slow tests. Building a spectrum table costs one 1000-node mass
-integral per (a, k) node, about a minute at 4 threads for p_mm alone;
-those tests run only with COCOA_HALO_SLOW=1. The default run takes a
-model build plus a few seconds of halo integrals.
+Slow tests. Building a spectrum table costs a 1024-node mass integral
+per (a, k) node, seconds per table at 4 threads; those tests run only
+with COCOA_HALO_SLOW=1. The default run takes a model build plus a few
+seconds of halo integrals.
 
 To run (from the Cocoa/ folder, cocoa environment active,
 start_cocoa.sh sourced):
@@ -188,15 +187,7 @@ PK_A = (0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99)
 # Probes the current build cannot evaluate. They are never called
 # (xfail(run=False)) and never frozen; the ticket that unblocks one
 # deletes its entry here and regenerates the frozen file (--halo).
-OMEGAB_GLUE = (
-    "cosmology.Omega_b is not wired through the cobaya glue yet: "
-    "set_cosmological_parameters carries omega_baryon and the "
-    "set_cosmology binding defaults omegab to 0, so the Compton-y "
-    "spectra abort until the glue passes a positive value")
-HEAD_DEFECTS = {
-    "p_my": OMEGAB_GLUE,
-    "p_yy": OMEGAB_GLUE,
-}
+HEAD_DEFECTS = {}
 
 # Probes whose table build is slow (module docstring).
 SLOW_PROBES = ("p_mm", "p_my", "p_yy", "p_gm", "p_gg")
@@ -1178,7 +1169,6 @@ class TestPhysicsInvariants:
                     f"p_gg/(bgal^2 P)(ni={ni}, k={k_h} h/Mpc) = {ratio}")
 
     @slow
-    @pytest.mark.xfail(run=False, reason=HEAD_DEFECTS["p_my"])
     def test_p_my_cauchy_schwarz(self, halo):
         """A cross spectrum is bounded by its autos: p_my^2 <= p_mm p_yy
         (Cauchy-Schwarz on each mass integral), and p_yy > 0."""
