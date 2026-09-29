@@ -103,6 +103,8 @@ TINKER_DELTA = 200.0    # halo.c Delta: halo overdensity / mean density
 HALO_M_MIN = 1.0e6      # structs.c limits.halo_m_min in M_sun/h
 HALO_M_MAX = 1.0e17     # structs.c limits.halo_m_max in M_sun/h
 COVERH0 = 2997.92458    # structs.c cosmology.coverH0 = c/H0 in Mpc/h
+RHO_CRIT = 7.4775e+21   # structs.c cosmology.rho_crit (c/H0 units)
+SIGMA2_N_M = 1024       # structs.c Ntable.N_M: the sigma2 ln M table nodes
 
 # ---- the HOD and gas parameters the tests pin -------------------------------
 
@@ -208,16 +210,22 @@ DLOGNU_FD_STEP = 0.05
 # [HALO_M_MIN, HALO_M_MAX] for both halo.c and the reference here.
 DLOGNU_TEST_M = np.logspace(8.0, 15.0, 15)
 
+# sigma2 vs an independent numpy integral of the same p_lin (dense
+# trapezoid in ln x; 2e6 and 4e6 nodes agree). The masses sit on the
+# table's own ln M nodes, so the table read is exact and only the lobe
+# quadrature is tested. Measured 2026-09-29 at hdi = 0: 6.2e-6 max
+# (N_M_internal = 192) and 5.0e-6 (exact branch); a head segment
+# integrated uniformly in x instead of ln x would be off by ~6e-3.
+SIGMA2_REF_RTOL = 2.0e-5
+SIGMA2_REF_NODES = (0, 128, 256, 384, 512, 640, 768, 896, 1023)
+SIGMA2_REF_NX = 2_000_001
+
 # bias_norm_nointerp vs the numpy integral. numpy's leggauss rules are
 # exact to rounding and converged here (1000 vs 2000 nodes agree to
-# 1e-11). halo.c integrates with GSL's 1000-node rule, which GSL does
-# not tabulate: it computes those weights on the fly, accurate only to
-# ~5e-7 each (the weights sum to 2 + 4e-10). Measured 2026-09-28:
-# 1.2e-8 relative at a = 0.1 (the widest nu range), 9e-10 at a = 0.99.
-# A tabulated rule (64/96/128/256/512/1024, as cosmo2D.c uses) would
-# bring this to ~1e-12; a wrong fit or bound would be >= 1e-3.
+# 1e-11). halo.c integrates with GSL's tabulated 128-node rule at
+# hdi = 0, converged to 3e-15; a wrong fit or bound would be >= 1e-3.
 BIAS_NORM_GL_NODES = 2000
-BIAS_NORM_QUAD_RTOL = 1.0e-7
+BIAS_NORM_QUAD_RTOL = 1.0e-10
 # bias_norm table vs direct integral: linear interpolation over
 # da ~ 4e-3 of a smooth function, error ~ da^2/8 |f''/f| ~ 1e-5.
 BIAS_NORM_INTERP_RTOL = 1.0e-4
@@ -785,6 +793,30 @@ class TestPhysicsInvariants:
             np.testing.assert_allclose(
                 ci.dlognudlogm(M=m), slope, rtol=DLOGNU_RTOL, atol=0.0,
                 err_msg=f"dlognudlogm(M={m:.2e})")
+
+    @slow
+    def test_sigma2_matches_python_integral(self, halo):
+        """sigma2(M) = 1/(2 pi^2 R^3) int P_lin(x/R, a = 1) 9 j1(x)^2 dx,
+        R = (3M/(4 pi rho_crit Omega_m))^(1/3): recomputed in numpy from
+        the same p_lin over the x range of the C lobe cache (512 lobes)."""
+        from scipy.special import spherical_jn
+        ci = halo["ci"]
+        omegam = float(halo["point"]["omegam"])
+        x_end = 513.5*np.pi - 1.0/(513.5*np.pi)  # last lobe edge
+        s = np.linspace(np.log(1.0e-4), np.log(x_end), SIGMA2_REF_NX)
+        x = np.exp(s)
+        w = 9.0*spherical_jn(1, x)**2*x*(s[1] - s[0])  # dx = x ds
+        w[0] *= 0.5
+        w[-1] *= 0.5
+        dlnm = np.log(HALO_M_MAX/HALO_M_MIN)/(SIGMA2_N_M - 1)
+        for j in SIGMA2_REF_NODES:
+            m = HALO_M_MIN*np.exp(j*dlnm)
+            r = (0.75*m/(np.pi*RHO_CRIT*omegam))**(1.0/3.0)
+            p = np.array([ci.p_lin(k=float(k), a=1.0) for k in x/r])
+            expected = np.dot(w, p)/(2.0*np.pi**2*r**3)
+            np.testing.assert_allclose(
+                ci.sigma2(M=float(m)), expected, rtol=SIGMA2_REF_RTOL,
+                atol=0.0, err_msg=f"sigma2(M={m:.2e})")
 
     # ---- bias normalization ------------------------------------------------
     def test_bias_norm_endpoint_continuity(self, halo):
