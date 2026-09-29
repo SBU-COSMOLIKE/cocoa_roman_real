@@ -31,14 +31,12 @@ parameters pinned below:
   4. TestDeterminism - the same inputs give the same bits: on repeated
      calls, and with 1, 4 or 8 OpenMP threads.
 
-Defects of the current halo.c. Several functions abort or corrupt the
-process on first use (HEAD_DEFECTS below): their tests are marked
-xfail(run=False) - reported, never executed, since a crash would take
-the whole pytest process down - and the generator leaves them out of
-the frozen file. Some invariants run but fail on the current code
-(xfail(strict=True), the reason names the defect): an unexpected pass
-then fails loudly, so the ticket that repairs a defect also removes its
-marker.
+Blocked probes. HEAD_DEFECTS below lists what the current build
+cannot evaluate (today: the Compton-y spectra, waiting on Omega_b
+through the cobaya glue): those tests are marked xfail(run=False) -
+reported, never executed, since halo.c aborts the process - and the
+generator leaves them out of the frozen file. The ticket that
+unblocks one removes its entry and regenerates the frozen file.
 
 Slow tests. Building a spectrum table costs one 1000-node mass
 integral per (a, k) node, about a minute at 4 threads for p_mm alone;
@@ -161,49 +159,18 @@ PK_A = (0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99)
 
 # ---- known defects of the current halo.c ------------------------------------
 
-# Probes that abort or corrupt the process on the current halo.c. They
-# are never called (xfail(run=False)) and never frozen. The ticket that
-# repairs one deletes its entry here, regenerates the frozen file
-# (--halo), and the tests run from then on.
-_HOD_TABLE_DEFECT = (
-    "the ngal/bgal tables are allocated malloc2d(clustering_nbin, N_a) "
-    "but filled as table[j][i] with j < N_a: writes through out-of-range "
-    "row pointers")
-_PMY_DEFECT = (
-    "p_xy_nointerp reaches u_KS (see u_KS) and calls I11_X_nointerp with "
-    "func = 2, which int_for_I11_X does not support (log_fatal + exit)")
+# Probes the current build cannot evaluate. They are never called
+# (xfail(run=False)) and never frozen; the ticket that unblocks one
+# deletes its entry here and regenerates the frozen file (--halo).
+OMEGAB_GLUE = (
+    "cosmology.Omega_b is not wired through the cobaya glue yet: "
+    "set_cosmological_parameters carries omega_baryon and the "
+    "set_cosmology binding defaults omegab to 0, so the Compton-y "
+    "spectra abort until the glue passes a positive value")
 HEAD_DEFECTS = {
-    "u_KS": ("Ntable.halo_uks_nc and Ntable.halo_uks_nx are never set "
-             "(0): u_KS builds an empty table and interpol2d reads row -1"),
-    "ngal": _HOD_TABLE_DEFECT,
-    "bgal": _HOD_TABLE_DEFECT,
-    "mmean_nointerp": "divides by the ngal table: " + _HOD_TABLE_DEFECT,
-    "fsat_nointerp": "divides by the ngal table: " + _HOD_TABLE_DEFECT,
-    "p_my": _PMY_DEFECT,
-    "p_yy": _PMY_DEFECT,
-    "p_gm": "p_gm_nointerp reads the bgal/ngal tables: " + _HOD_TABLE_DEFECT,
-    "p_gg": "p_gg_nointerp reads the bgal/ngal tables: " + _HOD_TABLE_DEFECT,
+    "p_my": OMEGAB_GLUE,
+    "p_yy": OMEGAB_GLUE,
 }
-SET_HOD_DEFECT = ("set_HOD reads the bgal table (bin 0) or the ngal table "
-                  "through mmean/fsat (its log_debug lines): "
-                  + _HOD_TABLE_DEFECT)
-
-# Defects that let the code run but break a physics invariant: the
-# test runs and is expected to fail (xfail(strict=True)).
-HB1NU_INT = ("halo.c hb1nu keeps the Tinker bias in an int (int ans), "
-             "truncating b(nu) toward zero")
-U_C_INT = ("halo.c u_c keeps the NFW profile in an int (int ans), so the "
-           "p_mm integrands see u = 0 or 1")
-BGAL_UNNORMALIZED = ("hm_funcs_nointerp divides by ngal for mmean and fsat "
-                     "but not for bgal (func = 3): bgal comes back as a "
-                     "bias-weighted number density")
-SATELLITES_AT_M_NI = ("int_hm_funcs evaluates HOD_ns(ni, a, ni), the "
-                      "satellite count at halo mass m = ni, which the "
-                      "ns > 0 floor turns into 1e-15")
-DLOGNU_STENCIL = ("halo.c differentiates ln sigma with gsl_deriv_central "
-                  "at step 0.1 ln M (2 to 3.5 e-folds), which smooths the "
-                  "curvature of the low-mass slope: 1.7% off the local "
-                  "slope at M = 1e8 M_sun/h (measured 2026-09-28)")
 
 # Probes whose table build is slow (module docstring).
 SLOW_PROBES = ("p_mm", "p_my", "p_yy", "p_gm", "p_gg")
@@ -237,22 +204,27 @@ DLOGNU_RTOL = 1.0e-2
 # ln M step of the reference central difference: two sigma2 table cells
 # (0.025 in ln M) on either side.
 DLOGNU_FD_STEP = 0.05
-# Masses whose halo.c stencil (+-0.1 ln M) stays inside the sigma2
-# table [HALO_M_MIN, HALO_M_MAX].
+# Masses whose +-DLOGNU_FD_STEP stencil stays inside the sigma2 table
+# [HALO_M_MIN, HALO_M_MAX] for both halo.c and the reference here.
 DLOGNU_TEST_M = np.logspace(8.0, 15.0, 15)
 
-# bias_norm_nointerp vs the numpy integral: two converged Gauss-Legendre
-# rules (1000 nodes in halo.c, BIAS_NORM_GL_NODES here) of a smooth
-# integrand agree to ~1e-12; 1e-8 leaves room for summation order.
+# bias_norm_nointerp vs the numpy integral. numpy's leggauss rules are
+# exact to rounding and converged here (1000 vs 2000 nodes agree to
+# 1e-11). halo.c integrates with GSL's 1000-node rule, which GSL does
+# not tabulate: it computes those weights on the fly, accurate only to
+# ~5e-7 each (the weights sum to 2 + 4e-10). Measured 2026-09-28:
+# 1.2e-8 relative at a = 0.1 (the widest nu range), 9e-10 at a = 0.99.
+# A tabulated rule (64/96/128/256/512/1024, as cosmo2D.c uses) would
+# bring this to ~1e-12; a wrong fit or bound would be >= 1e-3.
 BIAS_NORM_GL_NODES = 2000
-BIAS_NORM_QUAD_RTOL = 1.0e-8
+BIAS_NORM_QUAD_RTOL = 1.0e-7
 # bias_norm table vs direct integral: linear interpolation over
 # da ~ 4e-3 of a smooth function, error ~ da^2/8 |f''/f| ~ 1e-5.
 BIAS_NORM_INTERP_RTOL = 1.0e-4
 # Off-node test points, below the pinned last table cell.
 BIAS_NORM_INTERP_A = np.linspace(0.3, 0.98, 12)
 # Queries past the table's last node (0.9999999): constant extrapolation
-# returns the pinned value itself.
+# returns the endpoint value itself.
 BIAS_NORM_PINNED_A = (0.99999995, 0.999999999)
 # int b f dnu = 1 over ALL nu (Tinker et al. 2010 normalization); the
 # 1e6 M_sun/h floor of the tabulated range misses the nu < ~0.3 tail,
@@ -744,7 +716,6 @@ class TestPhysicsInvariants:
                         f"|u_nfw_c(c={c}, k={k:.2e}, m={m:.1e})| = "
                         f"{abs(value)!r} > 1")
 
-    @pytest.mark.xfail(run=False, reason=HEAD_DEFECTS["u_KS"])
     def test_u_KS_bounded(self, halo):
         """0 < u_KS(k) <= u_KS(k -> 0) <= 1: the pressure profile is a
         positive function (|sin z| <= z bounds its transform by the k = 0
@@ -771,7 +742,6 @@ class TestPhysicsInvariants:
                     rtol=TINKER_RTOL, atol=0.0,
                     err_msg=f"fnu(nu={nu:.3f}, a={a})")
 
-    @pytest.mark.xfail(strict=True, reason=HB1NU_INT)
     def test_hb1nu_matches_tinker2010(self, halo):
         """b(nu) is the published Tinker et al. 2010 halo bias
         (recomputed in numpy from the paper's equations)."""
@@ -802,7 +772,6 @@ class TestPhysicsInvariants:
                                for m in CONC_M])
             assert np.all(np.diff(values) < 0), f"D={d}: {values}"
 
-    @pytest.mark.xfail(strict=True, reason=DLOGNU_STENCIL)
     def test_dlognudlogm_matches_finite_difference(self, halo):
         """d ln nu/d ln M = -(1/2) d ln sigma2/d ln M: compared with a
         central difference of the same sigma2 table (nu = delta_c/sigma,
@@ -818,14 +787,21 @@ class TestPhysicsInvariants:
                 err_msg=f"dlognudlogm(M={m:.2e})")
 
     # ---- bias normalization ------------------------------------------------
-    def test_bias_norm_pinned_endpoint(self, halo):
-        """halo.c pins bias_norm = 1 at the table's last node (a =
-        0.9999999); queries past it return the pinned value exactly."""
+    def test_bias_norm_endpoint_continuity(self, halo):
+        """The last table node (a = 0.9999999) holds the real integral
+        like every other node - no sentinel value - and queries past it
+        return that endpoint by constant extrapolation."""
         ci = halo["ci"]
+        a_end = 0.9999999
+        end = ci.bias_norm(a=a_end)
+        # at the node itself the lookup returns the stored integral, so
+        # table and direct evaluation agree to rounding
+        np.testing.assert_allclose(
+            end, ci.bias_norm_nointerp(a=a_end), rtol=FROZEN_RTOL,
+            atol=0.0, err_msg="bias_norm table end vs direct integral")
         for a in BIAS_NORM_PINNED_A:
-            assert ci.bias_norm(a=a) == 1.0, f"bias_norm({a!r})"
+            assert ci.bias_norm(a=a) == end, f"bias_norm({a!r})"
 
-    @pytest.mark.xfail(strict=True, reason=HB1NU_INT)
     def test_bias_norm_is_tinker_integral(self, halo):
         """bias_norm(a) = int b(nu) f(nu) dnu between nu(M_min) and
         nu(M_max): the defining integral, recomputed in numpy from the
@@ -848,7 +824,6 @@ class TestPhysicsInvariants:
                 rtol=BIAS_NORM_QUAD_RTOL, atol=0.0,
                 err_msg=f"bias_norm_nointerp(a={a})")
 
-    @pytest.mark.xfail(strict=True, reason=HB1NU_INT)
     def test_bias_norm_near_one_today(self, halo):
         """Near a = 1 the tabulated mass range carries most of the
         Tinker normalization int b f dnu = 1 (the missing part is the
@@ -858,7 +833,6 @@ class TestPhysicsInvariants:
         assert low < value < high, (
             f"bias_norm_nointerp({BIAS_NORM_TODAY_A}) = {value}")
 
-    @pytest.mark.xfail(strict=True, reason=HB1NU_INT)
     def test_bias_norm_table_matches_direct_integral(self, halo):
         """The bias_norm table reproduces the direct integral between its
         nodes to within linear-interpolation error: a smooth function of
@@ -885,7 +859,6 @@ class TestPhysicsInvariants:
                 n = ci.ngal_nointerp(ni=ni, a=a)/COVERH0**3
                 assert low < n < high, f"ngal(ni={ni}, a={a:.3f}) = {n}"
 
-    @pytest.mark.xfail(strict=True, reason=BGAL_UNNORMALIZED)
     def test_bgal_is_a_mean_bias(self, halo):
         """bgal is the number-weighted mean bias of the HOD galaxies: an
         order-unity number, above 1 for red galaxies in group-mass
@@ -898,9 +871,6 @@ class TestPhysicsInvariants:
                 b = ci.bgal_nointerp(ni=ni, a=a)
                 assert low < b < high, f"bgal(ni={ni}, a={a:.3f}) = {b}"
 
-    @pytest.mark.xfail(run=False,
-                       reason=HEAD_DEFECTS["fsat_nointerp"]
-                       + "; also " + SATELLITES_AT_M_NI)
     def test_fsat_is_a_fraction(self, halo):
         """The satellite fraction lies in (0, 1), and the Coupon HOD
         does have satellites."""
@@ -911,7 +881,6 @@ class TestPhysicsInvariants:
                 f = ci.fsat_nointerp(ni=ni, a=a)
                 assert FSAT_FLOOR < f < 1.0, f"fsat(ni={ni}, a={a}) = {f}"
 
-    @pytest.mark.xfail(run=False, reason=HEAD_DEFECTS["mmean_nointerp"])
     def test_mmean_within_populated_range(self, halo):
         """The mean halo mass of the galaxies lies inside the mass range
         the HOD integrals cover."""
@@ -924,7 +893,6 @@ class TestPhysicsInvariants:
                 assert low < mean_m < HALO_M_MAX, (
                     f"mmean(ni={ni}, a={a}) = {mean_m:.3e}")
 
-    @pytest.mark.xfail(run=False, reason=SET_HOD_DEFECT)
     def test_set_HOD_loads_coupon_values(self, halo):
         """set_HOD(ni) loads the Coupon et al. 2012 HOD that
         HOD_COUPON_2012 copies: ngal after set_HOD equals ngal after
@@ -941,7 +909,6 @@ class TestPhysicsInvariants:
 
     # ---- spectra: large-scale (2-halo) limits ------------------------------
     @slow
-    @pytest.mark.xfail(strict=True, reason=U_C_INT + "; also " + HB1NU_INT)
     def test_p_mm_two_halo_limit(self, halo):
         """On large scales P_mm -> P_lin: the 2-halo term is
         I_m(k)^2 P_lin with I_m -> 1 (bias_norm makes the mass-weighted
@@ -955,7 +922,6 @@ class TestPhysicsInvariants:
                     f"p_mm/p_lin(k={k_h} h/Mpc, a={a}) = {ratio}")
 
     @slow
-    @pytest.mark.xfail(run=False, reason=HEAD_DEFECTS["p_gm"])
     def test_p_gm_two_halo_limit(self, halo):
         """On large scales P_gm -> bgal P: galaxies trace matter with
         their mean bias."""
@@ -970,7 +936,6 @@ class TestPhysicsInvariants:
                     f"p_gm/(bgal P)(ni={ni}, k={k_h} h/Mpc) = {ratio}")
 
     @slow
-    @pytest.mark.xfail(run=False, reason=HEAD_DEFECTS["p_gg"])
     def test_p_gg_two_halo_limit(self, halo):
         """On large scales P_gg -> bgal^2 P."""
         ci = halo["ci"]
@@ -1072,7 +1037,6 @@ class TestCacheConsistency:
                                   equal_nan=True), (
                 f"{name} differs after restoring the HOD")
 
-    @pytest.mark.xfail(run=False, reason=_HOD_TABLE_DEFECT)
     def test_hod_tables_round_trip(self, halo):
         """The same HOD round trip through the ngal/bgal tables, which
         rebuild on nuisance.random_galaxy_bias."""
@@ -1096,7 +1060,6 @@ class TestCacheConsistency:
             assert np.array_equal(after[name], before[name]), (
                 f"{name} differs after restoring the HOD")
 
-    @pytest.mark.xfail(run=False, reason=HEAD_DEFECTS["u_KS"])
     def test_gas_round_trip(self, halo):
         """Gamma -> Gamma + GAS_GAMMA_STEP -> back, through the gas
         setter; the u_KS table rebuilds on nuisance.random_gas."""
