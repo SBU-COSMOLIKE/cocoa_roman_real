@@ -1027,8 +1027,10 @@ class TestPhysicsInvariants:
     @slow
     def test_p_mm_two_halo_limit(self, halo):
         """On large scales P_mm -> P_lin: the 2-halo term is
-        I_m(k)^2 P_lin with I_m -> 1 (bias_norm makes the mass-weighted
-        mean halo bias exactly 1), and the 1-halo term is small."""
+        I_m(k)^2 P_lin with I_m -> 1 (the HMx additive correction of
+        2005.00009 App. A puts the matter of halos below M_min at M_min,
+        so I_m(k -> 0) = bias_norm + (1 - bias_norm) = 1), and the
+        1-halo term is small."""
         ci = halo["ci"]
         for a in P_2H_A:
             for k_h in P_2H_K_HMPC:
