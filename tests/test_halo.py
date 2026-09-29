@@ -56,6 +56,7 @@ The frozen values (frozen/halo_reference.json) come from
 and until that file exists the frozen tests skip.
 """
 
+import functools
 import json
 import os
 
@@ -141,6 +142,8 @@ GAS_PARAMS = (1.17, 0.6, 14.0, 0.0, 0.0, 1.0, 0.03, 12.5, 1.2, 6.5, 0.752)
 
 NU_GRID = np.logspace(-1.0, np.log10(5.0), 16)  # peak heights nu
 TINKER_A = (0.2, 0.5, 0.9)      # 0.2 < 0.25 exercises fnu's z <= 3 freeze
+# Scale factors of the Eq. 7 normalization check (0.2 < 0.25 again).
+TINKER_NORM_A = (0.2, 0.25, 0.4, 0.7, 0.99)
 HB1NU_A = 0.5                   # the Delta = 200 bias fit does not evolve
 CONC_M = np.logspace(8.0, 16.0, 9)             # M_sun/h
 CONC_GROWFAC = (1.0, 0.7, 0.4)                 # D(a)
@@ -188,6 +191,10 @@ FROZEN_RTOL_BY_PROBE = {}
 
 # Closed-form fits re-evaluated in numpy: pow/exp differ by a few ulp.
 TINKER_RTOL = 1.0e-12
+# fnu carries alpha(z) from halo.c's table: exact at 140 nodes, cubic-
+# upsampled to 4096 nodes in a, read linearly; measured in numpy
+# (2026-09-28) to 4.9e-8 at most, set by the linear read.
+FNU_RTOL = 2.0e-7
 CONC_RTOL = 1.0e-12
 
 # u_nfw_c at k -> 0: u = 1 - k^2 <r^2>/6 + ..., <r^2> < r_Delta^2 <=
@@ -223,9 +230,11 @@ SIGMA2_REF_NX = 2_000_001
 # bias_norm_nointerp vs the numpy integral. numpy's leggauss rules are
 # exact to rounding and converged here (1000 vs 2000 nodes agree to
 # 1e-11). halo.c integrates with GSL's tabulated 128-node rule at
-# hdi = 0, converged to 3e-15; a wrong fit or bound would be >= 1e-3.
+# hdi = 0, converged to 3e-15, but its f(nu) carries alpha(z) from the
+# alpha table (FNU_RTOL) while the numpy side computes alpha exactly;
+# a wrong fit or bound would be >= 1e-3.
 BIAS_NORM_GL_NODES = 2000
-BIAS_NORM_QUAD_RTOL = 1.0e-10
+BIAS_NORM_QUAD_RTOL = FNU_RTOL
 # bias_norm table vs direct integral: linear interpolation over
 # da ~ 4e-3 of a smooth function, error ~ da^2/8 |f''/f| ~ 1e-5.
 BIAS_NORM_INTERP_RTOL = 1.0e-4
@@ -234,12 +243,12 @@ BIAS_NORM_INTERP_A = np.linspace(0.3, 0.98, 12)
 # Queries past the table's last node (0.9999999): constant extrapolation
 # returns the endpoint value itself.
 BIAS_NORM_PINNED_A = (0.99999995, 0.999999999)
-# int b f dnu = 1 over ALL nu (Tinker et al. 2010 normalization); the
-# 1e6 M_sun/h floor of the tabulated range misses the nu < ~0.3 tail,
-# about 20% for the low-nu slope f ~ nu^-0.49, and the fit meets its
-# normalization only approximately (upper edge).
+# int b f dnu = 1 over all nu (Tinker et al. 2010 Eq. 7, which sets
+# alpha); the 1e6 M_sun/h floor of the tabulated range misses the
+# nu < ~0.3 tail, about 20% for the low-nu slope f ~ nu^-0.49, and the
+# integrand is positive, so the tabulated part stays below 1.
 BIAS_NORM_TODAY_A = 0.99
-BIAS_NORM_TODAY_RANGE = (0.6, 1.05)
+BIAS_NORM_TODAY_RANGE = (0.6, 1.0)
 
 # ngal in (h/Mpc)^3: halos above ~1e13 M_sun/h at z < 1 have abundances
 # 1e-6 to 1e-3 (h/Mpc)^3; the bracket catches only unit or
@@ -302,16 +311,58 @@ def tinker_bias(nu):
             + 0.183*nu**1.5 + big_c*nu**2.4)
 
 
+def tinker_shape(nu, a):
+    """Tinker et al. 2010 multiplicity function f(nu) with alpha = 1.
+
+    [1 + (beta nu)^(-2 phi)] nu^(2 eta) exp(-gamma nu^2/2), with the
+    Delta = 200 parameters of Table 4 (beta0 = 0.589, gamma0 = 0.864,
+    phi0 = -0.729, eta0 = -0.243) evolving as beta0 (1+z)^0.20,
+    phi0 (1+z)^-0.08, eta0 (1+z)^0.27, gamma0 (1+z)^-0.01; the evolution
+    is frozen at z = 3, the edge of the fitted range (discussion after
+    Eq. 12).
+
+    Arguments:
+      nu = peak height(s), float or numpy array.
+      a  = scale factor.
+
+    Returns:
+      the alpha = 1 shape, same shape as nu.
+    """
+    onepz = 1.0/max(a, 0.25)   # 1 + z, capped at z = 3
+    beta = 0.589*onepz**0.20
+    phi = -0.729*onepz**-0.08
+    eta = -0.243*onepz**0.27
+    gamma = 0.864*onepz**-0.01
+    return ((1.0 + (beta*nu)**(-2.0*phi))*nu**(2.0*eta)
+            * np.exp(-gamma*nu*nu/2.0))
+
+
+@functools.lru_cache(maxsize=None)
+def tinker_alpha(a):
+    """alpha(z) of Tinker et al. 2010: the normalization for which matter
+    is unbiased with respect to itself, int_0^inf b(nu) f(nu) dnu = 1
+    (Eq. 7), at every z (frozen at z = 3 with the shape).
+
+    Trapezoid in s = ln nu (dnu = nu ds) over [-120, 4] with step 0.02:
+    the integrand decays at both ends, so the rule converges fast
+    (1e-12; the Table 4 value alpha = 0.368 at z = 0 comes out 0.36841).
+
+    Arguments:
+      a = scale factor.
+
+    Returns:
+      alpha at a.
+    """
+    ds = 0.02
+    s = np.arange(-120.0, 4.0 + 0.5*ds, ds)
+    nu = np.exp(s)
+    g = tinker_bias(nu)*tinker_shape(nu, a)*nu
+    return 1.0/(ds*(g.sum() - 0.5*(g[0] + g[-1])))
+
+
 def tinker_multiplicity(nu, a):
-    """Tinker et al. 2010 multiplicity function f(nu), Eqs. 8-12.
-
-    f(nu) = alpha [1 + (beta nu)^(-2 phi)] nu^(2 eta) exp(-gamma nu^2/2)
-
-    with the Delta = 200 parameters of Table 4 (alpha = 0.368,
-    beta0 = 0.589, gamma0 = 0.864, phi0 = -0.729, eta0 = -0.243)
-    evolving as beta0 (1+z)^0.20, phi0 (1+z)^-0.08, eta0 (1+z)^0.27,
-    gamma0 (1+z)^-0.01; the evolution is frozen at z = 3, the edge of
-    the fitted range (discussion after Eq. 12).
+    """Tinker et al. 2010 multiplicity function f(nu), Eqs. 7-12:
+    alpha(z) (Eq. 7) times the alpha = 1 shape.
 
     Arguments:
       nu = peak height(s), float or numpy array.
@@ -320,13 +371,7 @@ def tinker_multiplicity(nu, a):
     Returns:
       f(nu), same shape as nu.
     """
-    onepz = 1.0/max(a, 0.25)   # 1 + z, capped at z = 3
-    beta = 0.589*onepz**0.20
-    phi = -0.729*onepz**-0.08
-    eta = -0.243*onepz**0.27
-    gamma = 0.864*onepz**-0.01
-    return (0.368*(1.0 + (beta*nu)**(-2.0*phi))*nu**(2.0*eta)
-            * np.exp(-gamma*nu*nu/2.0))
+    return tinker_alpha(float(a))*tinker_shape(nu, a)
 
 
 # =============================================================================
@@ -747,8 +792,23 @@ class TestPhysicsInvariants:
             for nu in NU_GRID:
                 np.testing.assert_allclose(
                     ci.fnu(nu=float(nu), a=a), tinker_multiplicity(nu, a),
-                    rtol=TINKER_RTOL, atol=0.0,
+                    rtol=FNU_RTOL, atol=0.0,
                     err_msg=f"fnu(nu={nu:.3f}, a={a})")
+
+    def test_fnu_leaves_matter_unbiased(self, halo):
+        """Eq. 7 of Tinker et al. 2010: int_0^inf b(nu) f(nu) dnu = 1 at
+        every z, from the production hb1nu and fnu (trapezoid in ln nu,
+        the same rule as tinker_alpha above)."""
+        ci = halo["ci"]
+        ds = 0.02
+        nus = np.exp(np.arange(-120.0, 4.0 + 0.5*ds, ds))
+        for a in TINKER_NORM_A:
+            g = np.array([ci.hb1nu(nu=float(nu), a=a)*ci.fnu(nu=float(nu), a=a)
+                          for nu in nus])*nus
+            total = ds*(g.sum() - 0.5*(g[0] + g[-1]))
+            np.testing.assert_allclose(
+                total, 1.0, rtol=FNU_RTOL, atol=0.0,
+                err_msg=f"int b f dnu at a = {a}")
 
     def test_hb1nu_matches_tinker2010(self, halo):
         """b(nu) is the published Tinker et al. 2010 halo bias
