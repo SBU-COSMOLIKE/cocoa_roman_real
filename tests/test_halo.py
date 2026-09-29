@@ -149,7 +149,14 @@ CONC_M = np.logspace(8.0, 16.0, 9)             # M_sun/h
 CONC_GROWFAC = (1.0, 0.7, 0.4)                 # D(a)
 DLOGNU_M = np.logspace(7.0, 16.0, 40)          # M_sun/h
 BIAS_NORM_A = np.linspace(0.05, 0.9995, 40)
-BIAS_NORM_DIRECT_A = np.linspace(0.1, 0.99, 10)
+# The bias_norm table grid (halo.c bias_norm): Ntable.N_a nodes
+# uniform in a over [limits.a_min, 0.9999999]; N_a is 256 times the
+# accuracy boost (init_accuracy_boost, rounded up). Nodes tested
+# exactly, as fractions of the node range.
+BIAS_NORM_A_MIN = 1.0/41.0     # structs.c limits.a_min (z = 40)
+BIAS_NORM_A_END = 0.9999999    # halo.c bias_norm last node
+BIAS_NORM_N_A_BASE = 256       # structs.c Ntable.N_a
+BIAS_NORM_NODE_FRAC = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0)
 U_NFW_C = (3.0, 8.0)
 U_NFW_M = (1.0e11, 1.0e14)                     # M_sun/h
 U_NFW_K = np.logspace(0.0, 5.0, 6)             # 3.3e-4 to 33 h/Mpc
@@ -227,7 +234,8 @@ SIGMA2_REF_RTOL = 2.0e-5
 SIGMA2_REF_NODES = (0, 128, 256, 384, 512, 640, 768, 896, 1023)
 SIGMA2_REF_NX = 2_000_001
 
-# bias_norm_nointerp vs the numpy integral. numpy's leggauss rules are
+# bias_norm at its own table nodes vs the numpy integral. numpy's
+# leggauss rules are
 # exact to rounding and converged here (1000 vs 2000 nodes agree to
 # 1e-11). halo.c integrates with GSL's tabulated 128-node rule at
 # hdi = 0, converged to 3e-15, but its f(nu) carries alpha(z) from the
@@ -235,7 +243,8 @@ SIGMA2_REF_NX = 2_000_001
 # a wrong fit or bound would be >= 1e-3.
 BIAS_NORM_GL_NODES = 2000
 BIAS_NORM_QUAD_RTOL = FNU_RTOL
-# bias_norm table vs direct integral: linear interpolation over
+# bias_norm table vs the numpy integral between nodes: linear
+# interpolation over
 # da ~ 4e-3 of a smooth function, error ~ da^2/8 |f''/f| ~ 1e-5.
 BIAS_NORM_INTERP_RTOL = 1.0e-4
 # Off-node test points, below the pinned last table cell.
@@ -360,6 +369,38 @@ def tinker_alpha(a):
     return 1.0/(ds*(g.sum() - 0.5*(g[0] + g[-1])))
 
 
+def bias_norm_integral(ci, a):
+    """bias_norm(a) = int b(nu) f(nu) dnu between nu(M_min) and nu(M_max),
+    recomputed in numpy from the published fits, sigma2 and D(a)
+    (BIAS_NORM_GL_NODES Gauss-Legendre nodes in nu). sigma falls with M,
+    so M_min gives the small nu and M_max the large one.
+
+    Arguments:
+      ci = the cosmolike interface module (sigma2, growfac).
+      a  = scale factor.
+
+    Returns:
+      the integral at a.
+    """
+    x, w = np.polynomial.legendre.leggauss(BIAS_NORM_GL_NODES)
+    d = ci.growfac(a=a)
+    nu_lo = DELTA_C/(np.sqrt(ci.sigma2(M=HALO_M_MIN))*d)
+    nu_hi = DELTA_C/(np.sqrt(ci.sigma2(M=HALO_M_MAX))*d)
+    # map the Legendre nodes from [-1, 1] onto [nu_lo, nu_hi]
+    half = 0.5*(nu_hi - nu_lo)
+    nu = half*x + 0.5*(nu_hi + nu_lo)
+    return half*np.sum(w*tinker_bias(nu)*tinker_multiplicity(nu, a))
+
+
+def bias_norm_nodes(halo):
+    """The scale factors of the bias_norm table nodes that
+    BIAS_NORM_NODE_FRAC selects (same arithmetic as halo.c bias_norm)."""
+    n_a = int(np.ceil(BIAS_NORM_N_A_BASE*float(halo["like"]["accuracyboost"])))
+    da = (BIAS_NORM_A_END - BIAS_NORM_A_MIN)/(n_a - 1.0)
+    return [BIAS_NORM_A_MIN + int(round(f*(n_a - 1)))*da
+            for f in BIAS_NORM_NODE_FRAC]
+
+
 def tinker_multiplicity(nu, a):
     """Tinker et al. 2010 multiplicity function f(nu), Eqs. 7-12:
     alpha(z) (Eq. 7) times the alpha = 1 shape.
@@ -450,7 +491,6 @@ def probe_inputs(state):
         "conc": {"m": floats(CONC_M), "growfac_a": floats(CONC_GROWFAC)},
         "dlognudlogm": {"M": floats(DLOGNU_M)},
         "bias_norm": {"a": floats(BIAS_NORM_A)},
-        "bias_norm_nointerp": {"a": floats(BIAS_NORM_DIRECT_A)},
         "u_nfw_c": {"c": floats(U_NFW_C), "m": floats(U_NFW_M),
                     "k": floats(U_NFW_K), "a": [U_NFW_A]},
         "u_KS": {"c": floats(U_KS_C), "k": floats(U_KS_K),
@@ -508,8 +548,6 @@ EVALUATORS = {
                            for d in x["growfac_a"] for m in x["m"]],
     "dlognudlogm": lambda ci, x: [ci.dlognudlogm(M=m) for m in x["M"]],
     "bias_norm": lambda ci, x: [ci.bias_norm(a=a) for a in x["a"]],
-    "bias_norm_nointerp": lambda ci, x: [ci.bias_norm_nointerp(a=a)
-                                         for a in x["a"]],
     "u_nfw_c": lambda ci, x: [ci.u_nfw_c(c=c, k=k, m=m, a=a)
                               for a in x["a"] for c in x["c"]
                               for m in x["m"] for k in x["k"]],
@@ -537,9 +575,8 @@ FAST_PROBES = tuple(name for name in PROBE_NAMES
 
 # The fast probes a change of omegam must move (hb1nu and fnu are
 # closed forms in nu: no cosmology enters).
-COSMOLOGY_PROBES = ("conc", "dlognudlogm", "bias_norm",
-                    "bias_norm_nointerp", "u_nfw_c", "ngal_nointerp",
-                    "bgal_nointerp")
+COSMOLOGY_PROBES = ("conc", "dlognudlogm", "bias_norm", "u_nfw_c",
+                    "ngal_nointerp", "bgal_nointerp")
 
 
 def evaluate_probe(ci, name, x):
@@ -884,58 +921,45 @@ class TestPhysicsInvariants:
         like every other node - no sentinel value - and queries past it
         return that endpoint by constant extrapolation."""
         ci = halo["ci"]
-        a_end = 0.9999999
-        end = ci.bias_norm(a=a_end)
-        # at the node itself the lookup returns the stored integral, so
-        # table and direct evaluation agree to rounding
+        end = ci.bias_norm(a=BIAS_NORM_A_END)
         np.testing.assert_allclose(
-            end, ci.bias_norm_nointerp(a=a_end), rtol=FROZEN_RTOL,
-            atol=0.0, err_msg="bias_norm table end vs direct integral")
+            end, bias_norm_integral(ci, BIAS_NORM_A_END),
+            rtol=BIAS_NORM_QUAD_RTOL, atol=0.0,
+            err_msg="bias_norm table end vs the numpy integral")
         for a in BIAS_NORM_PINNED_A:
             assert ci.bias_norm(a=a) == end, f"bias_norm({a!r})"
 
     def test_bias_norm_is_tinker_integral(self, halo):
-        """bias_norm(a) = int b(nu) f(nu) dnu between nu(M_min) and
-        nu(M_max): the defining integral, recomputed in numpy from the
-        published fits, sigma2 and D(a). sigma falls with M, so M_min
-        gives the SMALL nu and M_max the large one."""
+        """At its own nodes the bias_norm table returns the stored
+        integral, which must equal the defining integral recomputed in
+        numpy (bias_norm_integral): this checks the quadrature."""
         ci = halo["ci"]
-        x, w = np.polynomial.legendre.leggauss(BIAS_NORM_GL_NODES)
-        for a in BIAS_NORM_DIRECT_A:
-            a = float(a)
-            d = ci.growfac(a=a)
-            nu_lo = DELTA_C/(np.sqrt(ci.sigma2(M=HALO_M_MIN))*d)
-            nu_hi = DELTA_C/(np.sqrt(ci.sigma2(M=HALO_M_MAX))*d)
-            # map the Legendre nodes from [-1, 1] onto [nu_lo, nu_hi]
-            half = 0.5*(nu_hi - nu_lo)
-            nu = half*x + 0.5*(nu_hi + nu_lo)
-            expected = half*np.sum(w*tinker_bias(nu)
-                                   * tinker_multiplicity(nu, a))
+        for a in bias_norm_nodes(halo):
             np.testing.assert_allclose(
-                ci.bias_norm_nointerp(a=a), expected,
+                ci.bias_norm(a=a), bias_norm_integral(ci, a),
                 rtol=BIAS_NORM_QUAD_RTOL, atol=0.0,
-                err_msg=f"bias_norm_nointerp(a={a})")
+                err_msg=f"bias_norm at the node a={a}")
 
     def test_bias_norm_near_one_today(self, halo):
         """Near a = 1 the tabulated mass range carries most of the
         Tinker normalization int b f dnu = 1 (the missing part is the
         unresolved low-mass tail)."""
-        value = halo["ci"].bias_norm_nointerp(a=BIAS_NORM_TODAY_A)
+        value = halo["ci"].bias_norm(a=BIAS_NORM_TODAY_A)
         low, high = BIAS_NORM_TODAY_RANGE
         assert low < value < high, (
-            f"bias_norm_nointerp({BIAS_NORM_TODAY_A}) = {value}")
+            f"bias_norm({BIAS_NORM_TODAY_A}) = {value}")
 
     def test_bias_norm_table_matches_direct_integral(self, halo):
-        """The bias_norm table reproduces the direct integral between its
-        nodes to within linear-interpolation error: a smooth function of
-        a needs no more."""
+        """Between its nodes the bias_norm table reproduces the numpy
+        integral to within linear-interpolation error: this checks the
+        interpolation."""
         ci = halo["ci"]
         for a in BIAS_NORM_INTERP_A:
             a = float(a)
             np.testing.assert_allclose(
-                ci.bias_norm(a=a), ci.bias_norm_nointerp(a=a),
+                ci.bias_norm(a=a), bias_norm_integral(ci, a),
                 rtol=BIAS_NORM_INTERP_RTOL, atol=0.0,
-                err_msg=f"bias_norm table vs direct at a={a}")
+                err_msg=f"bias_norm table vs the numpy integral at a={a}")
 
     # ---- HOD integrals -----------------------------------------------------
     def test_ngal_physical(self, halo):
