@@ -270,9 +270,13 @@ BIAS_NORM_TODAY_RANGE = (0.6, 1.0)
 NGAL_BRACKET_H3 = (1.0e-7, 1.0e-2)
 # Linear bias of red galaxies in >~1e13 M_sun/h halos at z < 1.
 BGAL_RANGE = (1.0, 5.0)
-# The Coupon HOD puts roughly 5-20% of its galaxies in satellites; the
-# floor flags only a vanishing satellite term.
-FSAT_FLOOR = 1.0e-3
+# ngal and bgal tables against hod_reference (composite Gauss-Legendre
+# in ln M, HOD_REF_PANEL wide panels of HOD_REF_NODES nodes). Measured
+# 2026-09-29: the tables' linear read in a leaves up to 1.4e-5 against
+# the direct integral, the 128-node rule 5e-7.
+HOD_TABLE_RTOL = 5.0e-5
+HOD_REF_PANEL = 0.25
+HOD_REF_NODES = 16
 
 # Large-scale limits: at the linear P(k) peak (k = 0.01-0.02 h/Mpc) the
 # 1-halo term (~<M>/rho_m, a few 1e2 (Mpc/h)^3) is a few percent of the
@@ -462,6 +466,50 @@ def bias_norm_integral(ci, a):
     return half*np.sum(w*tinker_bias(nu)*tinker_multiplicity(nu, a))
 
 
+def hod_reference(ci, ni, a, omegam):
+    """ngal and bgal of lens bin ni at a, integrated in numpy: composite
+    Gauss-Legendre in ln M (panels HOD_REF_PANEL wide, HOD_REF_NODES
+    nodes each) over [ln 10^(lg M_min - 2), ln M_max], with the
+    compiled sigma2, dlognudlogm, fnu and hb1nu and the HOD of
+    HOD_COUPON_2012 written out:
+
+      ngal = int dlnM (rho_m/M) nu f(nu) dlnnu/dlnM [f_c N_c + N_s]
+      bgal = int dlnM (...) b(nu) / ngal
+
+    N_c = [1 + erf((lg M - lg M_min)/sigma_lgM)]/2, N_s = N_c
+    ((M - M_0)/M_1)^alpha above M_0 (1e-15 at or below, as halo.c).
+
+    Arguments:
+      ci = the cosmolike interface module; ni = lens bin; a = scale
+      factor; omegam = the fixture point's Omega_m.
+
+    Returns:
+      (ngal in (c/H0)^-3, bgal).
+    """
+    from scipy.special import erf
+    lgmmin, sig, lgm1, lgm0, alpha, fc = hod_of_bin(ni)
+    lo, hi = np.log(10.0)*(lgmmin - 2.0), np.log(HALO_M_MAX)
+    edges = np.linspace(lo, hi, int(np.ceil((hi - lo)/HOD_REF_PANEL)) + 1)
+    t, w = np.polynomial.legendre.leggauss(HOD_REF_NODES)
+    half = 0.5*np.diff(edges)
+    lnm = (half[:, None]*t[None, :] + (edges[:-1] + half)[:, None]).ravel()
+    wq = (half[:, None]*w[None, :]).ravel()
+    m = np.exp(lnm)
+    rhom = RHO_CRIT*omegam
+    d = ci.growfac(a=a)
+    nu = np.array([DELTA_C/(np.sqrt(ci.sigma2(M=float(x)))*d) for x in m])
+    fn = np.array([ci.fnu(nu=float(v), a=a) for v in nu])
+    bn = np.array([ci.hb1nu(nu=float(v), a=a) for v in nu])
+    dl = np.array([ci.dlognudlogm(M=float(x)) for x in m])
+    nc = 0.5*(1.0 + erf((np.log10(m) - lgmmin)/sig))
+    m0 = 10.0**lgm0
+    ns = np.where(m > m0, nc*np.clip((m - m0)/10.0**lgm1, 0.0, None)**alpha,
+                  1.0e-15)
+    ns = np.where(ns > 0, ns, 1.0e-15)
+    tq = wq*(rhom/m)*nu*fn*dl*(fc*nc + ns)
+    return np.sum(tq), np.sum(tq*bn)/np.sum(tq)
+
+
 def bias_norm_nodes(halo):
     """The scale factors of the bias_norm table nodes that
     BIAS_NORM_NODE_FRAC selects (same arithmetic as halo.c bias_norm)."""
@@ -565,12 +613,8 @@ def probe_inputs(state):
                     "k": floats(U_NFW_K), "a": [U_NFW_A]},
         "u_KS": {"c": floats(U_KS_C), "k": floats(U_KS_K),
                  "rv": [U_KS_RV]},
-        "ngal_nointerp": hod,
-        "bgal_nointerp": hod,
         "ngal": hod,
         "bgal": hod,
-        "mmean_nointerp": hod,
-        "fsat_nointerp": hod,
         "p_mm": spectra,
         "p_my": spectra,
         "p_yy": spectra,
@@ -624,12 +668,8 @@ EVALUATORS = {
     "u_KS": lambda ci, x: [ci.u_KS(c=c, k=k, rv=rv)
                            for rv in x["rv"] for c in x["c"]
                            for k in x["k"]],
-    "ngal_nointerp": lambda ci, x: _per_bin(ci.ngal_nointerp, x),
-    "bgal_nointerp": lambda ci, x: _per_bin(ci.bgal_nointerp, x),
     "ngal": lambda ci, x: _per_bin(ci.ngal, x),
     "bgal": lambda ci, x: _per_bin(ci.bgal, x),
-    "mmean_nointerp": lambda ci, x: _per_bin(ci.mmean_nointerp, x),
-    "fsat_nointerp": lambda ci, x: _per_bin(ci.fsat_nointerp, x),
     "p_mm": lambda ci, x: _spectrum(ci.p_mm, x),
     "p_my": lambda ci, x: _spectrum(ci.p_my, x),
     "p_yy": lambda ci, x: _spectrum(ci.p_yy, x),
@@ -646,7 +686,7 @@ FAST_PROBES = tuple(name for name in PROBE_NAMES
 # The fast probes a change of omegam must move (hb1nu and fnu are
 # closed forms in nu: no cosmology enters).
 COSMOLOGY_PROBES = ("conc", "dlognudlogm", "bias_norm", "u_nfw_c",
-                    "ngal_nointerp", "bgal_nointerp")
+                    "ngal", "bgal")
 
 
 def evaluate_probe(ci, name, x):
@@ -1067,12 +1107,12 @@ class TestPhysicsInvariants:
         halos the HOD populates (a unit or normalization slip moves it by
         many decades)."""
         ci = halo["ci"]
-        x = halo["inputs"]["ngal_nointerp"]
+        x = halo["inputs"]["ngal"]
         low, high = NGAL_BRACKET_H3
         for ni, a_list in zip(x["ni"], x["a"]):
             for a in a_list:
                 # code units (c/H0)^-3 -> (h/Mpc)^3
-                n = ci.ngal_nointerp(ni=ni, a=a)/COVERH0**3
+                n = ci.ngal(ni=ni, a=a)/COVERH0**3
                 assert low < n < high, f"ngal(ni={ni}, a={a:.3f}) = {n}"
 
     def test_bgal_is_a_mean_bias(self, halo):
@@ -1080,34 +1120,26 @@ class TestPhysicsInvariants:
         order-unity number, above 1 for red galaxies in group-mass
         halos."""
         ci = halo["ci"]
-        x = halo["inputs"]["bgal_nointerp"]
+        x = halo["inputs"]["bgal"]
         low, high = BGAL_RANGE
         for ni, a_list in zip(x["ni"], x["a"]):
             for a in a_list:
-                b = ci.bgal_nointerp(ni=ni, a=a)
+                b = ci.bgal(ni=ni, a=a)
                 assert low < b < high, f"bgal(ni={ni}, a={a:.3f}) = {b}"
 
-    def test_fsat_is_a_fraction(self, halo):
-        """The satellite fraction lies in (0, 1), and the Coupon HOD
-        does have satellites."""
+    def test_hod_tables_match_python_integral(self, halo):
+        """The ngal and bgal tables against hod_reference, the same
+        integrals done in numpy on a composite Gauss-Legendre rule."""
         ci = halo["ci"]
-        x = halo["inputs"]["fsat_nointerp"]
+        x = halo["inputs"]["ngal"]
+        omegam = float(halo["point"]["omegam"])
         for ni, a_list in zip(x["ni"], x["a"]):
             for a in a_list:
-                f = ci.fsat_nointerp(ni=ni, a=a)
-                assert FSAT_FLOOR < f < 1.0, f"fsat(ni={ni}, a={a}) = {f}"
-
-    def test_mmean_within_populated_range(self, halo):
-        """The mean halo mass of the galaxies lies inside the mass range
-        the HOD integrals cover."""
-        ci = halo["ci"]
-        x = halo["inputs"]["mmean_nointerp"]
-        for ni, a_list in zip(x["ni"], x["a"]):
-            low = 10.0**(hod_of_bin(ni)[0] - 2.0)
-            for a in a_list:
-                mean_m = ci.mmean_nointerp(ni=ni, a=a)
-                assert low < mean_m < HALO_M_MAX, (
-                    f"mmean(ni={ni}, a={a}) = {mean_m:.3e}")
+                ref_n, ref_b = hod_reference(ci, ni, a, omegam)
+                np.testing.assert_allclose(
+                    [ci.ngal(ni=ni, a=a), ci.bgal(ni=ni, a=a)],
+                    [ref_n, ref_b], rtol=HOD_TABLE_RTOL, atol=0.0,
+                    err_msg=f"ngal, bgal vs numpy (ni={ni}, a={a:.4f})")
 
     def test_set_HOD_loads_coupon_values(self, halo):
         """set_HOD(ni) loads the Coupon et al. 2012 HOD that
@@ -1119,10 +1151,10 @@ class TestPhysicsInvariants:
         for ni in range(min(int(halo["nbin"]), len(HOD_COUPON_2012))):
             try:
                 ci.set_HOD(ni=ni)
-                via_set_hod = ci.ngal_nointerp(ni=ni, a=a)
+                via_set_hod = ci.ngal(ni=ni, a=a)
             finally:
                 apply_halo_parameters(halo)
-            assert via_set_hod == ci.ngal_nointerp(ni=ni, a=a), (
+            assert via_set_hod == ci.ngal(ni=ni, a=a), (
                 f"lens bin {ni}")
 
     # ---- spectra: large-scale (2-halo) limits ------------------------------
@@ -1234,9 +1266,10 @@ class TestCacheConsistency:
 
     def test_hod_round_trip(self, halo):
         """lg M_min of one bin -> + HOD_LGMMIN_STEP -> back, through the
-        HOD setter (direct integrals: they read the HOD at every call)."""
+        HOD setter: the ngal/bgal tables rebuild on
+        nuisance.random_galaxy_bias."""
         ci = halo["ci"]
-        names = ("ngal_nointerp", "bgal_nointerp")
+        names = ("ngal", "bgal")
         before = evaluate_fast(halo)
         ni = HOD_TEST_BINS[0]
         moved_hod = np.array(hod_of_bin(ni), dtype=float)
@@ -1254,29 +1287,6 @@ class TestCacheConsistency:
         for name in FAST_PROBES:
             assert np.array_equal(after[name], before[name],
                                   equal_nan=True), (
-                f"{name} differs after restoring the HOD")
-
-    def test_hod_tables_round_trip(self, halo):
-        """The same HOD round trip through the ngal/bgal tables, which
-        rebuild on nuisance.random_galaxy_bias."""
-        ci = halo["ci"]
-        x = halo["inputs"]["ngal"]
-        names = ("ngal", "bgal")
-        before = {n: np.array(evaluate_probe(ci, n, x)) for n in names}
-        ni = HOD_TEST_BINS[0]
-        moved_hod = np.array(hod_of_bin(ni), dtype=float)
-        moved_hod[0] += HOD_LGMMIN_STEP
-        try:
-            ci.set_nuisance_hod(ni=ni, hod=moved_hod,
-                                gc=GALAXY_CONCENTRATION_FACTOR)
-            moved = {n: np.array(evaluate_probe(ci, n, x)) for n in names}
-        finally:
-            apply_halo_parameters(halo)
-        after = {n: np.array(evaluate_probe(ci, n, x)) for n in names}
-        for name in names:
-            assert (_max_relative_change(moved[name], before[name])
-                    > CACHE_CHANGE_FLOOR), f"{name}: stale table"
-            assert np.array_equal(after[name], before[name]), (
                 f"{name} differs after restoring the HOD")
 
     def test_gas_round_trip(self, halo):
