@@ -171,6 +171,13 @@ U_KS_K = np.logspace(0.0, 5.0, 6)
 # at z = 3 (a table of u below, the contour factorization above).
 U_KS_REF_C = (0.3, 1.0, 3.0, 5.0, 8.0, 12.0, 25.0)
 U_KS_REF_Z = (1.0e-3, 0.5, 2.9, 3.1, 10.0, 50.0, 200.0, 800.0)
+# u_nfw_c against the closed form evaluated with scipy's Si and Ci
+# (nfw_u_reference): concentrations across the halo range and x = k r_s
+# from the k -> 0 plateau through the ringing, on both sides of the
+# switch at (1 + c) x = 50 from the f, G table to their asymptotic series.
+U_NFW_REF_C = (0.1, 0.5, 2.0, 5.0, 12.0, 40.0)
+U_NFW_REF_X = (1.0e-6, 1.0e-2, 0.3, 1.0, 3.0, 20.0, 60.0, 1.0e3)
+U_NFW_REF_M = 1.0e13           # M_sun/h (u depends on m only through r_s)
 HOD_TEST_BINS = (0, 1)          # lens bins probed (mean z 0.32 and 0.55)
 HOD_A_FACTORS = np.linspace(0.98, 1.02, 8)     # times 1/(1 + <z>_bin)
 PK_K = np.logspace(-1.0, 6.0, 20)              # 3.3e-5 to 330 h/Mpc
@@ -296,6 +303,12 @@ U_KS_BOUND_ATOL = 1.0e-8
 U_KS_REF_RTOL = 1.0e-4
 U_KS_REF_ATOL = 2.0e-5  # times u(c, z -> 0)
 U_KS_K0 = 1.0e-3        # (c/H0)^-1; k rv/c ~ 1e-7, inside the table
+# Measured 2026-09-29 against mpmath at 3000 random (c, k, m), c in
+# [0.05, 100]: error <= 6.1e-7 relative, largest at c < 0.1 where
+# m(c) ~ c^2/2 amplifies the table's error; below |u| = 1e-3 the error
+# stays under 2e-11 absolute.
+U_NFW_REF_RTOL = 2.0e-6
+U_NFW_REF_ATOL = 1.0e-10
 
 # Cache checks: an omegam step of 0.02 moves sigma(M) at the percent
 # level; a relative change below the floor means a stale table.
@@ -331,6 +344,30 @@ def tinker_bias(nu):
     big_c = 0.019 + 0.107*y + 0.19*np.exp(-(4.0/y)**4)
     return (1.0 - big_a*nu**small_a/(nu**small_a + DELTA_C**small_a)
             + 0.183*nu**1.5 + big_c*nu**2.4)
+
+
+def nfw_u_reference(c, x):
+    """The truncated-NFW transform (astro-ph/0206508 Eq. 81) with
+    scipy's sine and cosine integrals, independent of the f, G table
+    halo.c reads:
+
+      u = {sin x [Si(xu) - Si(x)] - sin(c x)/xu
+           + cos x [Ci(xu) - Ci(x)]} / m(c),
+      xu = (1 + c) x,  m(c) = ln(1 + c) - c/(1 + c).
+
+    Arguments:
+      c = concentration, x = k r_s.
+
+    Returns:
+      u(c, x).
+    """
+    from scipy.special import sici
+    xu = (1.0 + c)*x
+    si_u, ci_u = sici(xu)
+    si_x, ci_x = sici(x)
+    num = (np.sin(x)*(si_u - si_x) - np.sin(c*x)/xu
+           + np.cos(x)*(ci_u - ci_x))
+    return num/(np.log1p(c) - c/(1.0 + c))
 
 
 def ks_u_reference(c, z, gamma):
@@ -847,6 +884,21 @@ class TestPhysicsInvariants:
                     assert abs(value) <= 1.0 + U_NFW_BOUND_ATOL, (
                         f"|u_nfw_c(c={c}, k={k:.2e}, m={m:.1e})| = "
                         f"{abs(value)!r} > 1")
+
+    def test_u_nfw_c_matches_sici(self, halo):
+        """u_nfw_c against nfw_u_reference, the closed form with scipy's
+        Si and Ci: checks the f, G table, the asymptotic series and the
+        switch between them."""
+        ci = halo["ci"]
+        omegam = float(halo["point"]["omegam"])
+        r_delta = (0.75*U_NFW_REF_M/(np.pi*TINKER_DELTA*RHO_CRIT*omegam)
+                   )**(1.0/3.0)
+        for c in U_NFW_REF_C:
+            for x in U_NFW_REF_X:
+                np.testing.assert_allclose(
+                    ci.u_nfw_c(c=c, k=x*c/r_delta, m=U_NFW_REF_M, a=U_NFW_A),
+                    nfw_u_reference(c, x), rtol=U_NFW_REF_RTOL,
+                    atol=U_NFW_REF_ATOL, err_msg=f"u_nfw_c(c={c}, x={x})")
 
     def test_u_KS_bounded(self, halo):
         """0 < u_KS(k) <= u_KS(k -> 0) <= 1: the pressure profile is a
