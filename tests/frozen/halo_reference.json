@@ -15,7 +15,7 @@
       6.5,
       0.752
     ],
-    "generated_utc": "2026-09-29T05:48:39Z",
+    "generated_utc": "2026-09-29T06:20:38Z",
     "head_defects": {
       "p_my": "cosmology.Omega_b is not wired through the cobaya glue yet: set_cosmological_parameters carries omega_baryon and the set_cosmology binding defaults omegab to 0, so the Compton-y spectra abort until the glue passes a positive value",
       "p_yy": "cosmology.Omega_b is not wired through the cobaya glue yet: set_cosmological_parameters carries omega_baryon and the set_cosmology binding defaults omegab to 0, so the Compton-y spectra abort until the glue passes a positive value"
@@ -47,10 +47,18 @@
       ],
       [
         12.8,
-        0.35,
+        0.33,
         13.94,
         12.15,
         1.52,
+        1.0
+      ],
+      [
+        12.62,
+        0.3,
+        13.79,
+        8.67,
+        1.5,
         1.0
       ]
     ],

@@ -110,17 +110,19 @@ SIGMA2_N_M = 1024       # structs.c Ntable.N_M: the sigma2 ln M table nodes
 # ---- the HOD and gas parameters the tests pin -------------------------------
 
 # HOD of each lens bin, {lg M_min, sigma_lgM, lg M_1, lg M_0, alpha,
-# f_c}: the Coupon et al. (2012, Table B.2) red-galaxy fits that halo.c
-# set_HOD hard-codes, copied here so no test depends on set_HOD or on
-# struct defaults. Lens bins 0-3 get set_HOD's bins 0-3; every later
-# bin repeats bin 3 (set_HOD's own rule for bin 4). EVERY lens bin
-# must be set: halo.c aborts on a bin whose lg M_min is outside
+# f_c}: the Coupon et al. (2012, 1107.0616, Table B.1) fits for all
+# galaxies with M_g - 5 log h < -21.8 that halo.c set_HOD hard-codes,
+# one row per redshift slice (0.2-0.4, ..., 1.0-1.2), copied here so
+# no test depends on set_HOD or on struct defaults. Lens bins 0-4 get
+# rows 0-4; every later bin repeats row 4. Every lens bin must be
+# set: halo.c aborts on a bin whose lg M_min is outside
 # [10, 16], and its ngal/bgal tables cover all bins at once.
 HOD_COUPON_2012 = (
     (13.17, 0.39, 14.53, 11.09, 1.27, 1.00),
     (13.18, 0.30, 14.47, 10.93, 1.36, 1.00),
     (12.96, 0.38, 14.10, 12.47, 1.28, 1.00),
-    (12.80, 0.35, 13.94, 12.15, 1.52, 1.00),
+    (12.80, 0.33, 13.94, 12.15, 1.52, 1.00),
+    (12.62, 0.30, 13.79, 8.67, 1.50, 1.00),
 )
 
 # Galaxy concentration factor f_g of every bin (galaxy profile
@@ -1012,16 +1014,18 @@ class TestPhysicsInvariants:
     def test_set_HOD_loads_coupon_values(self, halo):
         """set_HOD(ni) loads the Coupon et al. 2012 HOD that
         HOD_COUPON_2012 copies: ngal after set_HOD equals ngal after
-        setting the copied values explicitly, bit for bit."""
+        setting the copied values explicitly, bit for bit, in every
+        lens bin set_HOD covers (0-4)."""
         ci = halo["ci"]
-        ni = 1
-        a = halo["inputs"]["ngal_nointerp"]["a"][ni][0]
-        try:
-            ci.set_HOD(ni=ni)
-            via_set_hod = ci.ngal_nointerp(ni=ni, a=a)
-        finally:
-            apply_halo_parameters(halo)
-        assert via_set_hod == ci.ngal_nointerp(ni=ni, a=a)
+        a = 0.6
+        for ni in range(min(int(halo["nbin"]), len(HOD_COUPON_2012))):
+            try:
+                ci.set_HOD(ni=ni)
+                via_set_hod = ci.ngal_nointerp(ni=ni, a=a)
+            finally:
+                apply_halo_parameters(halo)
+            assert via_set_hod == ci.ngal_nointerp(ni=ni, a=a), (
+                f"lens bin {ni}")
 
     # ---- spectra: large-scale (2-halo) limits ------------------------------
     @slow
