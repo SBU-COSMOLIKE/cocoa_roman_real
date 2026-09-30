@@ -22,12 +22,21 @@ the tests consume each piece):
   - frozen/reference_chi2.json: the four reference chi2 values
     (example1/2, each with NLA and TATT), computed FROM the frozen
     modules just written, exactly the way the tests will compute them.
+  - frozen/halo_reference.json: the halo.c ground truth of
+    test_halo.py - per-point values of every halo-model probe on the
+    grids test_halo.py defines, at the configuration and HOD/gas
+    parameters it pins (test_halo.build_halo_state).
   - manifest_sha256.json: the SHA-256 pin of every frozen file.
 
 Usage (from the Cocoa/ folder, cocoa environment active,
 start_cocoa.sh sourced):
 
     python ./projects/roman_real/tests/generate_frozen_reference.py --overwrite
+
+To rewrite only frozen/halo_reference.json in an existing frozen state
+(and re-pin the manifest):
+
+    python ./projects/roman_real/tests/generate_frozen_reference.py --halo
 """
 
 import json
@@ -360,6 +369,106 @@ def generate_baryon_datavector(label):
           f"lines); descriptor: {dataset_name}", flush=True)
 
 
+# The --mask reruns of the comparison sweeps read one frozen TATT
+# dataset descriptor per scale-cut mask: identical to the base TATT
+# descriptor except for its mask_file line (the entries of
+# cocoa_test_utils.FASTPT_MASK_DATASETS). variant -> (base, mask).
+TATT_MASK_VARIANTS = {
+    "tatt_roman_real_ones.dataset": ("tatt_roman_real.dataset", "ones.mask"),
+}
+
+def generate_tatt_mask_datasets():
+    """Write the per-mask TATT dataset descriptors.
+
+    Each variant is the base TATT descriptor with only its mask_file
+    line retyped: the comparison sweeps read them through the --mask
+    option to evaluate the same generated vector under another
+    scale-cut mask. Pure text, no model evaluations, so the variants
+    regenerate in the --overwrite run and in the incremental
+    --tatt-masks mode alike.
+
+    Returns:
+      nothing; frozen/data/ gains one descriptor per variant.
+
+    Raises:
+      RuntimeError when a base descriptor does not contain exactly
+      one mask_file line.
+    """
+    data_dir = os.path.join(u.FROZEN_DIR, "data")
+    for variant, (base, mask) in TATT_MASK_VARIANTS.items():
+        with open(os.path.join(data_dir, base)) as f:
+            descriptor = f.read()
+        replaced = 0
+        out_lines = []
+        # keepends=True keeps the newline on every line, so joining
+        # the pieces rebuilds the file byte for byte and only the
+        # retyped line differs
+        for line in descriptor.splitlines(keepends=True):
+            if line.strip().startswith("mask_file"):
+                out_lines.append(f"mask_file = {mask}\n")
+                replaced += 1
+            else:
+                out_lines.append(line)
+        if replaced != 1:
+            raise RuntimeError(
+                f"{base}: expected exactly one mask_file line, "
+                f"found {replaced}")
+        with open(os.path.join(data_dir, variant), "w") as f:
+            f.write("".join(out_lines))
+        print(f"TATT mask variant: {variant} (mask_file = {mask})",
+              flush=True)
+
+
+def generate_halo_reference(stamp):
+    """Write frozen/halo_reference.json, the ground truth of test_halo.py.
+
+    The probe grids, the configuration and the pinned HOD and gas
+    parameters all live in test_halo.py, which this function imports,
+    so the generator and the tests can never describe different
+    states. It builds that state (a model at the frozen fiducial
+    point), evaluates every probe the current halo.c can evaluate, and
+    stores inputs and values together; the probes listed in
+    test_halo.HEAD_DEFECTS abort the process on the current halo.c and
+    are left out (the _meta block records the list). Runs inside a
+    --halo-one worker subprocess: it builds a model (see main's note).
+
+    Arguments:
+      stamp = the UTC time string written into the _meta block.
+
+    Returns:
+      nothing; frozen/halo_reference.json is written.
+
+    Raises:
+      whatever test_halo.build_halo_state raises when the model fails
+      to build or evaluate.
+    """
+    # test_halo sits next to this script, on the path inserted at the
+    # top of the file
+    import test_halo as th
+
+    t0 = time.time()
+    print("freezing the halo.c probes ...", flush=True)
+    state = th.build_halo_state()
+    probes = th.freeze_probes(state)
+    # dict(a, **b) builds one dictionary from a's entries plus b's:
+    # the generation record plus the settings the values depend on
+    reference = {
+        "_meta": dict({"generated_utc": stamp,
+                       "omp_num_threads": os.environ["OMP_NUM_THREADS"]},
+                      **th.frozen_meta()),
+        "probes": probes,
+    }
+    with open(th.HALO_REFERENCE_FILE, "w") as f:
+        # written like the chi2 reference file; json stores the floats
+        # in their shortest exact form, so every value round-trips
+        # bit for bit
+        json.dump(reference, f, indent=2, sort_keys=True)
+        f.write("\n")
+    print(f"halo reference: {len(probes)} probes frozen "
+          f"({time.time() - t0:.1f}s); left out (current halo.c "
+          f"defects): {sorted(th.HEAD_DEFECTS)}", flush=True)
+
+
 def main():
     # worker modes first: --freeze-one X and --tatt-one D each run a
     # single model-building step and exit. The parent below spawns one
@@ -384,20 +493,43 @@ def main():
         dataset_name = sys.argv[sys.argv.index("--tatt-one") + 1]
         generate_tatt_datavector(dataset_name)
         return 0
+    if "--halo-one" in sys.argv:
+        u.require_cocoa_environment()
+        stamp = sys.argv[sys.argv.index("--stamp") + 1]
+        generate_halo_reference(stamp)
+        return 0
     """Rebuild tests/frozen/ and the manifest from the current project.
 
     The steps, in order: refuse without --overwrite; delete and
     recreate frozen/; copy the data and the example snapshots; write
-    the two expanded frozen-configuration modules; evaluate the four
-    reference chi2 values from those modules (the same code path the
-    tests use); write the reference file; hash everything into the
-    manifest. The manifest comes last so it covers every file the
-    earlier steps produced.
+    the two expanded frozen-configuration modules; freeze the halo.c
+    probe values of test_halo.py; evaluate the four reference chi2
+    values from those modules (the same code path the tests use);
+    write the reference file; hash everything into the manifest. The
+    manifest comes last so it covers every file the earlier steps
+    produced.
 
     Returns:
       0 on success, 1 when --overwrite was not given (the usage text
       and the refusal reason are printed).
     """
+    if "--tatt-masks" in sys.argv:
+        # incremental: rewrite the per-mask TATT descriptors of the
+        # --mask comparison sweeps in an existing frozen state and
+        # re-pin the manifest; pure text, no model evaluations
+        u.require_cocoa_environment()
+        generate_tatt_mask_datasets()
+        manifest = {
+            "_comment": "SHA-256 of every file under tests/frozen/; "
+                        "verified by every test before evaluating "
+                        "anything.",
+            "files": u.compute_manifest(),
+        }
+        with open(u.MANIFEST_FILE, "w") as f:
+            json.dump(manifest, f, indent=2, sort_keys=True)
+            f.write("\n")
+        print(f"manifest: {len(manifest['files'])} files pinned")
+        return
     if "--baryons" in sys.argv:
         # incremental: add the per-method frozen baryon vectors of the
         # DRIFT tests to an existing frozen state and re-pin the
@@ -411,6 +543,30 @@ def main():
                 [sys.executable, self_path, "--baryon-one", label])
             if completed.returncode != 0:
                 raise RuntimeError(f"baryon worker for {label!r} failed")
+        manifest = {
+            "_comment": "SHA-256 of every file under tests/frozen/; "
+                        "verified by every test before evaluating "
+                        "anything.",
+            "files": u.compute_manifest(),
+        }
+        with open(u.MANIFEST_FILE, "w") as f:
+            json.dump(manifest, f, indent=2, sort_keys=True)
+            f.write("\n")
+        print(f"manifest: {len(manifest['files'])} files pinned")
+        return
+    if "--halo" in sys.argv:
+        # incremental: (re)write frozen/halo_reference.json, the
+        # halo.c ground truth of test_halo.py, in an existing frozen
+        # state and re-pin the manifest; nothing else changes
+        import subprocess
+
+        u.require_cocoa_environment()
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        completed = subprocess.run(
+            [sys.executable, os.path.abspath(__file__), "--halo-one",
+             "--stamp", stamp])
+        if completed.returncode != 0:
+            raise RuntimeError("halo worker failed")
         manifest = {
             "_comment": "SHA-256 of every file under tests/frozen/; "
                         "verified by every test before evaluating "
@@ -470,6 +626,15 @@ def main():
             [sys.executable, self_path, "--tatt-one", dataset_name])
         if completed.returncode != 0:
             raise RuntimeError(f"TATT worker for {dataset_name} failed")
+
+    generate_tatt_mask_datasets()
+
+    # the halo.c ground truth of test_halo.py; its model uses the TATT
+    # dataset, so it runs after the TATT worker above
+    completed = subprocess.run(
+        [sys.executable, self_path, "--halo-one", "--stamp", stamp])
+    if completed.returncode != 0:
+        raise RuntimeError("halo worker failed")
 
     reference = {
         "_meta": {
