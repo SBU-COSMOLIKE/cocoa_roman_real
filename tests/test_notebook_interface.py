@@ -252,6 +252,12 @@ def _notebook_chi2_impl():
 
     # --- the notebook's init sequence (EXAMPLE_EVALUATE1.ipynb) ---
     ci.initial_setup()
+    # the FAST-PT internal boost goes in before init_accuracy_boost, as
+    # the likelihood orders them: init_accuracy_boost multiplies it by
+    # the value it finds at its first call in the process, and
+    # initial_setup has just reset it to the C default 0.5. The value is
+    # the likelihood's (its yaml default, 1.0, unless the example sets it)
+    ci.init_fpt_internal_boost(float(like.get("internal_accuracyboost", 1.0)))
     ci.init_ggl_exclude(np.array(like["ggl_exclude"]).flatten())
     ci.init_cosmo_runmode(is_linear=False)
     ci.init_redshift_distributions_from_files(
