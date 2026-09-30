@@ -166,6 +166,17 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("ia_code").none(false).noconvert()
     );
 
+  m.def("init_IA_sim",
+      &cosmolike_interface::init_IA_sim,
+      "Load simulation-measured IA/bias P(k,z) tables from a directory and "
+      "set IA_MODEL=NLA, IA_code=SIM (=3). sn and zlist are Python lists "
+      "(same length); nfold is the filename nfold value.",
+      py::arg("dir").none(false),
+      py::arg("sn").none(false),
+      py::arg("zlist").none(false),
+      py::arg("nfold").none(false).noconvert()
+    );
+
   m.def("init_probes",
       &cosmolike_interface::init_probes,
       "Init Probes (cosmic shear or 2x2pt or 3x2pt...)",
@@ -819,8 +830,8 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "2-halo central dI (matter-IA) power spectrum (NLA limit) in lens bin ni."
   );
 
-  m.def("compute_b_red_cen",
-      &cosmolike_interface::compute_b_red_cen,
+  m.def("compute_f_red_cen_sample",
+      &cosmolike_interface::compute_f_red_cen_sample,
       py::arg("ni"), py::arg("a"),
       "Effective linear bias of the red central population in lens bin ni."
   );
