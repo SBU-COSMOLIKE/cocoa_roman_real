@@ -88,7 +88,11 @@ def _get_camb_cosmology(point, camb_args, kmax_boltzmann):
     wants k in h/Mpc, P(k) in (Mpc/h)^3, distances in Mpc/h) all
     follow the notebook cell, with the numerical settings taken from
     the frozen configuration instead of the notebook's hardcoded
-    values so the comparison targets exactly what the yaml ran.
+    values so the comparison targets exactly what the yaml ran. The
+    shared cosmolike_notebook_utils.get_camb_cosmology cannot stand in
+    for this copy: it scales kmax, k_per_logint and
+    lens_potential_accuracy with its own CAMB boost, while the frozen
+    extra_args must reach CAMB unchanged.
 
     Arguments:
       point     = the frozen {parameter name: value} dictionary; the
@@ -101,8 +105,11 @@ def _get_camb_cosmology(point, camb_args, kmax_boltzmann):
                   with camb_args["kmax"], the one physical cutoff.
 
     Returns:
-      (log10k_interp_2D, z_interp_2D, lnPL, lnPNL, G_growth,
-       z_interp_1D, chi), the exact tuple set_cosmology consumes.
+      (log10k_interp_2D, z_interp_2D, lnPL, lnPNL, G_growth, z_growth,
+       z_interp_1D, chi), the arrays set_cosmology consumes as the
+      keywords log10k_2D, z_2D, lnP_linear, lnP_nonlinear, G, z_G, z_1D
+      and chi. G_growth lives on z_growth (the z_interp_1D nodes up to
+      z_interp_2D[-1]), not on z_interp_2D.
     """
     import camb
     from camb import model
@@ -187,17 +194,27 @@ def _get_camb_cosmology(point, camb_args, kmax_boltzmann):
     # log10k shifts to h/Mpc units after the tables were evaluated
     log10k_interp_2D = log10k_interp_2D - np.log10(h)
 
-    # growth from the linear P(k) at a fixed large scale, normalized
-    # to its highest-z entry, exactly as the notebook builds it
-    # (np.sqrt, the 1+z factor, and the division by a single entry
-    # all act elementwise on the whole array)
-    G_growth = np.sqrt(PKL.P(z_interp_2D, 0.0005)
-                       / PKL.P(0, 0.0005)) * (1 + z_interp_2D)
-    G_growth = G_growth / G_growth[len(G_growth) - 1]
+    # growth factor G(z) = D(z) (1 + z) from the linear P(k) at one
+    # large scale (k = 5e-4/Mpc), where P grows as D^2, sampled on the
+    # dense 1D grid cut at the last 2D node, exactly as
+    # cosmolike_notebook_utils.get_camb_cosmology (the notebook path)
+    # and the likelihood build it: cosmolike reads G linearly in z,
+    # and on the 2D grid that read misses D by up to 9e-5. Indexing
+    # with the boolean array z_interp_1D <= z_interp_2D[-1] keeps the
+    # nodes where it is True
+    z_growth = z_interp_1D[z_interp_1D <= z_interp_2D[-1]]
+    power_ratio = PKL.P(z_growth, 0.0005) / PKL.P(0, 0.0005)
+    G_growth = np.sqrt(power_ratio) * (1 + z_growth)
+    # divided by G at the last 2D node (z = 49.99), as the notebook
+    # path and the likelihood do; cosmolike divides by G(z = 0) on its
+    # side, so D(z = 0) = 1 whatever this constant is
+    z_norm = z_interp_2D[-1]
+    power_ratio_norm = PKL.P(z_norm, 0.0005) / PKL.P(0, 0.0005)
+    G_growth = G_growth / (np.sqrt(power_ratio_norm) * (1 + z_norm))
 
     chi = results.comoving_radial_distance(z_interp_1D) * h
 
-    return (log10k_interp_2D, z_interp_2D, lnPL, lnPNL, G_growth,
+    return (log10k_interp_2D, z_interp_2D, lnPL, lnPNL, G_growth, z_growth,
             z_interp_1D, chi)
 
 
@@ -263,11 +280,14 @@ def _notebook_chi2_impl():
 
     # --- one CAMB run at the frozen point, notebook grids ---
     print("    running CAMB (notebook-style grids)...", flush=True)
-    # the returned 7-tuple unpacks by position into the named grids;
+    # the returned 8-tuple unpacks by position into the named grids;
     # the backslash continues the statement on the next line
-    (log10k_2D, z_2D, lnPL, lnPNL, G_growth, z_1D, chi) = \
+    (log10k_2D, z_2D, lnPL, lnPNL, G_growth, z_growth, z_1D, chi) = \
         _get_camb_cosmology(point, camb_args, like["kmax_boltzmann"])
 
+    # the growth table has its own z grid (z_growth, the dense 1D grid
+    # cut at the last z_2D node), handed over as z_G, as the notebook
+    # wrappers and the likelihood do
     ci.set_cosmology(omegam=point["omegam"],
                      H0=point["H0"],
                      log10k_2D=log10k_2D,
@@ -275,6 +295,7 @@ def _notebook_chi2_impl():
                      lnP_linear=lnPL,
                      lnP_nonlinear=lnPNL,
                      G=G_growth,
+                     z_G=z_growth,
                      z_1D=z_1D,
                      chi=chi)
 
