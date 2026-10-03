@@ -195,7 +195,8 @@ def _get_camb_cosmology(point, camb_args, kmax_boltzmann):
     log10k_interp_2D = log10k_interp_2D - np.log10(h)
 
     # growth factor G(z) = D(z) (1 + z) from the linear P(k) at one
-    # large scale (k = 5e-4/Mpc), where P grows as D^2, sampled on the
+    # sub-horizon scale (k = 0.05/Mpc, the likelihood's growth_k
+    # default), where P grows as D^2, sampled on the
     # dense 1D grid cut at the last 2D node, exactly as
     # cosmolike_notebook_utils.get_camb_cosmology (the notebook path)
     # and the likelihood build it: cosmolike reads G linearly in z,
@@ -203,13 +204,13 @@ def _get_camb_cosmology(point, camb_args, kmax_boltzmann):
     # with the boolean array z_interp_1D <= z_interp_2D[-1] keeps the
     # nodes where it is True
     z_growth = z_interp_1D[z_interp_1D <= z_interp_2D[-1]]
-    power_ratio = PKL.P(z_growth, 0.0005) / PKL.P(0, 0.0005)
+    power_ratio = PKL.P(z_growth, 0.05) / PKL.P(0, 0.05)
     G_growth = np.sqrt(power_ratio) * (1 + z_growth)
     # divided by G at the last 2D node (z = 49.99), as the notebook
     # path and the likelihood do; cosmolike divides by G(z = 0) on its
     # side, so D(z = 0) = 1 whatever this constant is
     z_norm = z_interp_2D[-1]
-    power_ratio_norm = PKL.P(z_norm, 0.0005) / PKL.P(0, 0.0005)
+    power_ratio_norm = PKL.P(z_norm, 0.05) / PKL.P(0, 0.05)
     G_growth = G_growth / (np.sqrt(power_ratio_norm) * (1 + z_norm))
 
     chi = results.comoving_radial_distance(z_interp_1D) * h
