@@ -1,7 +1,8 @@
 """Unit test: halo-model cache invalidation (the halo parameter ladder).
 
 halo.c caches every expensive table behind its own keys - the spectra
-p_mm, p_gm, p_gg, p_my, p_yy, the HOD tables ngal/bgal, and the shared
+p_mm, p_gm, p_gg, the gas pressure table u_KS, the HOD tables ngal/bgal,
+and the shared
 sigma^2(M), dlnnu/dlnM and bias_norm tables - and cosmo2D.c's HOD mode
 (include_HOD_GX = 1) reads p_gm/p_gg into the Limber C_l^gg and
 C_l^gs. A partial-invalidation bug - one sector's update failing to
@@ -18,7 +19,7 @@ point):
     3 x cosmology-only steps          (omegam, H0, As_1e9)
     3 x HOD-only steps                (every bin's lg M_min and alpha)
     3 x galaxy-concentration steps    (every bin's gc)
-    3 x gas-only steps                (the bound-gas slope and M0)
+    3 x gas-only steps                (the polytropic index Gamma)
     3 x IA-only steps                 (A1, A2, BTA)
     3 x source-photo-z steps          (every DZ_S shift)
     3 x shear-calibration steps       (every M)
@@ -30,9 +31,9 @@ table stays cached across a step - exactly the partial-invalidation
 case under test. After every step the test records two vectors:
 
   dv   = the masked HOD 3x2pt data vector (Limber gg and gs, NLA);
-  halo = the halo probes at fixed (k, a, bin) points: p_mm, p_my,
-         p_yy, p_gm, p_gg, ngal, bgal (the gas sector moves only
-         p_my/p_yy, which no data vector reads).
+  halo = the halo probes at fixed (k, a, bin) points: p_mm, u_KS,
+         p_gm, p_gg, ngal, bgal (the gas sector moves only u_KS, which
+         no data vector reads).
 
 Assertions:
   1. every ladder step changes the vector its sector feeds (dv, or
@@ -100,7 +101,7 @@ GAS_FIDUCIAL = (1.17, 0.6, 14.0, 0.0, 0.0, 1.0, 0.03, 12.5, 1.2, 6.5,
 # per-step offsets of the halo sectors
 HOD_DELTA = {0: 0.03, 4: 0.02}   # lg M_min, alpha
 GC_DELTA = -0.05                 # galaxy concentration factor
-GAS_DELTA = {1: 0.02, 2: 0.05}   # bound-gas slope, lg M0
+GAS_DELTA = {0: 0.02}            # polytropic index Gamma (u_KS reads it)
 
 # ---- the sampled sectors (as in test_cache_consistency.py) ------------------
 
@@ -132,6 +133,9 @@ SCRAMBLE_STEP = 4
 # fixed halo probe points: (k in (c/H0)^-1, a) and the lens bins
 PROBE_K = (3.0, 30.0, 300.0, 3000.0)
 PROBE_A = (0.5, 0.7, 0.9)
+# u_KS(c, k, rv) probes: concentrations, and r_v in c/H0 (0.9 Mpc/h)
+PROBE_UKS_C = (2.0, 5.0, 10.0)
+PROBE_UKS_RV = 3.0e-4
 
 
 def _sector_of(name):
@@ -207,8 +211,9 @@ def halo_probes(ci, nbin):
     for a in PROBE_A:
         for k in PROBE_K:
             out.append(ci.p_mm(k=k, a=a))
-            out.append(ci.p_my(k=k, a=a))
-            out.append(ci.p_yy(k=k, a=a))
+    for c in PROBE_UKS_C:
+        for k in PROBE_K:
+            out.append(ci.u_KS(c=c, k=k, rv=PROBE_UKS_RV))
     for ni in range(nbin):
         for a in PROBE_A:
             out.append(ci.ngal(ni=ni, a=a))
@@ -289,7 +294,7 @@ class TestHaloCacheConsistency(unittest.TestCase):
                                     sector_deltas, steps)
                 if sector == "gas":
                     changed = not np.array_equal(halo, prev_halo)
-                    what = "halo probes (p_my, p_yy)"
+                    what = "halo probes (u_KS)"
                 else:
                     changed = not np.array_equal(dv, prev_dv)
                     what = "data vector"

@@ -4,7 +4,7 @@ halo.c computes cosmolike's halo model: the halo mass function and
 halo bias (Tinker et al. 2010), halo concentrations (Bhattacharya et
 al. 2013) and density profiles (NFW), the gas pressure profile
 (Komatsu-Seljak), the HOD galaxy integrals, and the power spectra
-built from them (p_mm, p_my, p_yy, p_gm, p_gg). The compiled interface
+built from them (p_mm, p_gm, p_gg). The compiled interface
 exposes each function under its halo.c name through
 cosmolike/halo_wrapper.cpp, so ci.p_mm(k, a) here runs halo.c p_mm.
 
@@ -190,7 +190,7 @@ PK_A = (0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99)
 HEAD_DEFECTS = {}
 
 # Probes whose table build is slow (module docstring).
-SLOW_PROBES = ("p_mm", "p_my", "p_yy", "p_gm", "p_gg")
+SLOW_PROBES = ("p_mm", "p_gm", "p_gg")
 
 # ---- tolerances -------------------------------------------------------------
 
@@ -284,10 +284,6 @@ HOD_REF_NODES = 16
 P_2H_K_HMPC = (0.01, 0.02)
 P_2H_A = (0.5, 0.8, 0.99)
 P_2H_RTOL = 0.1
-# p_my^2 <= p_mm p_yy holds node by node (Cauchy-Schwarz on the mass
-# integrals); bilinear interpolation of the three ln P tables with
-# shared weights preserves it, up to rounding.
-CAUCHY_SCHWARZ_RTOL = 1.0e-10
 # u_KS <= u_KS(k -> 0) <= 1 holds node by node; allow the rounding of
 # the table and of the Gauss-Legendre sums.
 U_KS_BOUND_ATOL = 1.0e-8
@@ -616,8 +612,6 @@ def probe_inputs(state):
         "ngal": hod,
         "bgal": hod,
         "p_mm": spectra,
-        "p_my": spectra,
-        "p_yy": spectra,
         "p_gm": spectra_bins,
         "p_gg": spectra_bins,
     }
@@ -671,8 +665,6 @@ EVALUATORS = {
     "ngal": lambda ci, x: _per_bin(ci.ngal, x),
     "bgal": lambda ci, x: _per_bin(ci.bgal, x),
     "p_mm": lambda ci, x: _spectrum(ci.p_mm, x),
-    "p_my": lambda ci, x: _spectrum(ci.p_my, x),
-    "p_yy": lambda ci, x: _spectrum(ci.p_yy, x),
     "p_gm": lambda ci, x: _spectrum_per_bin(ci.p_gm, x, auto=False),
     "p_gg": lambda ci, x: _spectrum_per_bin(ci.p_gg, x, auto=True),
 }
@@ -1200,19 +1192,6 @@ class TestPhysicsInvariants:
                 assert abs(ratio - 1.0) < P_2H_RTOL, (
                     f"p_gg/(bgal^2 P)(ni={ni}, k={k_h} h/Mpc) = {ratio}")
 
-    @slow
-    def test_p_my_cauchy_schwarz(self, halo):
-        """A cross spectrum is bounded by its autos: p_my^2 <= p_mm p_yy
-        (Cauchy-Schwarz on each mass integral), and p_yy > 0."""
-        ci = halo["ci"]
-        k = np.asarray(PK_K, dtype=float)
-        for a in P_2H_A:
-            pmm = np.ravel(ci.p_mm(k=k, a=a))
-            pmy = np.ravel(ci.p_my(k=k, a=a))
-            pyy = np.ravel(ci.p_yy(k=k, a=a))
-            assert np.all(pyy > 0), f"a={a}: p_yy = {pyy}"
-            assert np.all(pmy**2 <= pmm*pyy*(1.0 + CAUCHY_SCHWARZ_RTOL)), (
-                f"a={a}: p_my^2/(p_mm p_yy) = {pmy**2/(pmm*pyy)}")
 
 
 # =============================================================================
