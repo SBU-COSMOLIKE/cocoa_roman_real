@@ -1,7 +1,7 @@
 """Unit test: halo-model cache invalidation (the halo parameter ladder).
 
 halo.c caches every expensive table behind its own keys - the spectra
-p_mm, p_gm, p_gg, the gas pressure table u_KS, the HOD tables ngal/bgal,
+p_gm, p_gg, the gas pressure table u_KS, the HOD tables ngal/bgal,
 and the shared
 sigma^2(M), dlnnu/dlnM and bias_norm tables - and cosmo2D.c's HOD mode
 (include_HOD_GX = 1) reads p_gm/p_gg into the Limber C_l^gg and
@@ -31,7 +31,7 @@ table stays cached across a step - exactly the partial-invalidation
 case under test. After every step the test records two vectors:
 
   dv   = the masked HOD 3x2pt data vector (Limber gg and gs, NLA);
-  halo = the halo probes at fixed (k, a, bin) points: p_mm, u_KS,
+  halo = the halo probes at fixed (k, a, bin) points: u_KS,
          p_gm, p_gg, ngal, bgal (the gas sector moves only u_KS, which
          no data vector reads).
 
@@ -208,9 +208,6 @@ def halo_probes(ci, nbin):
     import numpy as np
 
     out = []
-    for a in PROBE_A:
-        for k in PROBE_K:
-            out.append(ci.p_mm(k=k, a=a))
     for c in PROBE_UKS_C:
         for k in PROBE_K:
             out.append(ci.u_KS(c=c, k=k, rv=PROBE_UKS_RV))

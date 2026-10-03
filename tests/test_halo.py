@@ -4,9 +4,9 @@ halo.c computes cosmolike's halo model: the halo mass function and
 halo bias (Tinker et al. 2010), halo concentrations (Bhattacharya et
 al. 2013) and density profiles (NFW), the gas pressure profile
 (Komatsu-Seljak), the HOD galaxy integrals, and the power spectra
-built from them (p_mm, p_gm, p_gg). The compiled interface
+built from them (p_gm, p_gg). The compiled interface
 exposes each function under its halo.c name through
-cosmolike/halo_wrapper.cpp, so ci.p_mm(k, a) here runs halo.c p_mm.
+cosmolike/halo_wrapper.cpp, so ci.p_gm(k, a, ni) here runs halo.c p_gm.
 
 Units are halo.c's code units: k in (c/H0)^-1 (k[h/Mpc] * COVERH0),
 power spectra in (c/H0)^3, masses in M_sun/h, number densities in
@@ -190,7 +190,7 @@ PK_A = (0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99)
 HEAD_DEFECTS = {}
 
 # Probes whose table build is slow (module docstring).
-SLOW_PROBES = ("p_mm", "p_gm", "p_gg")
+SLOW_PROBES = ("p_gm", "p_gg")
 
 # ---- tolerances -------------------------------------------------------------
 
@@ -611,7 +611,6 @@ def probe_inputs(state):
                  "rv": [U_KS_RV]},
         "ngal": hod,
         "bgal": hod,
-        "p_mm": spectra,
         "p_gm": spectra_bins,
         "p_gg": spectra_bins,
     }
@@ -664,7 +663,6 @@ EVALUATORS = {
                            for k in x["k"]],
     "ngal": lambda ci, x: _per_bin(ci.ngal, x),
     "bgal": lambda ci, x: _per_bin(ci.bgal, x),
-    "p_mm": lambda ci, x: _spectrum(ci.p_mm, x),
     "p_gm": lambda ci, x: _spectrum_per_bin(ci.p_gm, x, auto=False),
     "p_gg": lambda ci, x: _spectrum_per_bin(ci.p_gg, x, auto=True),
 }
@@ -1151,21 +1149,6 @@ class TestPhysicsInvariants:
 
     # ---- spectra: large-scale (2-halo) limits ------------------------------
     @slow
-    def test_p_mm_two_halo_limit(self, halo):
-        """On large scales P_mm -> P_lin: the 2-halo term is
-        I_m(k)^2 P_lin with I_m -> 1 (the HMx additive correction of
-        2005.00009 App. A puts the matter of halos below M_min at M_min,
-        so I_m(k -> 0) = bias_norm + (1 - bias_norm) = 1), and the
-        1-halo term is small."""
-        ci = halo["ci"]
-        for a in P_2H_A:
-            for k_h in P_2H_K_HMPC:
-                k = k_h*COVERH0
-                ratio = ci.p_mm(k=k, a=a)/ci.p_lin(k=k, a=a)
-                assert abs(ratio - 1.0) < P_2H_RTOL, (
-                    f"p_mm/p_lin(k={k_h} h/Mpc, a={a}) = {ratio}")
-
-    @slow
     def test_p_gm_two_halo_limit(self, halo):
         """On large scales P_gm -> bgal P: galaxies trace matter with
         their mean bias."""
@@ -1300,8 +1283,8 @@ class TestDeterminism:
     counts are switched in-process (set_omp_threads plus a table
     rebuild) rather than in subprocesses: the cosmology inputs from
     CAMB then stay bit-identical, and only cosmolike's own threading
-    varies. The slow spectra are left out (p_mm on one thread takes
-    several minutes).
+    varies. The slow spectra are left out (a spectrum table on one
+    thread takes minutes).
     """
 
     def test_repeated_calls(self, halo):
