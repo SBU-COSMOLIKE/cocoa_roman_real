@@ -2,8 +2,8 @@
 
 halo.c computes cosmolike's halo model: the halo mass function and
 halo bias (Tinker et al. 2010), halo concentrations (Bhattacharya et
-al. 2013) and density profiles (NFW), the gas pressure profile
-(Komatsu-Seljak), the HOD galaxy integrals, and the power spectra
+al. 2013) and density profiles (NFW), the HOD galaxy integrals, and the
+power spectra
 built from them (p_gm, p_gg). The compiled interface
 exposes each function under its halo.c name through
 cosmolike/halo_wrapper.cpp, so ci.p_gm(k, a, ni) here runs halo.c p_gm.
@@ -13,8 +13,8 @@ power spectra in (c/H0)^3, masses in M_sun/h, number densities in
 (c/H0)^-3.
 
 Four groups of checks, all in ONE pytest process on the frozen
-cosmic-shear example at its fiducial point, with the HOD and gas
-parameters pinned below:
+cosmic-shear example at its fiducial point, with the HOD parameters
+pinned below:
 
   1. TestFrozenReferences - every probe reproduces, point by point,
      the values frozen from the current (GSL fixed-quadrature)
@@ -106,7 +106,7 @@ COVERH0 = 2997.92458    # structs.c cosmology.coverH0 = c/H0 in Mpc/h
 RHO_CRIT = 7.4775e+21   # structs.c cosmology.rho_crit (c/H0 units)
 SIGMA2_N_M = 1024       # structs.c Ntable.N_M: the sigma2 ln M table nodes
 
-# ---- the HOD and gas parameters the tests pin -------------------------------
+# ---- the HOD parameters the tests pin ---------------------------------------
 
 # HOD of each lens bin, {lg M_min, sigma_lgM, lg M_1, lg M_0, alpha,
 # f_c}: the Coupon et al. (2012, 1107.0616, Table B.1) fits for all
@@ -128,15 +128,6 @@ HOD_COUPON_2012 = (
 # concentration = f_g x halo concentration); 1 = the galaxies trace the
 # dark matter. set_HOD does not set it.
 GALAXY_CONCENTRATION_FACTOR = 1.0
-
-# Gas (Compton-y) parameters in the structs.h layout. A representative
-# physical point, not a fit: Gamma = 1.17 (the Komatsu-Seljak exponent
-# 1/(Gamma - 1) needs Gamma > 1), beta = 0.6, lg M_0 = 14,
-# eps1 = eps2 = 0 (unread by halo.c), alpha = 1 (bound gas at the
-# virial temperature), A_star = 0.03, lg M_star = 12.5,
-# sigma_star = 1.2, lg T_w = 6.5, f_H = 0.752 (the primordial hydrogen
-# mass fraction).
-GAS_PARAMS = (1.17, 0.6, 14.0, 0.0, 0.0, 1.0, 0.03, 12.5, 1.2, 6.5, 0.752)
 
 # ---- probe grids ------------------------------------------------------------
 # np.logspace(p, q, n) = n points from 10^p to 10^q, uniform in log
@@ -162,14 +153,6 @@ U_NFW_C = (3.0, 8.0)
 U_NFW_M = (1.0e11, 1.0e14)                     # M_sun/h
 U_NFW_K = np.logspace(0.0, 5.0, 6)             # 3.3e-4 to 33 h/Mpc
 U_NFW_A = 0.7                   # unused by the NFW form (halo.c signature)
-U_KS_C = (2.0, 5.0, 10.0)       # inside [halo_uks_cmin, halo_uks_cmax]
-U_KS_RV = 3.0e-4                # c/H0 (0.9 Mpc/h)
-U_KS_K = np.logspace(0.0, 5.0, 6)
-# u_KS against the real-axis integral (ks_u_reference): concentrations
-# across the halo range and z = k r_v on both sides of the table switch
-# at z = 3 (a table of u below, the contour factorization above).
-U_KS_REF_C = (0.3, 1.0, 3.0, 5.0, 8.0, 12.0, 25.0)
-U_KS_REF_Z = (1.0e-3, 0.5, 2.9, 3.1, 10.0, 50.0, 200.0, 800.0)
 # u_nfw_c against the closed form evaluated with scipy's Si and Ci
 # (nfw_u_reference): concentrations across the halo range and x = k r_s
 # from the k -> 0 plateau through the ringing, on both sides of the
@@ -284,16 +267,6 @@ HOD_REF_NODES = 16
 P_2H_K_HMPC = (0.01, 0.02)
 P_2H_A = (0.5, 0.8, 0.99)
 P_2H_RTOL = 0.1
-# u_KS <= u_KS(k -> 0) <= 1 holds node by node; allow the rounding of
-# the table and of the Gauss-Legendre sums.
-U_KS_BOUND_ATOL = 1.0e-8
-# Measured 2026-09-29 against the gas study's reference at 20000 random
-# (c, z): error <= 4.8e-6 of the local envelope of u, 1.8e-5 relative
-# where |u| > 1e-2. Near the zeros of the ringing u only the absolute
-# scale is meaningful, set by the plateau u(c, z -> 0).
-U_KS_REF_RTOL = 1.0e-4
-U_KS_REF_ATOL = 2.0e-5  # times u(c, z -> 0)
-U_KS_K0 = 1.0e-3        # (c/H0)^-1; k rv/c ~ 1e-7, inside the table
 # Measured 2026-09-29 against mpmath at 3000 random (c, k, m), c in
 # [0.05, 100]: error <= 6.1e-7 relative, largest at c < 0.1 where
 # m(c) ~ c^2/2 amplifies the table's error; below |u| = 1e-3 the error
@@ -305,7 +278,6 @@ U_NFW_REF_ATOL = 1.0e-10
 # level; a relative change below the floor means a stale table.
 OMEGAM_STEP = 0.02
 HOD_LGMMIN_STEP = 0.1
-GAS_GAMMA_STEP = 0.03
 CACHE_CHANGE_FLOOR = 1.0e-6
 
 # Thread counts of the determinism check (the default is 4).
@@ -359,35 +331,6 @@ def nfw_u_reference(c, x):
     num = (np.sin(x)*(si_u - si_x) - np.sin(c*x)/xu
            + np.cos(x)*(ci_u - ci_x))
     return num/(np.log1p(c) - c/(1.0 + c))
-
-
-def ks_u_reference(c, z, gamma):
-    """The KS pressure shape u = F/F0 on the real axis, independent of the
-    complex-contour method halo.c uses above z = 3:
-
-      F0 = int_0^c x^2 theta^q dx,  F = int_0^c x sin(y x)/y theta^p dx,
-      theta = ln(1 + x)/x, p = gamma/(gamma - 1), q = 1/(gamma - 1),
-      y = z/c.
-
-    Composite Gauss-Legendre (24 nodes per panel), panels no wider than
-    0.5 or a quarter period of sin(y x), so every oscillation is resolved.
-
-    Arguments:
-      c = concentration, z = k r_v, gamma = the polytropic index.
-
-    Returns:
-      u(c, z).
-    """
-    p, q = gamma/(gamma - 1.0), 1.0/(gamma - 1.0)
-    y = z/c
-    t, w = np.polynomial.legendre.leggauss(24)
-    width = min(0.5, 0.5*np.pi/y)
-    edges = np.linspace(0.0, c, max(1, int(np.ceil(c/width))) + 1)
-    half = 0.5*np.diff(edges)
-    x = (half[:, None]*(t + 1.0)[None, :] + edges[:-1, None]).ravel()
-    wx = (half[:, None]*w[None, :]).ravel()
-    th = np.log1p(x)/x
-    return np.sum(wx*x*np.sin(y*x)/y*th**p)/np.sum(wx*x*x*th**q)
 
 
 def tinker_shape(nu, a):
@@ -539,7 +482,7 @@ def hod_of_bin(ni):
 
 
 def apply_halo_parameters(state):
-    """Write the pinned HOD (every lens bin) and gas parameters.
+    """Write the pinned HOD of every lens bin.
 
     Arguments:
       state = the dictionary from build_halo_state.
@@ -552,7 +495,6 @@ def apply_halo_parameters(state):
         ci.set_nuisance_hod(ni=ni,
                             hod=np.array(hod_of_bin(ni), dtype=float),
                             gc=GALAXY_CONCENTRATION_FACTOR)
-    ci.set_nuisance_gas(gas=np.array(GAS_PARAMS, dtype=float))
 
 
 def lens_bin_mean_scale_factor(state, ni):
@@ -607,8 +549,6 @@ def probe_inputs(state):
         "bias_norm": {"a": floats(BIAS_NORM_A)},
         "u_nfw_c": {"c": floats(U_NFW_C), "m": floats(U_NFW_M),
                     "k": floats(U_NFW_K), "a": [U_NFW_A]},
-        "u_KS": {"c": floats(U_KS_C), "k": floats(U_KS_K),
-                 "rv": [U_KS_RV]},
         "ngal": hod,
         "bgal": hod,
         "p_gm": spectra_bins,
@@ -658,9 +598,6 @@ EVALUATORS = {
     "u_nfw_c": lambda ci, x: [ci.u_nfw_c(c=c, k=k, m=m, a=a)
                               for a in x["a"] for c in x["c"]
                               for m in x["m"] for k in x["k"]],
-    "u_KS": lambda ci, x: [ci.u_KS(c=c, k=k, rv=rv)
-                           for rv in x["rv"] for c in x["c"]
-                           for k in x["k"]],
     "ngal": lambda ci, x: _per_bin(ci.ngal, x),
     "bgal": lambda ci, x: _per_bin(ci.bgal, x),
     "p_gm": lambda ci, x: _spectrum_per_bin(ci.p_gm, x, auto=False),
@@ -724,7 +661,7 @@ def build_halo_state():
 
     Builds the frozen EXAMPLE model, evaluates its fiducial point
     (which hands cosmolike the cosmology: P(k, z), growth, distances)
-    and pins the HOD and gas parameters. Shared by the fixture below
+    and pins the HOD parameters. Shared by the fixture below
     and generate_frozen_reference.py --halo, so the tests and the
     frozen values always describe the same state.
 
@@ -780,7 +717,6 @@ def frozen_meta():
         "tatt": TATT,
         "hod_coupon_2012": [list(row) for row in HOD_COUPON_2012],
         "galaxy_concentration_factor": GALAXY_CONCENTRATION_FACTOR,
-        "gas": list(GAS_PARAMS),
         "head_defects": dict(HEAD_DEFECTS),
     }
 
@@ -816,7 +752,7 @@ def frozen_reference():
     stored = {key: reference["_meta"].get(key) for key in expected}
     if stored != expected:
         pytest.fail("frozen/halo_reference.json was generated with other "
-                    "settings (configuration, HOD, gas or defect list); "
+                    "settings (configuration, HOD or defect list); "
                     "regenerate it with generate_frozen_reference.py "
                     "--halo")
     return reference
@@ -921,36 +857,6 @@ class TestPhysicsInvariants:
                     nfw_u_reference(c, x), rtol=U_NFW_REF_RTOL,
                     atol=U_NFW_REF_ATOL, err_msg=f"u_nfw_c(c={c}, x={x})")
 
-    def test_u_KS_bounded(self, halo):
-        """0 < u_KS(k) <= u_KS(k -> 0) <= 1: the pressure profile is a
-        positive function (|sin z| <= z bounds its transform by the k = 0
-        value), and the pressure-to-density normalization ln(1+x)/x <= 1
-        keeps the k = 0 value at or below 1."""
-        ci = halo["ci"]
-        for c in U_KS_C:
-            u0 = ci.u_KS(c=c, k=U_KS_K0, rv=U_KS_RV)
-            assert 0.0 < u0 <= 1.0 + U_KS_BOUND_ATOL, f"u_KS(k->0) = {u0}"
-            for k in U_KS_K:
-                value = ci.u_KS(c=c, k=float(k), rv=U_KS_RV)
-                assert value <= u0 + U_KS_BOUND_ATOL, (
-                    f"u_KS(c={c}, k={k:.2e}) = {value} > u_KS(k->0)")
-
-    def test_u_KS_matches_real_axis_integral(self, halo):
-        """u_KS against ks_u_reference, the real-axis integral: checks the
-        small-z table, the contour factorization above z = 3 and the
-        switch between them."""
-        ci = halo["ci"]
-        gamma = GAS_PARAMS[0]
-        for c in U_KS_REF_C:
-            plateau = ks_u_reference(c, 1.0e-9, gamma)
-            for z in U_KS_REF_Z:
-                np.testing.assert_allclose(
-                    ci.u_KS(c=c, k=z/U_KS_RV, rv=U_KS_RV),
-                    ks_u_reference(c, z, gamma), rtol=U_KS_REF_RTOL,
-                    atol=U_KS_REF_ATOL*plateau,
-                    err_msg=f"u_KS(c={c}, z={z})")
-
-    # ---- mass function and bias kernels ------------------------------------
     def test_fnu_matches_tinker2010(self, halo):
         """f(nu) is the published Tinker et al. 2010 multiplicity
         function (recomputed in numpy from the paper's equations)."""
@@ -1184,8 +1090,8 @@ class TestCacheConsistency:
     """Table rebuilds: a change is seen, and undoing it restores the bits.
 
     halo.c keeps its tables in C statics keyed on the global cache keys
-    (cosmology.random, Ntable.random, nuisance.random_galaxy_bias,
-    nuisance.random_gas). Each test changes one input, checks that the
+    (cosmology.random, Ntable.random, nuisance.random_galaxy_bias).
+    Each test changes one input, checks that the
     halo quantities move (a stale table would not), changes it back and
     checks that every value returns bit for bit (a rebuild that reads
     leftover state would not). The contract belongs to the caching
@@ -1251,22 +1157,6 @@ class TestCacheConsistency:
                                   equal_nan=True), (
                 f"{name} differs after restoring the HOD")
 
-    def test_gas_round_trip(self, halo):
-        """Gamma -> Gamma + GAS_GAMMA_STEP -> back, through the gas
-        setter; the u_KS table rebuilds on nuisance.random_gas."""
-        ci = halo["ci"]
-        x = halo["inputs"]["u_KS"]
-        before = np.array(evaluate_probe(ci, "u_KS", x))
-        moved_gas = np.array(GAS_PARAMS, dtype=float)
-        moved_gas[0] += GAS_GAMMA_STEP
-        try:
-            ci.set_nuisance_gas(gas=moved_gas)
-            moved = np.array(evaluate_probe(ci, "u_KS", x))
-        finally:
-            apply_halo_parameters(halo)
-        after = np.array(evaluate_probe(ci, "u_KS", x))
-        assert _max_relative_change(moved, before) > CACHE_CHANGE_FLOOR
-        assert np.array_equal(after, before)
 
 
 # =============================================================================

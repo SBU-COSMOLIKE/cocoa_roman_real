@@ -24,7 +24,7 @@ the tests consume each piece):
     modules just written, exactly the way the tests will compute them.
   - frozen/halo_reference.json: the halo.c ground truth of
     test_halo.py - per-point values of every halo-model probe on the
-    grids test_halo.py defines, at the configuration and HOD/gas
+    grids test_halo.py defines, at the configuration and HOD
     parameters it pins (test_halo.build_halo_state).
   - manifest_sha256.json: the SHA-256 pin of every frozen file.
 
@@ -422,7 +422,7 @@ def generate_tatt_mask_datasets():
 def generate_halo_reference(stamp):
     """Write frozen/halo_reference.json, the ground truth of test_halo.py.
 
-    The probe grids, the configuration and the pinned HOD and gas
+    The probe grids, the configuration and the pinned HOD
     parameters all live in test_halo.py, which this function imports,
     so the generator and the tests can never describe different
     states. It builds that state (a model at the frozen fiducial

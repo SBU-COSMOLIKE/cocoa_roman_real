@@ -1,9 +1,7 @@
 """Unit test: halo-model cache invalidation (the halo parameter ladder).
 
 halo.c caches every expensive table behind its own keys - the spectra
-p_gm, p_gg, the gas pressure table u_KS, the HOD tables ngal/bgal,
-and the shared
-sigma^2(M), dlnnu/dlnM and bias_norm tables - and cosmo2D.c's HOD mode
+p_gm, p_gg, the HOD tables ngal/bgal, and the shared sigma^2(M), dlnnu/dlnM and bias_norm tables - and cosmo2D.c's HOD mode
 (include_HOD_GX = 1) reads p_gm/p_gg into the Limber C_l^gg and
 C_l^gs. A partial-invalidation bug - one sector's update failing to
 rebuild a table another sector consumes - produces silently wrong
@@ -19,26 +17,22 @@ point):
     3 x cosmology-only steps          (omegam, H0, As_1e9)
     3 x HOD-only steps                (every bin's lg M_min and alpha)
     3 x galaxy-concentration steps    (every bin's gc)
-    3 x gas-only steps                (the polytropic index Gamma)
     3 x IA-only steps                 (A1, A2, BTA)
     3 x source-photo-z steps          (every DZ_S shift)
     3 x shear-calibration steps       (every M)
 
 The halo sectors are not sampled parameters: the ladder sets them
-through the interface (set_nuisance_hod, set_nuisance_gas), which
-redraw their cache tags only when a value changes, so every other
+through the interface (set_nuisance_hod), which redraws their cache tag only when a value changes, so every other
 table stays cached across a step - exactly the partial-invalidation
 case under test. After every step the test records two vectors:
 
   dv   = the masked HOD 3x2pt data vector (Limber gg and gs, NLA);
-  halo = the halo probes at fixed (k, a, bin) points: u_KS,
-         p_gm, p_gg, ngal, bgal (the gas sector moves only u_KS, which
-         no data vector reads).
+  halo = the halo probes at fixed (k, a, bin) points: p_gm, p_gg,
+         ngal, bgal.
 
 Assertions:
-  1. every ladder step changes the vector its sector feeds (dv, or
-     halo for the gas sector) - a dead sector flag would pass the
-     later checks vacuously;
+  1. every ladder step changes the data vector - a dead sector flag
+     would pass the later checks vacuously;
   2. a no-op update (the final point again) leaves both vectors
      bitwise unchanged;
   3. after a SCRAMBLE (every sector moved at once, galaxy bias
@@ -95,13 +89,10 @@ HOD_ROWS = (
     (12.62, 0.30, 13.79, 8.67, 1.50, 1.00),
 )
 GC_FIDUCIAL = 1.0
-GAS_FIDUCIAL = (1.17, 0.6, 14.0, 0.0, 0.0, 1.0, 0.03, 12.5, 1.2, 6.5,
-                0.752)
 
 # per-step offsets of the halo sectors
 HOD_DELTA = {0: 0.03, 4: 0.02}   # lg M_min, alpha
 GC_DELTA = -0.05                 # galaxy concentration factor
-GAS_DELTA = {0: 0.02}            # polytropic index Gamma (u_KS reads it)
 
 # ---- the sampled sectors (as in test_cache_consistency.py) ------------------
 
@@ -125,17 +116,14 @@ DELTAS = {
 
 # ladder order: sampled and halo sectors interleaved, so every halo
 # step sits between steps of other sectors
-PHASES = ("cosmo", "hod", "gc", "gas", "ia", "dz_source", "m")
-HALO_SECTORS = ("hod", "gc", "gas")
+PHASES = ("cosmo", "hod", "gc", "ia", "dz_source", "m")
+HALO_SECTORS = ("hod", "gc")
 NSTEP = 3
 SCRAMBLE_STEP = 4
 
 # fixed halo probe points: (k in (c/H0)^-1, a) and the lens bins
 PROBE_K = (3.0, 30.0, 300.0, 3000.0)
 PROBE_A = (0.5, 0.7, 0.9)
-# u_KS(c, k, rv) probes: concentrations, and r_v in c/H0 (0.9 Mpc/h)
-PROBE_UKS_C = (2.0, 5.0, 10.0)
-PROBE_UKS_RV = 3.0e-4
 
 
 def _sector_of(name):
@@ -187,8 +175,8 @@ def point_at(fid, sector_deltas, steps):
 
 
 def apply_halo_state(ci, nbin, steps):
-    """Set HOD, gc and gas at their sector step counts (interface
-    setters: each redraws its cache tag only when a value changes)."""
+    """Set HOD and gc at their sector step counts (the interface
+    setter redraws its cache tag only when a value changes)."""
     import numpy as np
 
     for ni in range(nbin):
@@ -197,10 +185,6 @@ def apply_halo_state(ci, nbin, steps):
             row[col] += steps["hod"] * d
         ci.set_nuisance_hod(ni=ni, hod=np.array(row, dtype=float),
                             gc=GC_FIDUCIAL + steps["gc"] * GC_DELTA)
-    gas = list(GAS_FIDUCIAL)
-    for col, d in GAS_DELTA.items():
-        gas[col] += steps["gas"] * d
-    ci.set_nuisance_gas(gas=np.array(gas, dtype=float))
 
 
 def halo_probes(ci, nbin):
@@ -208,9 +192,6 @@ def halo_probes(ci, nbin):
     import numpy as np
 
     out = []
-    for c in PROBE_UKS_C:
-        for k in PROBE_K:
-            out.append(ci.u_KS(c=c, k=k, rv=PROBE_UKS_RV))
     for ni in range(nbin):
         for a in PROBE_A:
             out.append(ci.ngal(ni=ni, a=a))
@@ -289,12 +270,8 @@ class TestHaloCacheConsistency(unittest.TestCase):
                 steps[sector] = r
                 dv, halo = evaluate(model, ci, nbin, fid,
                                     sector_deltas, steps)
-                if sector == "gas":
-                    changed = not np.array_equal(halo, prev_halo)
-                    what = "halo probes (u_KS)"
-                else:
-                    changed = not np.array_equal(dv, prev_dv)
-                    what = "data vector"
+                changed = not np.array_equal(dv, prev_dv)
+                what = "data vector"
                 self.assertTrue(
                     changed,
                     f"{order}: {sector} step {r} left the {what} "

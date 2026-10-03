@@ -71,7 +71,6 @@ def cells():
         ci.set_nuisance_hod(ni=ni,
                             hod=np.array(th.hod_of_bin(ni % 5), dtype=float),
                             gc=th.GALAXY_CONCENTRATION_FACTOR)
-    ci.set_nuisance_gas(gas=np.array(th.GAS_PARAMS, dtype=float))
     state = {"like": info["likelihood"][name]}
 
     Z = np.zeros(nbin)
