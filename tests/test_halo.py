@@ -138,7 +138,7 @@ TINKER_A = (0.2, 0.5, 0.9)      # 0.2 < 0.25 exercises fnu's z <= 3 freeze
 TINKER_NORM_A = (0.2, 0.25, 0.4, 0.7, 0.99)
 HB1NU_A = 0.5                   # the Delta = 200 bias fit does not evolve
 CONC_M = np.logspace(8.0, 16.0, 9)             # M_sun/h
-CONC_GROWFAC = (1.0, 0.7, 0.4)                 # D(a)
+CONC_A = (1.0, 0.7, 0.4)                 # scale factor a
 DLOGNU_M = np.logspace(7.0, 16.0, 40)          # M_sun/h
 BIAS_NORM_A = np.linspace(0.05, 0.9995, 40)
 # The bias_norm table grid (halo.c bias_norm): Ntable.N_a nodes
@@ -384,7 +384,7 @@ def tinker_alpha(a):
 
 def bias_norm_integral(ci, a):
     """bias_norm(a) = int b(nu) f(nu) dnu between nu(M_min) and nu(M_max),
-    recomputed in numpy from the published fits, sigma2 and D(a)
+    recomputed in numpy from the published fits and sigma_cb(M,a)
     (BIAS_NORM_GL_NODES Gauss-Legendre nodes in nu). sigma falls with M,
     so M_min gives the small nu and M_max the large one.
 
@@ -396,23 +396,22 @@ def bias_norm_integral(ci, a):
       the integral at a.
     """
     x, w = np.polynomial.legendre.leggauss(BIAS_NORM_GL_NODES)
-    d = ci.growfac(a=a)
-    nu_lo = DELTA_C/(np.sqrt(ci.sigma2(M=HALO_M_MIN))*d)
-    nu_hi = DELTA_C/(np.sqrt(ci.sigma2(M=HALO_M_MAX))*d)
+    nu_lo = DELTA_C/np.sqrt(ci.sigma2(M=HALO_M_MIN, a=a, field=1))
+    nu_hi = DELTA_C/np.sqrt(ci.sigma2(M=HALO_M_MAX, a=a, field=1))
     # map the Legendre nodes from [-1, 1] onto [nu_lo, nu_hi]
     half = 0.5*(nu_hi - nu_lo)
     nu = half*x + 0.5*(nu_hi + nu_lo)
     return half*np.sum(w*tinker_bias(nu)*tinker_multiplicity(nu, a))
 
 
-def hod_reference(ci, ni, a, omegam):
+def hod_reference(ci, ni, a, omega_cb):
     """ngal and bgal of lens bin ni at a, integrated in numpy: composite
     Gauss-Legendre in ln M (panels HOD_REF_PANEL wide, HOD_REF_NODES
     nodes each) over [ln 10^(lg M_min - 2), ln M_max], with the
     compiled sigma2, dlognudlogm, fnu and hb1nu and the HOD of
     HOD_COUPON_2012 written out:
 
-      ngal = int dlnM (rho_m/M) nu f(nu) dlnnu/dlnM [f_c N_c + N_s]
+      ngal = int dlnM (rho_cb/M) nu f(nu) dlnnu/dlnM [f_c N_c + N_s]
       bgal = int dlnM (...) b(nu) / ngal
 
     N_c = [1 + erf((lg M - lg M_min)/sigma_lgM)]/2, N_s = N_c
@@ -434,12 +433,11 @@ def hod_reference(ci, ni, a, omegam):
     lnm = (half[:, None]*t[None, :] + (edges[:-1] + half)[:, None]).ravel()
     wq = (half[:, None]*w[None, :]).ravel()
     m = np.exp(lnm)
-    rhom = RHO_CRIT*omegam
-    d = ci.growfac(a=a)
-    nu = np.array([DELTA_C/(np.sqrt(ci.sigma2(M=float(x)))*d) for x in m])
+    rhom = RHO_CRIT*omega_cb
+    nu = np.array([DELTA_C/np.sqrt(ci.sigma2(M=float(x), a=a, field=1)) for x in m])
     fn = np.array([ci.fnu(nu=float(v), a=a) for v in nu])
     bn = np.array([ci.hb1nu(nu=float(v), a=a) for v in nu])
-    dl = np.array([ci.dlognudlogm(M=float(x)) for x in m])
+    dl = np.array([ci.dlognudlogm(M=float(x), a=a) for x in m])
     nc = 0.5*(1.0 + erf((np.log10(m) - lgmmin)/sig))
     m0 = 10.0**lgm0
     ns = np.where(m > m0, nc*np.clip((m - m0)/10.0**lgm1, 0.0, None)**alpha,
@@ -544,7 +542,7 @@ def probe_inputs(state):
     return {
         "hb1nu": {"nu": floats(NU_GRID), "a": [HB1NU_A]},
         "fnu": {"nu": floats(NU_GRID), "a": floats(TINKER_A)},
-        "conc": {"m": floats(CONC_M), "growfac_a": floats(CONC_GROWFAC)},
+        "conc": {"m": floats(CONC_M), "a": floats(CONC_A)},
         "dlognudlogm": {"M": floats(DLOGNU_M)},
         "bias_norm": {"a": floats(BIAS_NORM_A)},
         "u_nfw_c": {"c": floats(U_NFW_C), "m": floats(U_NFW_M),
@@ -591,8 +589,8 @@ EVALUATORS = {
                             for a in x["a"] for nu in x["nu"]],
     "fnu": lambda ci, x: [ci.fnu(nu=nu, a=a)
                           for a in x["a"] for nu in x["nu"]],
-    "conc": lambda ci, x: [ci.conc(m=m, growfac_a=d)
-                           for d in x["growfac_a"] for m in x["m"]],
+    "conc": lambda ci, x: [ci.conc(m=m, a=d)
+                           for d in x["a"] for m in x["m"]],
     "dlognudlogm": lambda ci, x: [ci.dlognudlogm(M=m) for m in x["M"]],
     "bias_norm": lambda ci, x: [ci.bias_norm(a=a) for a in x["a"]],
     "u_nfw_c": lambda ci, x: [ci.u_nfw_c(c=c, k=k, m=m, a=a)
@@ -896,22 +894,24 @@ class TestPhysicsInvariants:
         """c(m) = 9.0 nu^-0.29 D^1.15 (Bhattacharya et al. 2013, Table
         2, Delta = 200 mean), with nu from the same sigma2 table."""
         ci = halo["ci"]
-        for d in CONC_GROWFAC:
+        for d in CONC_A:
             for m in CONC_M:
-                nu = DELTA_C/(np.sqrt(ci.sigma2(M=float(m)))*d)
+                variance = ci.sigma2(M=float(m), a=d, field=1)
+                growth_cb = np.sqrt(variance/ci.sigma2(M=float(m), a=1.0, field=1))
+                nu = DELTA_C/np.sqrt(variance)
                 np.testing.assert_allclose(
-                    ci.conc(m=float(m), growfac_a=d),
-                    9.0*nu**-0.29*d**1.15, rtol=CONC_RTOL, atol=0.0,
-                    err_msg=f"conc(m={m:.1e}, D={d})")
+                    ci.conc(m=float(m), a=d),
+                    9.0*nu**-0.29*growth_cb**1.15, rtol=CONC_RTOL, atol=0.0,
+                    err_msg=f"conc(m={m:.1e}, a={d})")
 
     def test_conc_decreases_with_mass(self, halo):
         """Massive halos formed late and are less concentrated: c(m)
-        falls monotonically with m at fixed D."""
+        falls monotonically with m at fixed a."""
         ci = halo["ci"]
-        for d in CONC_GROWFAC:
-            values = np.array([ci.conc(m=float(m), growfac_a=d)
+        for d in CONC_A:
+            values = np.array([ci.conc(m=float(m), a=d)
                                for m in CONC_M])
-            assert np.all(np.diff(values) < 0), f"D={d}: {values}"
+            assert np.all(np.diff(values) < 0), f"a={d}: {values}"
 
     def test_dlognudlogm_matches_finite_difference(self, halo):
         """d ln nu/d ln M = -(1/2) d ln sigma2/d ln M: compared with a
@@ -919,19 +919,21 @@ class TestPhysicsInvariants:
         so delta_c drops out)."""
         ci = halo["ci"]
         h = DLOGNU_FD_STEP
-        for m in DLOGNU_TEST_M:
-            m = float(m)
-            slope = -0.5*(np.log(ci.sigma2(M=m*np.exp(h)))
-                          - np.log(ci.sigma2(M=m*np.exp(-h))))/(2.0*h)
-            np.testing.assert_allclose(
-                ci.dlognudlogm(M=m), slope, rtol=DLOGNU_RTOL, atol=0.0,
-                err_msg=f"dlognudlogm(M={m:.2e})")
+        for a in (1.0, 0.7, 0.4):
+            for m in DLOGNU_TEST_M:
+                m = float(m)
+                upper = ci.sigma2(M=m*np.exp(h), a=a, field=1)
+                lower = ci.sigma2(M=m*np.exp(-h), a=a, field=1)
+                slope = -0.5*(np.log(upper)-np.log(lower))/(2.0*h)
+                np.testing.assert_allclose(
+                    ci.dlognudlogm(M=m, a=a), slope, rtol=DLOGNU_RTOL, atol=0.0,
+                    err_msg=f"dlognudlogm(M={m:.2e}, a={a})")
 
     @slow
     def test_sigma2_matches_python_integral(self, halo):
         """sigma2(M) = 1/(2 pi^2 R^3) int P_lin(x/R, a = 1) 9 j1(x)^2 dx,
         R = (3M/(4 pi rho_crit Omega_m))^(1/3): recomputed in numpy from
-        the same p_lin over the x range of the C lobe cache (512 lobes)."""
+        the same p_lin over a converged oscillatory integration range."""
         from scipy.special import spherical_jn
         ci = halo["ci"]
         omegam = float(halo["point"]["omegam"])
@@ -1029,9 +1031,11 @@ class TestPhysicsInvariants:
         ci = halo["ci"]
         x = halo["inputs"]["ngal"]
         omegam = float(halo["point"]["omegam"])
+        hubble = float(halo["point"]["H0"])/100.0
+        omega_cb = omegam - float(halo["model"].provider.get_param("omnuh2"))/hubble**2
         for ni, a_list in zip(x["ni"], x["a"]):
             for a in a_list:
-                ref_n, ref_b = hod_reference(ci, ni, a, omegam)
+                ref_n, ref_b = hod_reference(ci, ni, a, omega_cb)
                 np.testing.assert_allclose(
                     [ci.ngal(ni=ni, a=a), ci.bgal(ni=ni, a=a)],
                     [ref_n, ref_b], rtol=HOD_TABLE_RTOL, atol=0.0,
