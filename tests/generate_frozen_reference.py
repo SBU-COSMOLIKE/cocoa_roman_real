@@ -442,9 +442,9 @@ def generate_halo_reference(stamp):
       whatever test_halo.build_halo_state raises when the model fails
       to build or evaluate.
     """
-    # test_halo sits next to this script, on the path inserted at the
-    # top of the file
-    import test_halo as th
+    # The halo test defines the probe grid and HOD state. Import it from
+    # the data-vector sector; stored reference files remain in tests/frozen/.
+    from data_vector import test_halo as th
 
     t0 = time.time()
     print("freezing the halo.c probes ...", flush=True)
