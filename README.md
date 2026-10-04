@@ -709,6 +709,14 @@ Use eight lens and eight source bins. The galaxy–shear pairs (6,0), (7,0), and
 (7,1), with zero-based indices, are absent from the measured vector. All
 internal crossed spectra remain in the covariance calculation.
 
+The default [installation options](../../set_installation_options.sh) set
+`IGNORE_COSMOLIKE_ROMAN_REAL_COVARIANCE=1`. This leaves covariance-generation
+kernels and notebook bindings out of the compiled interface. Likelihoods still
+read and invert their supplied covariance matrices. The steps below enable
+covariance generation for this build; comment out that export in
+`set_installation_options.sh` to keep it enabled in later sessions.
+Recompile after changing the option, then restart any running notebook kernel.
+
 We assume Cocoa and this project are installed, users have run
 `conda activate cocoa`, the shell is Bash, and the current folder is
 `cocoa/Cocoa`.
@@ -717,9 +725,10 @@ We assume Cocoa and this project are installed, users have run
 
     source start_cocoa.sh
 
-**Step :two:**: compile the project interface.
+**Step :two:**: enable covariance generation and compile the project interface.
 
     unset IGNORE_COSMOLIKE_ROMAN_REAL_CODE
+    unset IGNORE_COSMOLIKE_ROMAN_REAL_COVARIANCE
     source ./projects/roman_real/scripts/compile_roman_real.sh
 
 **Step :three:**: start Jupyter.
@@ -749,3 +758,16 @@ component plots, accuracy controls and covariance-only tests.
 > eight OpenMP threads and one BLAS thread. `accuracy_boost` refines
 > tables and cutoffs; `integration_accuracy` separately selects precomputed
 > GSL rules from [covariance/default.yaml](covariance/default.yaml).
+
+To return to a data-vector-only build, use the following steps from
+`cocoa/Cocoa` with `conda activate cocoa` and Bash.
+
+**Step :one:**: activate Cocoa.
+
+    source start_cocoa.sh
+
+**Step :two:**: omit covariance generation and rebuild the interface.
+
+    unset IGNORE_COSMOLIKE_ROMAN_REAL_CODE
+    export IGNORE_COSMOLIKE_ROMAN_REAL_COVARIANCE=1
+    source ./projects/roman_real/scripts/compile_roman_real.sh
