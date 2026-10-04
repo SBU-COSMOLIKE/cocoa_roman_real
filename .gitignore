@@ -19,3 +19,6 @@ scripts/.DS_Store
 chains2/
 chains*/
 data/.DS_Store
+
+# Covariance notebook outputs; the survey settings remain tracked.
+covariance/forecast_*.npz
