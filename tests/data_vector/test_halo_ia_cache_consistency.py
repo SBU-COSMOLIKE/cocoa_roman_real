@@ -94,7 +94,7 @@ test_halo.py. To run (from the Cocoa/ folder, cocoa environment
 active, start_cocoa.sh sourced):
 
     COCOA_HALO_SLOW=1 python -m pytest \\
-      ./projects/roman_real/tests/test_halo_ia_cache_consistency.py
+      ./projects/roman_real/tests/data_vector/test_halo_ia_cache_consistency.py
 """
 
 import os
@@ -110,7 +110,7 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cocoa_test_utils as u
 
 RUN_SLOW = os.environ.get("COCOA_HALO_SLOW", "0") == "1"
