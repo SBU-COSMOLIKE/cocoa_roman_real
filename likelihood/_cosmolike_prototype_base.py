@@ -97,7 +97,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       ci.init_data_real(self.cov_file, self.mask_file, self.data_vector_file)
 
       if (int(self.IA_model) == 0) and (int(self.IA_code) == 1):
-   		# Fall back to C FASTPT under NLA
+      # Fall back to C FASTPT under NLA
         self.IA_code = 0
       ci.init_IA(ia_model = int(self.IA_model), 
                 ia_redshift_evolution = int(self.IA_redshift_evolution),
@@ -106,10 +106,24 @@ class _cosmolike_prototype_base(DataSetLikelihood):
       # NLA/SIM and loads the measured P(k,z) tables. Must come AFTER init_IA
       # so it has the final say on nuisance.IA_code.
       if int(self.IA_code) == 3:
-        ci.init_IA_sim('/xdisk/timeifler/yijiezhu/cocoa_demo/Cocoa/PS_2re_unred_new_2',
+        # ---- hard-coded sim IA inputs (edit here) -------------------------
+        # SIM_DIR   : folder with P<TAG>0_sn<NN>_nfold1.dat spectra
+        # HINFO_DIR : folder with hinfo_<HINFO_STEM>_sn<NN>_nfold1.dat from the
+        #             SAME run as SIM_DIR (*.dat.bak backups are ignored)
+        SIM_DIR    = '/xdisk/timeifler/yijiezhu/cocoa_demo/Cocoa/PS_2re_unred_3'
+        HINFO_DIR  = '/xdisk/timeifler/yijiezhu/cocoa_demo/Cocoa/hinfo'
+        HINFO_STEM = 'fixng_ms_sub_red'
+        APPLY_SHEAR = 1   # 1: distortion chi -> shear, 1/(2R) per shape leg
+        LOS_MODE    = 1   # 0: monopole as is; 1: LA mu=0 factors (index-0
+                          # files only); 2: mu=0 from index-0,2,4 files
+        # ---------------------------------------------------------------------
+        ci.init_IA_sim(SIM_DIR,
                        [11, 17, 19,25, 28, 33, 37, 40, 42, 47, 50, 53, 55, 59, 63, 67, 72, 78, 84, 91, 98],
                        [7.01,5,4.43,3.01, 2.58, 2, 1.67, 1.5, 1.36, 1.11, 1, 0.89, 0.82, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.01],
                        int(1))
+        ci.set_IA_sim_shape_convention(APPLY_SHEAR, LOS_MODE)
+        if APPLY_SHEAR == 1:
+          ci.set_IA_sim_erms_hinfo(HINFO_DIR, HINFO_STEM, [])
 
       if self.probe != "xi":
         # (b1, b2, bs2, b3, bmag). 0 = one amplitude per bin

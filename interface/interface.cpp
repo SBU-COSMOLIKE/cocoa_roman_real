@@ -177,6 +177,33 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       py::arg("nfold").none(false).noconvert()
     );
 
+  m.def("set_IA_sim_shape_convention",
+      &cosmolike_interface::set_IA_sim_shape_convention,
+      "Shape convention of the sim IA tables. apply_shear=1 converts the "
+      "measured distortion to shear (1/(2R) per shape leg, R = 1 - e_rms^2); "
+      "los_mode: 0 monopole as is, 1 LA mu=0 factors (dE x 3/2, EE x 15/8, "
+      "index-0 files only; default), 2 mu=0 from the index-0,2,4 files.",
+      py::arg("apply_shear").none(false).noconvert(),
+      py::arg("los_mode").none(false).noconvert()
+    );
+
+  m.def("set_IA_sim_erms",
+      &cosmolike_interface::set_IA_sim_erms,
+      "Per-snapshot e_rms for the sim IA shear conversion; snapshots not "
+      "listed (or with e_rms <= 0) are interpolated in z.",
+      py::arg("sn").none(false),
+      py::arg("erms").none(false)
+    );
+
+  m.def("set_IA_sim_erms_hinfo",
+      &cosmolike_interface::set_IA_sim_erms_hinfo,
+      "Read e_rms = (e1z_rms+e2z_rms)/2 from <dir>/hinfo_<stem>_sn<sn>_nfold<n>"
+      ".dat (backups *.dat.bak are ignored); snapshots in skip are interpolated in z instead.",
+      py::arg("dir").none(false),
+      py::arg("stem").none(false),
+      py::arg("skip").none(false)
+    );
+
   m.def("init_probes",
       &cosmolike_interface::init_probes,
       "Init Probes (cosmic shear or 2x2pt or 3x2pt...)",
