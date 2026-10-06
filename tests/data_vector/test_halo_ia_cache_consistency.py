@@ -414,8 +414,11 @@ class TestHaloIACacheConsistency(unittest.TestCase):
                 [sys.executable, os.path.abspath(__file__), "--fresh",
                  json.dumps(steps), out],
                 capture_output=True, text=True, env=dict(os.environ))
+            # The C guard messages use stdout; retain them with stderr
+            # so a failed inverse cannot look like an empty worker error.
             self.assertEqual(run.returncode, 0,
-                             f"fresh worker failed:\n{run.stderr[-3000:]}")
+                             f"fresh worker failed:\n{run.stdout[-3000:]}\n"
+                             f"{run.stderr[-3000:]}")
             fresh = np.load(out)
             dv_fresh, ia_fresh = fresh["dv"], fresh["ia"]
 
