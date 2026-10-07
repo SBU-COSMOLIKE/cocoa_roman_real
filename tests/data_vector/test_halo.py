@@ -100,7 +100,7 @@ slow = pytest.mark.skipif(
 # below need (mirrored: the C code has no binding for them).
 DELTA_C = 1.686         # halo.c delta_c: linear collapse threshold
 TINKER_DELTA = 200.0    # halo.c Delta: halo overdensity / mean density
-HALO_M_MIN = 1.0e6      # structs.c limits.halo_m_min in M_sun/h
+HALO_M_MIN = 1.0e4      # structs.c limits.halo_m[RANGE_MIN] in M_sun/h
 HALO_M_MAX = 1.0e17     # structs.c limits.halo_m_max in M_sun/h
 COVERH0 = 2997.92458    # structs.c cosmology.coverH0 = c/H0 in Mpc/h
 RHO_CRIT = 7.4775e+21   # structs.c cosmology.rho_crit (c/H0 units)
@@ -241,9 +241,9 @@ BIAS_NORM_INTERP_A = np.linspace(0.3, 0.98, 12)
 # returns the endpoint value itself.
 BIAS_NORM_PINNED_A = (0.99999995, 0.999999999)
 # int b f dnu = 1 over all nu (Tinker et al. 2010 Eq. 7, which sets
-# alpha); the 1e6 M_sun/h floor of the tabulated range misses the
-# nu < ~0.3 tail, about 20% for the low-nu slope f ~ nu^-0.49, and the
-# integrand is positive, so the tabulated part stays below 1.
+# alpha). Even at the 1e4 M_sun/h lower boundary, the small-nu tail
+# remains outside the tabulated range. Its integrand is positive,
+# so the finite-range bias integral stays below one.
 BIAS_NORM_TODAY_A = 0.99
 BIAS_NORM_TODAY_RANGE = (0.6, 1.0)
 
@@ -938,7 +938,11 @@ class TestPhysicsInvariants:
         ci = halo["ci"]
         omegam = float(halo["point"]["omegam"])
         x_end = 513.5*np.pi - 1.0/(513.5*np.pi)  # last lobe edge
-        s = np.linspace(np.log(1.0e-4), np.log(x_end), SIGMA2_REF_NX)
+        # x = k R: a smaller halo radius raises the physical k at a fixed
+        # x. Start at 1e-6 so the new 1e4 mass boundary still includes the
+        # large-scale power. Starting at 1e-4 omits 1e-4 of its variance;
+        # extending 1e-6 to 1e-8 changes that integral by only 3e-11.
+        s = np.linspace(np.log(1.0e-6), np.log(x_end), SIGMA2_REF_NX)
         x = np.exp(s)
         w = 9.0*spherical_jn(1, x)**2*x*(s[1] - s[0])  # dx = x ds
         w[0] *= 0.5
