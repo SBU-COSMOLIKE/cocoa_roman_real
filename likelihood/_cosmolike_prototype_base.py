@@ -668,7 +668,7 @@ class _cosmolike_prototype_base(DataSetLikelihood):
           extrap_kmax=2.5e2*self.accuracyboost).logP(self.z_interp_2D,
           np.power(10.0,self.log10k_interp_2D)).flatten(order='F')+np.log(h**3)   
       else:
-        raise LoggedError(self.log, "non_linear_emul = %d is an invalid option", non_linear_emul)
+        raise LoggedError(self.log, "non_linear_emul = %d is an invalid option", self.non_linear_emul)
 
       # G(z) = D(z)(1 + z) = D/a: the linear growth factor D relative to its
       # matter-era behavior D ~ a, measured as sqrt(P(z, k)/P(0, k)) (1 + z)
