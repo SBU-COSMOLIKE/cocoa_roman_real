@@ -1,15 +1,16 @@
 """Unit test: halo-model cache invalidation (the halo parameter ladder).
 
-halo.c caches every expensive table behind its own keys - the spectra
-p_gm, p_gg, the HOD tables ngal/bgal, and the shared sigma^2(M), dlnnu/dlnM and bias_norm tables - and cosmo2D.c's HOD mode
+halo.c caches every expensive table behind its own keys (the spectra
+p_gm, p_gg, the HOD tables ngal/bgal, and the shared sigma^2(M),
+dlnnu/dlnM and bias_norm tables), and cosmo2D.c's HOD mode
 (include_HOD_GX = 1) reads p_gm/p_gg into the Limber C_l^gg and
-C_l^gs. A partial-invalidation bug - one sector's update failing to
-rebuild a table another sector consumes - produces silently wrong
-spectra only in MIXED update sequences, which the per-point suites
+C_l^gs. A partial-invalidation bug (one sector's update failing to
+rebuild a table another sector consumes) produces silently wrong
+spectra only in mixed update sequences, which the per-point suites
 never exercise. This is test_cache_consistency.py's ladder, extended
 to the halo sectors, with the HOD C_l live.
 
-The test walks a deterministic ladder IN ONE PROCESS, evaluating the
+The test walks a deterministic ladder in one process, evaluating the
 model after every step (each sector's later steps keep the earlier
 sectors at their last values, so the ladder ends at one well-defined
 point):
@@ -22,25 +23,26 @@ point):
     3 x shear-calibration steps       (every M)
 
 The halo sectors are not sampled parameters: the ladder sets them
-through the interface (set_nuisance_hod), which redraws their cache tag only when a value changes, so every other
-table stays cached across a step - exactly the partial-invalidation
-case under test. After every step the test records two vectors:
+through the interface (set_nuisance_hod), which redraws their cache
+tag only when a value changes, so every other table stays cached
+across a step: exactly the partial-invalidation case under test.
+After every step the test records two vectors:
 
   dv   = the masked HOD 3x2pt data vector (Limber gg and gs, NLA);
   halo = the halo probes at fixed (k, a, bin) points: p_gm, p_gg,
          ngal, bgal.
 
 Assertions:
-  1. every ladder step changes the data vector - a dead sector flag
-     would pass the later checks vacuously;
+  1. every ladder step changes the data vector (a dead sector flag
+     would pass the later checks vacuously);
   2. a no-op update (the final point again) leaves both vectors
      bitwise unchanged;
-  3. after a SCRAMBLE (every sector moved at once, galaxy bias
+  3. after a scramble (every sector moved at once, galaxy bias
      included), returning to the ladder's final point reproduces both
      vectors bit for bit;
-  4. a second model instance walking the MIRRORED ladder lands on the
+  4. a second model instance walking the mirrored ladder lands on the
      same vectors bit for bit;
-  5. a FRESH process (a subprocess: cosmolike's tables are
+  5. a fresh process (a subprocess: cosmolike's tables are
      per-process statics, so a second model instance in this process
      is not fresh) that evaluates the final point once, with every
      cache built from scratch, reproduces both vectors bit for bit.
@@ -60,7 +62,7 @@ active, start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import json
@@ -70,6 +72,8 @@ import sys
 import tempfile
 import unittest
 
+# The harness stays in the parent tests/ folder; put it on the module
+# search path so direct execution and the fresh subprocess also find it.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cocoa_test_utils as u
 
@@ -121,12 +125,15 @@ HALO_SECTORS = ("hod", "gc")
 NSTEP = 3
 SCRAMBLE_STEP = 4
 
-# fixed halo probe points: (k in (c/H0)^-1, a) and the lens bins
+# fixed halo probe points: k in (c/H0)^-1 (3 to 3000, i.e. 1e-3 to
+# 1 h/Mpc), a, and every lens bin
 PROBE_K = (3.0, 30.0, 300.0, 3000.0)
 PROBE_A = (0.5, 0.7, 0.9)
 
 
 def _sector_of(name):
+    """Return the sector of a sampled-parameter name: the first SECTORS
+    pattern found in it ("other" matches any name)."""
     for sector, pat in SECTORS:
         if pat.search(name):
             return sector
@@ -134,7 +141,12 @@ def _sector_of(name):
 
 
 def _deltas_for(sector, names):
-    """{parameter: per-step delta} for this sector's sampled names."""
+    """Return {parameter: per-step delta} for one sector's sampled names.
+
+    A DELTAS key is an exact name (str) or a compiled regular expression
+    searched in the name; the conditional expression in the loop picks
+    the comparison that fits the key's type, and the first match wins.
+    """
     table = DELTAS.get(sector, {})
     out = {}
     for n in names:
@@ -146,7 +158,7 @@ def _deltas_for(sector, names):
 
 
 def build_hod_model():
-    """The frozen NLA 3x2pt model with the HOD Limber C_l switched on.
+    """Build the frozen NLA 3x2pt model with the HOD Limber C_l on.
 
     Returns:
       (model, fiducial point, compiled interface, number of lens bins)
@@ -166,7 +178,7 @@ def build_hod_model():
 
 
 def point_at(fid, sector_deltas, steps):
-    """The sampled point with each sampled sector at its step count."""
+    """Return the sampled point with each sampled sector at its step."""
     point = dict(fid)
     for sector, step in steps.items():
         for n, d in sector_deltas.get(sector, {}).items():
@@ -188,7 +200,8 @@ def apply_halo_state(ci, nbin, steps):
 
 
 def halo_probes(ci, nbin):
-    """The halo tables at fixed points, as one flat vector."""
+    """Return the halo tables at the fixed points as one flat vector:
+    per lens bin and a, ngal, bgal, then p_gm and p_gg at each k."""
     import numpy as np
 
     out = []
@@ -213,8 +226,13 @@ def evaluate(model, ci, nbin, fid, sector_deltas, steps):
 
 
 def fresh_worker(steps_json, out_path):
-    """Subprocess entry: evaluate the given ladder point ONCE, every
-    cache built from scratch, and save (dv, halo)."""
+    """Subprocess entry: evaluate the given ladder point once, every
+    cache built from scratch, and save (dv, halo).
+
+    Arguments:
+      steps_json = the {sector: step count} dict as json text
+      out_path   = the .npz file written with the arrays dv and halo
+    """
     import numpy as np
 
     steps = json.loads(steps_json)
@@ -228,23 +246,34 @@ def fresh_worker(steps_json, out_path):
 @unittest.skipUnless(RUN_SLOW, "slow halo cache ladder; set "
                      "COCOA_HALO_SLOW=1 to run")
 class TestHaloCacheConsistency(unittest.TestCase):
-    """Halo-sector ladder cache-invalidation check, HOD C_l live."""
+    """Halo-sector ladder cache-invalidation check, HOD C_l live.
+
+    unittest.skipUnless skips the whole class unless COCOA_HALO_SLOW=1.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 
     @classmethod
     def tearDownClass(cls):
+        """Switch the HOD mode off again after the last test."""
         # the HOD gate is a process-wide static: leave it off for the
         # next test module's models
         import cosmolike_roman_real_interface as ci
         ci.init_include_HOD_GX(0)
 
     def _walk(self, order):
-        """Walk the ladder in the given order; returns the final state
-        and the recorded vectors."""
+        """Walk the ladder in one order and check assertions 1-3.
+
+        Arguments:
+          order = "forward" or "mirrored" (the reversed sector order)
+
+        Returns:
+          (final steps, final data vector, final halo probes)
+        """
         import numpy as np
 
         model, fid, ci, nbin = build_hod_model()
@@ -307,6 +336,11 @@ class TestHaloCacheConsistency(unittest.TestCase):
         return final_steps, final_dv, final_halo
 
     def test_halo_cache_consistency(self):
+        """Both ladders, then assertions 4 (mirrored) and 5 (fresh process).
+
+        The fresh process reruns this file with --fresh (see the
+        __main__ block at the end), and the parent reads its .npz file.
+        """
         import numpy as np
 
         steps, dv_fwd, halo_fwd = self._walk("forward")
@@ -335,6 +369,7 @@ class TestHaloCacheConsistency(unittest.TestCase):
             dv_fresh, halo_fresh = fresh["dv"], fresh["halo"]
 
         def report(a, b):
+            """Return max |a/b - 1| over the entries where b != 0."""
             nz = b != 0
             return float(np.max(np.abs(a[nz]/b[nz] - 1.0))) if nz.any() else 0.0
 

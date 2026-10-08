@@ -26,14 +26,14 @@ The halo.c tables carry four numerical knobs:
   - the coarse ln k step of the mass sums on the same ladder:
     halo_nk_step, halo_nk_step/2, then 1 at hdi >= 2;
   - Ntable.halo_ia_lmax (2, 4, 6): the multipole truncation. This is
-    a PHYSICS choice (F21 use l <= 6), not a numerical one.
+    a physics choice (F21 use l <= 6), not a numerical one.
 
 HOW THE ARMS SET THE KNOBS
 
 The frozen configurations carry accuracyboost and
 integration_accuracy as likelihood options. cocoa_testing's
 high-accuracy path (test_accuracy.py) writes them into the likelihood
-block and builds a NEW model, because the likelihood consumes
+block and builds a new model, because the likelihood consumes
 accuracyboost at initialization for its Python-side grids as well
 (z_interp_2D, log10k_interp_2D, and CAMB's k_max = kmax_boltzmann x
 accuracyboost) before forwarding both values to
@@ -41,12 +41,12 @@ ci.init_accuracy_boost. A yaml arm would therefore move CAMB and the
 P(k) tables handed to cosmolike together with cosmolike's own tables.
 
 This test measures cosmolike's numerics only, so every arm builds
-the SAME frozen model and then calls ci.init_accuracy_boost directly:
+the same frozen model and then calls ci.init_accuracy_boost directly:
 the function rescales every Ntable size from the baseline cached at
 its first call (the likelihood's own call at initialization), so
 calls never compound, and it redraws Ntable.random, so every table
 keyed on it rebuilds at its next use. No model rebuild is needed for
-that. Each arm still runs in its OWN worker subprocess (the pattern
+that. Each arm still runs in its own worker subprocess (the pattern
 of test_halo_cache_consistency.py's fresh worker): cosmolike's tables
 and init_accuracy_boost's baseline cache are per-process statics, so
 a separate process guarantees every arm starts from the same pristine
@@ -61,23 +61,23 @@ frozen point, with the IA fiducial
   {a_1h, eta_1h, z_pivot}                   = {0.001, 0, 0.62}
     (F21 red galaxies; no redshift evolution)
   red sigmoids {lgM_cen, w_cen, lgM_sat, w_sat} = {13.0, 0.5, 12.5, 0.7}
-    (the student's notebook values)
+    (fiducial red-fraction sigmoids of centrals and satellites)
   IA HOD {lgMmin, sigma_lgM, lgM1, lgM0, alpha, f_c}
         = {13.17, 0.39, 14.53, 11.09, 1.27, 1.00}
-    (the student's default: Coupon et al. 2012, red M_r < -21.8)
+    (the default IA HOD: Coupon et al. 2012, red M_r < -21.8)
 
 NO SCALE CUTS. A masked data vector skips the cut points, and the
 production mask cuts the small-scale gammat and w points, where the
-gs 1-halo term lives; so the data vector is computed WITHOUT scale
+gs 1-halo term lives; so the data vector is computed without scale
 cuts: the model loads a scratch dataset (written into a
 temporary directory; nothing touches frozen/) whose mask is
 ones.mask and whose covariance is the diagonal of the frozen one
 (the full covariance is not positive definite without a mask, and
-the interface refuses it). Only the model VECTOR is used; the chi2
+the interface refuses it). Only the model vector is used; the chi2
 values below are computed in Python from the frozen covariance.
 
-SCORING. Every judgment is a chi2 with a reference vector INJECTED
-AS TRUTH, delta^T C^-1 delta, scored on the most aggressive
+SCORING. Every judgment is a chi2 with a reference vector injected
+as truth, delta^T C^-1 delta, scored on the most aggressive
 positive-definite mask of the frozen covariance (all shear points
 plus 85 of the 165 points the production mask cuts;
 AGGRESSIVE_MASK_EXCLUDED below), with the production-mask number
@@ -86,8 +86,8 @@ reported next to it.
 Assertions:
 
   IA0. Invisible when off: with include_halo_IA = 0 the data vector
-       is BITWISE identical to that of a model (in another process)
-       that never called the IA setters - both right after setting
+       is bitwise identical to that of a model (in another process)
+       that never called the IA setters, both right after setting
        the IA parameters and after switching the flag on, evaluating,
        and switching it back off (the C_ss/C_gs caches key on the
        flag). The flag-on vector must differ, so the check cannot
@@ -95,7 +95,7 @@ Assertions:
 
   IA1-IA5. Convergence of the numerical knobs. Each arm computes, in
        one worker and at identical settings, the flag-on vector and
-       the flag-off vector; their difference is the IA INCREMENT,
+       the flag-off vector; their difference is the IA increment,
        the part of the data vector the halo-model IA code produces.
        The reference arm is accuracyboost 3 (test_accuracy.py's
        all-knobs boost) and integration_accuracy 3 (the top of every
@@ -107,13 +107,13 @@ Assertions:
        The arms: IA1 production (accuracyboost 1, hdi 0), IA2
        accuracyboost 2, IA3-IA5 integration_accuracy 1, 2, 3.
        Why the increment and not the whole vector: accuracyboost and
-       integration_accuracy move EVERY cosmolike table (N_ell, N_a,
+       integration_accuracy move every cosmolike table (N_ell, N_a,
        the Limber node counts), so the whole-vector difference is the
        whole code's numerical error, which test_accuracy.py reports
        (advisory). Differencing the two vectors of one arm cancels
        the terms the flag does not touch (lensing, clustering,
        magnification: the same tables in both vectors), leaving the
-       numerical error of the CHANGE the flag makes: the halo.c IA
+       numerical error of the change the flag makes: the halo.c IA
        tables and the quadrature of the new IA legs, minus the
        quadrature error of the NLA legs the flag removes. The
        whole-vector chi2 is printed next to it (advisory). As in
@@ -150,7 +150,7 @@ sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import json
@@ -182,10 +182,11 @@ NOCUT_COVARIANCE = "halo_ia_diagonal_cov"
 # {a_1h, eta_1h, z_pivot}: F21 red galaxies, no redshift evolution
 IA_HALO_FIDUCIAL = (0.001, 0.0, 0.62)
 
-# {lgM_cen, width_cen, lgM_sat, width_sat}: the student's notebook values
+# {lgM_cen, width_cen, lgM_sat, width_sat}: the fiducial red-fraction
+# sigmoids (central and satellite)
 IA_RED_FIDUCIAL = (13.0, 0.5, 12.5, 0.7)
 
-# {lgMmin, sigma_lgM, lgM1, lgM0, alpha, f_c}: the student's default,
+# {lgMmin, sigma_lgM, lgM1, lgM0, alpha, f_c}: the default IA HOD,
 # Coupon et al. 2012 red galaxies with M_r < -21.8
 IA_HOD_FIDUCIAL = (13.17, 0.39, 14.53, 11.09, 1.27, 1.00)
 
@@ -228,13 +229,14 @@ MIN_IA_SIGNAL_CHI2 = 1.0
 # ---- the aggressive positive-definite mask ----------------------------------
 
 # The 3x2pt indices (xi+ 0-539, xi- 540-1079, gammat 1080-1994,
-# w 1995-2114) that stay CUT in the most aggressive mask whose
+# w 1995-2114) that stay cut in the most aggressive mask whose
 # covariance block is still positive definite. Built from the
 # production mask (example1.mask cuts 165 points, all gammat and w)
 # by re-admitting the cut points one at a time, largest theta bin
 # first, keeping a point only while the smallest eigenvalue of the
-# masked CORRELATION matrix stays >= 1e-4: 85 re-admitted, these 80
-# remain cut. Stored as data because the greedy search costs minutes.
+# masked correlation matrix (not the covariance) stays >= 1e-4: 85
+# re-admitted, these 80 remain cut. Stored as data because the greedy
+# search costs minutes.
 AGGRESSIVE_MASK_EXCLUDED = (
     1080, 1095, 1096, 1110, 1111, 1125, 1126, 1140, 1141, 1155,
     1156, 1170, 1171, 1185, 1186, 1215, 1216, 1230, 1231, 1245,
@@ -377,7 +379,7 @@ def build_scoring(workdir):
 
 
 def chi2_of(delta, scoring, mask):
-    """delta^T C^-1 delta on one scoring mask.
+    """Return delta^T C^-1 delta on one scoring mask.
 
     Arguments:
       delta   = a full-length difference of two data vectors.
@@ -432,7 +434,7 @@ integration_accuracy {REFERENCE_SETTINGS[1]})
 # THE WORKERS (subprocesses: one model, one set of cosmolike statics)
 # =============================================================================
 def build_model(workdir, include_halo_IA):
-    """The frozen NLA 3x2pt model on the no-cut scratch dataset.
+    """Build the frozen NLA 3x2pt model on the no-cut scratch dataset.
 
     Arguments:
       workdir         = the directory holding the scratch dataset.
@@ -469,7 +471,7 @@ def set_ia(ci, ia_halo):
 
 
 def data_vector(ci):
-    """The full-length theory vector from cosmolike's current state.
+    """Return the full-length theory vector of cosmolike's current state.
 
     Under ones.mask every point is kept, so the masked vector is the
     whole vector. The caches make this cheap after an evaluation; a
@@ -494,17 +496,23 @@ def set_halo_ia_lmax(ci, lmax):
 def worker_main(spec_json, out_path):
     """Subprocess entry: build one arm and save its vectors.
 
-    spec kinds:
-      "accuracy" - flag on at (accuracy_boost, integration_accuracy):
-                   dv_on, dv_off; with one_halo_signal also dv_2h (flag
-                   on, a_1h = 0).
-      "lmax"     - flag on at production settings: dv_6, dv_4, dv_2,
-                   dv_6_again; binding_missing alone when the
-                   interface cannot set Ntable.halo_ia_lmax.
-      "pristine" - include_halo_IA left at its default, the IA setters
-                   never called: dv.
-      "touched"  - include_halo_IA = 0 with the IA parameters set: dv_a;
-                   flag on: dv_on; flag back off: dv_b.
+    spec kinds and the vectors they save:
+      "accuracy": flag on at (accuracy_boost, integration_accuracy):
+                  dv_on, dv_off; with one_halo_signal also dv_2h (flag
+                  on, a_1h = 0).
+      "lmax":     flag on at production settings: dv_6, dv_4, dv_2,
+                  dv_6_again; binding_missing alone when the
+                  interface cannot set Ntable.halo_ia_lmax.
+      "pristine": include_halo_IA left at its default, the IA setters
+                  never called: dv.
+      "touched":  include_halo_IA = 0 with the IA parameters set: dv_a;
+                  flag on: dv_on; flag back off: dv_b.
+
+    Arguments:
+      spec_json = the spec dictionary as json text (kind, workdir and
+                  the kind's settings)
+      out_path  = the .npz file the vectors are saved into; np.savez
+                  stores one array per keyword of **out
     """
     import numpy as np
 
@@ -624,6 +632,8 @@ class TestHaloIAAccuracy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state, write the scratch dataset, factor
+        the scoring covariances."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.workdir = tempfile.mkdtemp(prefix="cocoa_halo_ia_accuracy_")
@@ -638,10 +648,11 @@ class TestHaloIAAccuracy(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """Remove the temporary directory of the scratch dataset."""
         shutil.rmtree(cls.workdir, ignore_errors=True)
 
     def _worker(self, label, spec):
-        """The vectors of one worker, run once per class.
+        """Return the vectors of one worker, run once per class.
 
         A failed worker is cached too: its exception is raised again
         for every later test that needs it, so a crashing reference
@@ -667,6 +678,7 @@ class TestHaloIAAccuracy(unittest.TestCase):
 
     def _accuracy_arm(self, label, accuracy_boost, integration_accuracy,
                       one_halo_signal=False):
+        """Return the vectors of one "accuracy" worker (see worker_main)."""
         spec = {"kind": "accuracy",
                 "accuracy_boost": accuracy_boost,
                 "integration_accuracy": integration_accuracy,
@@ -674,7 +686,11 @@ class TestHaloIAAccuracy(unittest.TestCase):
         return self._worker(label, spec)
 
     def _reference(self):
-        """The reference arm, with its vacuity guard and signal report."""
+        """Return the reference arm's vectors, after its vacuity guard.
+
+        *REFERENCE_SETTINGS unpacks the (accuracyboost,
+        integration_accuracy) pair into the two positional arguments.
+        """
         ref = self._accuracy_arm("reference", *REFERENCE_SETTINGS)
         increment = ref["dv_on"] - ref["dv_off"]
         signal = chi2_of(increment, self.scoring, "aggressive")
@@ -686,6 +702,11 @@ class TestHaloIAAccuracy(unittest.TestCase):
         return ref
 
     def _check_arm(self, number):
+        """Score one convergence arm against the reference and assert.
+
+        Arguments:
+          number = a key of ACCURACY_ARMS (IA1-IA5)
+        """
         label, boost, hdi = ACCURACY_ARMS[number]
         ref = self._reference()
         is_production = (boost, hdi) == PRODUCTION_SETTINGS
@@ -739,6 +760,7 @@ class TestHaloIAAccuracy(unittest.TestCase):
             "flag is dead, so the flag-off checks would pass vacuously")
 
         def largest_relative(a, b):
+            """Return max |a/b - 1| over the entries where b != 0."""
             nonzero = b != 0
             if not nonzero.any():
                 return 0.0

@@ -11,10 +11,12 @@ per tomographic pair and per angular bin, for xi_plus (solid) and
 xi_minus (dashed). Masked angular bins are left out. Two figures,
 because the two knobs live on different scales:
 
-    photoz_zmid_dxi.png   - the Z_LOW vs Z_MID reading of the n(z)
-                            file z column (percent level),
-    photoz_interp_dxi.png - linear and Steffen vs cubic spline
-                            (1e-4 level).
+    photoz_zmid_dxi.png:   the Z_LOW vs Z_MID reading of the n(z)
+                           file z column (percent level),
+    photoz_interp_dxi.png: linear and Steffen vs cubic spline
+                           (1e-4 level).
+
+Both are written next to this file, in tests/.
 
 To run (from the Cocoa/ folder, cocoa environment active,
 start_cocoa.sh sourced):
@@ -24,6 +26,8 @@ start_cocoa.sh sourced):
 
 import os
 
+# OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so it
+# is set before any cobaya/cosmolike import.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -31,13 +35,18 @@ import shutil
 import tempfile
 
 import matplotlib
+# Agg draws into image files only (no window), so the script also runs
+# without a display; it must be chosen before pyplot is imported.
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+# tests/, this file's folder, holds the harness
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cocoa_test_utils as u
 
+# The frozen example1 layout: 8 source bins, 15 angular bins between 2.5
+# and 250 arcmin, and its scale-cut mask.
 EXAMPLE = "example1"
 NTOMO = 8
 NTHETA = 15
@@ -51,7 +60,11 @@ SETTINGS = (("cspline/Z_LOW (default)", 0, 0), ("linear", 1, 0),
 
 
 def datavectors():
-    """The printed theory vector under each setting, keyed by tag."""
+    """Return the printed theory vector under each setting, keyed by tag.
+
+    Each setting builds a new model whose likelihood prints its theory
+    vector into a temporary folder, removed in the finally block.
+    """
     vectors_dir = tempfile.mkdtemp(prefix="photoz_conventions_fig_")
     out = {}
     try:
@@ -74,11 +87,25 @@ def datavectors():
 
 
 def plot(curves, fname, title, scale=100.0, unit="%", ylim=None):
-    """One 3x5 per-pair panel grid in the notebook-plotter layout.
+    """Draw a 6 x 6 grid with one panel per source-bin pair and save it.
 
-    curves = {label: (dxi_plus, dxi_minus)}, each a (npair, NTHETA)
-    fractional-difference array with NaN at masked bins.
+    The 36 pairs (i <= j) of the 8 source bins fill the grid in order;
+    each panel shows every curve's xi_plus (solid) and xi_minus
+    (dashed) fractional difference, multiplied by scale.
+
+    Arguments:
+      curves = {label: (dxi_plus, dxi_minus)}, each a (npair, NTHETA)
+               fractional-difference array with NaN at masked bins
+      fname  = the PNG file name, written next to this script
+      title  = the figure title
+      scale  = factor applied to the differences (100 = percent)
+      unit   = the unit text of the y label
+      ylim   = symmetric y range (-ylim, ylim), or None for automatic
+
+    Side effects: writes fname and prints its name.
     """
+    # area-weighted centers of the log-spaced angular bins:
+    # 2/3 (t_max^3 - t_min^3)/(t_max^2 - t_min^2)
     theta = np.geomspace(THETA_MIN, THETA_MAX, NTHETA + 1)
     theta = (2.0 / 3.0) * (theta[1:]**3 - theta[:-1]**3) \
                         / (theta[1:]**2 - theta[:-1]**2)
@@ -116,6 +143,7 @@ def plot(curves, fname, title, scale=100.0, unit="%", ylim=None):
 
 
 def main():
+    """Evaluate the four settings and write the two figures."""
     u.require_cocoa_environment()
     u.verify_frozen()
     dv = datavectors()
@@ -126,6 +154,8 @@ def main():
     nxi = npair * NTHETA
 
     def frac(tag):
+        """Return [dxi_plus, dxi_minus] of one setting against the
+        default, each reshaped to (npair, NTHETA)."""
         # first the xi_plus block, then xi_minus; fractional difference
         # against the default, NaN where the mask removes the point
         ref, cur = dv[SETTINGS[0][0]], dv[tag]

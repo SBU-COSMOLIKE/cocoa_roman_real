@@ -1,3 +1,19 @@
+"""Compare samplers on the roman_real w0waCDM cosmic-shear emulator posterior.
+
+Draws one getdist triangle plot of the same posterior (the cosmic-shear
+data-vector emulator, w0waCDM) sampled four ways:
+
+  EXAMPLE_EMUL_MCMC4      Metropolis-Hastings (MH), burn-in 30% removed;
+  EXAMPLE_EMUL_NAUTILUS2  Nautilus nested sampling;
+  EXAMPLE_EMUL_EMCEE2     emcee ensemble sampling;
+  EXAMPLE_EMUL_POLY2      PolyChord nested sampling.
+
+The chains are read from projects/roman_real/chains/, where the figure
+example_compare_chains_emul4.pdf and hidden copies of the chains
+(.VM_P4_TMP*) are written. Run it once the four chains exist:
+
+    python ./projects/roman_real/scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL4.py
+"""
 import getdist.plots as gplot
 from getdist import MCSamples
 from getdist import loadMCSamples
@@ -7,7 +23,8 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 
-# GENERAL PLOT OPTIONS
+# Figure style: matplotlib's global settings (rcParams) for fonts, ticks,
+# grid and the saved-figure format (PDF, tight bounding box).
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
@@ -28,8 +45,16 @@ matplotlib.rcParams['savefig.bbox'] = 'tight'
 matplotlib.rcParams['savefig.format'] = 'pdf'
 
 parameter = [u'wa',u'w',u'As_1e9', u'omegam', u'ns', u'H0', u'omegab', u'chi2v2']
+# ROOTDIR, the cocoa/Cocoa folder, is set by start_cocoa.sh.
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
+# getdist analysis settings: Gaussian smoothing of the 1D and 2D densities
+# by 0.25 standard deviations, plot ranges that hold 99.5% of each 1D
+# posterior (range_confidence = 0.005), and fine histogram bins.
+# analysissettings drops the first 30% of each MH chain
+# as burn-in (ignore_rows = 0.3) when the chain is loaded; analysissettings2
+# keeps every row, for the saved copies (already cut) and for samplers whose
+# output needs no burn-in cut.
 analysissettings={'smooth_scale_1D':0.25,
                   'smooth_scale_2D':0.25,
                   'ignore_rows': u'0.3',
@@ -52,6 +77,12 @@ root_chains = (
 )
 
 # --------------------------------------------------------------------------------
+# Each block loads one chain, adds the derived parameter chi2v2 and saves a
+# hidden text copy (a name starting with '.') in chaindir, which the
+# triangle plot reads. chi2v2 = chi2 + 2 minuslogprior is -2 ln(posterior)
+# up to a constant (chi2 = -2 ln L, minuslogprior = -ln prior).
+# For the Nautilus and emcee chains chi2v2 is chi2 alone, and wa is
+# derived from the sampled w0pwa = w0 + wa as w0pwa - w.
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
@@ -75,7 +106,9 @@ samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2',label='{\\chi^2}')
 samples.saveAsText(chaindir + '/.VM_P4_TMP4')
 # --------------------------------------------------------------------------------
 
-#GET DIST PLOT SETUP
+# getdist triangle plot: the 1D posterior of each parameter on the
+# diagonal and the 2D contours of every pair below it; the settings fix
+# the figure width (inches), tick rotation, line widths and font sizes.
 g=gplot.getSubplotPlotter(chain_dir=chaindir,
                           analysis_settings=analysissettings2,
                           width_inch=10.5)
@@ -113,4 +146,5 @@ g.triangle_plot(
     'PolyChord $n_{\\rm live}=512$, $n_{\\rm repeat}=3D$',
   ],
   legend_loc=(0.3, 0.85))
+# Save the figure as a PDF in chaindir.
 g.export(os.path.join(chaindir,"example_compare_chains_emul4.pdf"))

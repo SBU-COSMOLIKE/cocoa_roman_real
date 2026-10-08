@@ -12,29 +12,29 @@ Units are halo.c's code units: k in (c/H0)^-1 (k[h/Mpc] * COVERH0),
 power spectra in (c/H0)^3, masses in M_sun/h, number densities in
 (c/H0)^-3.
 
-Four groups of checks, all in ONE pytest process on the frozen
+Four groups of checks, all in one pytest process on the frozen
 cosmic-shear example at its fiducial point, with the HOD parameters
 pinned below:
 
-  1. TestFrozenReferences - every probe reproduces, point by point,
-     the values frozen from the current (GSL fixed-quadrature)
-     implementation: the ground truth that every later rewrite of
+  1. TestFrozenReferences: every probe reproduces, point by point,
+     the values frozen from the implementation at the freeze (GSL
+     fixed-order quadrature): the ground truth that any rewrite of
      halo.c is compared against.
-  2. TestPhysicsInvariants - properties the physics itself demands
+  2. TestPhysicsInvariants: properties the physics itself demands
      (published fits, normalizations, large-scale limits, bounds);
-     they hold for ANY correct implementation, so they survive every
+     they hold for any correct implementation, so they survive every
      rewrite unchanged.
-  3. TestCacheConsistency - halo.c caches its tables behind keys
+  3. TestCacheConsistency: halo.c caches its tables behind keys
      (cosmology.random, Ntable.random, nuisance.random_*): a change
      must be seen, and undoing it must reproduce the first values bit
      for bit.
-  4. TestDeterminism - the same inputs give the same bits: on repeated
-     calls, and with 1, 4 or 8 OpenMP threads.
+  4. TestDeterminism: the same inputs give the same bits, on repeated
+     calls and with 1, 4 or 8 OpenMP threads.
 
-Blocked probes. HEAD_DEFECTS below lists what the current build
-cannot evaluate (none today): those tests are marked xfail(run=False)
-- reported, never executed, since halo.c aborts the process - and the
-generator leaves them out of the frozen file. The ticket that
+Blocked probes. HEAD_DEFECTS below lists the probes the build cannot
+evaluate (the list is empty): such tests are marked xfail(run=False),
+reported but never executed because halo.c would abort the process,
+and the generator leaves them out of the frozen file. A fix that
 unblocks one removes its entry and regenerates the frozen file.
 
 Slow tests. Building a spectrum table costs a 1024-node mass integral
@@ -60,7 +60,7 @@ import json
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -165,10 +165,10 @@ HOD_A_FACTORS = np.linspace(0.98, 1.02, 8)     # times 1/(1 + <z>_bin)
 PK_K = np.logspace(-1.0, 6.0, 20)              # 3.3e-5 to 330 h/Mpc
 PK_A = (0.1, 0.2, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99)
 
-# ---- known defects of the current halo.c ------------------------------------
+# ---- known defects of halo.c ------------------------------------------------
 
-# Probes the current build cannot evaluate. They are never called
-# (xfail(run=False)) and never frozen; the ticket that unblocks one
+# Probes the build cannot evaluate. They are never called
+# (xfail(run=False)) and never frozen; a fix that unblocks one
 # deletes its entry here and regenerates the frozen file (--halo).
 HEAD_DEFECTS = {}
 
@@ -180,15 +180,15 @@ SLOW_PROBES = ("p_gm", "p_gg")
 # Frozen references: the implementation is unchanged since the freeze,
 # so only libm/compiler rounding (~1e-15 relative) may differ.
 FROZEN_RTOL = 1.0e-12
-# A conversion ticket enters its measured, justified bound per probe
-# here, in the same commit that changes the implementation.
+# A change of implementation enters its measured, justified bound per
+# probe here, together with the change.
 FROZEN_RTOL_BY_PROBE = {}
 
 # Closed-form fits re-evaluated in numpy: pow/exp differ by a few ulp.
 TINKER_RTOL = 1.0e-12
 # fnu carries alpha(z) from halo.c's table: exact at 140 nodes, cubic-
-# upsampled to 4096 nodes in a, read linearly; measured in numpy
-# (2026-09-28) to 4.9e-8 at most, set by the linear read.
+# upsampled to 4096 nodes in a, read linearly; measured in numpy to
+# 4.9e-8 at most, set by the linear read.
 FNU_RTOL = 2.0e-7
 CONC_RTOL = 1.0e-12
 
@@ -215,25 +215,26 @@ DLOGNU_TEST_M = np.logspace(8.0, 15.0, 15)
 # sigma2 vs an independent numpy integral of the same p_lin (dense
 # trapezoid in ln x; 2e6 and 4e6 nodes agree). The masses sit on the
 # table's own ln M nodes, so the table read is exact and only the lobe
-# quadrature is tested. Measured 2026-09-29 at hdi = 0: 6.2e-6 max
-# (N_M_internal = 192) and 5.0e-6 (exact branch); a head segment
-# integrated uniformly in x instead of ln x would be off by ~6e-3.
+# quadrature is tested. Measured at hdi (integration_accuracy) = 0:
+# 6.2e-6 max (N_M_internal = 192) and 5.0e-6 (exact branch); a head
+# segment integrated uniformly in x instead of ln x would be off by
+# ~6e-3.
 SIGMA2_REF_RTOL = 2.0e-5
 SIGMA2_REF_NODES = (0, 128, 256, 384, 512, 640, 768, 896, 1023)
 SIGMA2_REF_NX = 2_000_001
 
 # bias_norm at its own table nodes vs the numpy integral. numpy's
-# leggauss rules are
-# exact to rounding and converged here (1000 vs 2000 nodes agree to
-# 1e-11). halo.c integrates with GSL's tabulated 128-node rule at
+# leggauss rules are exact to rounding and converged here (1000 vs
+# 2000 nodes agree to 1e-11). halo.c integrates with GSL's tabulated
+# 128-node rule at
 # hdi = 0, converged to 3e-15, but its f(nu) carries alpha(z) from the
 # alpha table (FNU_RTOL) while the numpy side computes alpha exactly;
 # a wrong fit or bound would be >= 1e-3.
 BIAS_NORM_GL_NODES = 2000
 BIAS_NORM_QUAD_RTOL = FNU_RTOL
 # bias_norm table vs the numpy integral between nodes: linear
-# interpolation over
-# da ~ 4e-3 of a smooth function, error ~ da^2/8 |f''/f| ~ 1e-5.
+# interpolation over da ~ 4e-3 of a smooth function, error
+# ~ da^2/8 |f''/f| ~ 1e-5.
 BIAS_NORM_INTERP_RTOL = 1.0e-4
 # Off-node test points, below the pinned last table cell.
 BIAS_NORM_INTERP_A = np.linspace(0.3, 0.98, 12)
@@ -254,9 +255,9 @@ NGAL_BRACKET_H3 = (1.0e-7, 1.0e-2)
 # Linear bias of red galaxies in >~1e13 M_sun/h halos at z < 1.
 BGAL_RANGE = (1.0, 5.0)
 # ngal and bgal tables against hod_reference (composite Gauss-Legendre
-# in ln M, HOD_REF_PANEL wide panels of HOD_REF_NODES nodes). Measured
-# 2026-09-29: the tables' linear read in a leaves up to 1.4e-5 against
-# the direct integral, the 128-node rule 5e-7.
+# in ln M, HOD_REF_PANEL wide panels of HOD_REF_NODES nodes). Measured:
+# the tables' linear read in a leaves up to 1.4e-5 against the direct
+# integral, the 128-node rule 5e-7.
 HOD_TABLE_RTOL = 5.0e-5
 HOD_REF_PANEL = 0.25
 HOD_REF_NODES = 16
@@ -267,7 +268,7 @@ HOD_REF_NODES = 16
 P_2H_K_HMPC = (0.01, 0.02)
 P_2H_A = (0.5, 0.8, 0.99)
 P_2H_RTOL = 0.1
-# Measured 2026-09-29 against mpmath at 3000 random (c, k, m), c in
+# Measured against mpmath at 3000 random (c, k, m), c in
 # [0.05, 100]: error <= 6.1e-7 relative, largest at c < 0.1 where
 # m(c) ~ c^2/2 amplifies the table's error; below |u| = 1e-3 the error
 # stays under 2e-11 absolute.
@@ -365,6 +366,10 @@ def tinker_alpha(a):
     is unbiased with respect to itself, int_0^inf b(nu) f(nu) dnu = 1
     (Eq. 7), at every z (frozen at z = 3 with the shape).
 
+    The functools.lru_cache decorator stores each result by its argument,
+    so a repeated call with the same a returns the stored value instead
+    of integrating again.
+
     Trapezoid in s = ln nu (dnu = nu ds) over [-120, 4] with step 0.02:
     the integrand decays at both ends, so the rule converges fast
     (1e-12; the Table 4 value alpha = 0.368 at z = 0 comes out 0.36841).
@@ -419,7 +424,9 @@ def hod_reference(ci, ni, a, omega_cb):
 
     Arguments:
       ci = the cosmolike interface module; ni = lens bin; a = scale
-      factor; omegam = the fixture point's Omega_m.
+      factor; omega_cb = Omega_cb = Omega_m - Omega_nu of the fixture
+      point (the HOD counts halos of the cold dark matter + baryon
+      density rho_cb = RHO_CRIT Omega_cb).
 
     Returns:
       (ngal in (c/H0)^-3, bgal).
@@ -531,6 +538,7 @@ def probe_inputs(state):
       probes, "a" holds one list per entry of "ni".
     """
     def floats(values):
+        """Return values as a list of plain python floats (json-ready)."""
         return [float(v) for v in values]
 
     a_bins = [floats(HOD_A_FACTORS*lens_bin_mean_scale_factor(state, ni))
@@ -555,13 +563,17 @@ def probe_inputs(state):
 
 
 def _per_bin(function, x):
-    """function(ni, a) for each probed bin, then that bin's a values."""
+    """Return [function(ni, a)] bin by bin, each bin over its own a values.
+
+    The comprehension's first for clause (the bins) is the outer loop.
+    """
     return [function(ni=ni, a=a)
             for ni, a_list in zip(x["ni"], x["a"]) for a in a_list]
 
 
 def _spectrum(function, x):
-    """The array overload function(k array, a), for each a in turn."""
+    """Return the array overload function(k array, a), each a in turn,
+    as one flat list (a outer, k inner)."""
     k = np.asarray(x["k"], dtype=float)
     # np.ravel flattens the (nk, 1) column carma returns
     return [v for a in x["a"] for v in np.ravel(function(k=k, a=a))]
@@ -604,7 +616,7 @@ EVALUATORS = {
 PROBE_NAMES = tuple(EVALUATORS)
 
 # The probes the cache and determinism checks re-evaluate: cheap, and
-# callable on the current halo.c.
+# not blocked by HEAD_DEFECTS.
 FAST_PROBES = tuple(name for name in PROBE_NAMES
                     if name not in SLOW_PROBES and name not in HEAD_DEFECTS)
 
@@ -629,7 +641,7 @@ def evaluate_probe(ci, name, x):
 
 
 def evaluate_fast(state):
-    """{probe name: numpy array of values} for every FAST_PROBES entry."""
+    """Return {probe name: numpy array of values} for FAST_PROBES."""
     return {name: np.array(evaluate_probe(state["ci"], name,
                                           state["inputs"][name]))
             for name in FAST_PROBES}
@@ -689,7 +701,7 @@ def build_halo_state():
 
 
 def freeze_probes(state):
-    """Evaluate every probe the current halo.c can evaluate.
+    """Evaluate every probe outside HEAD_DEFECTS.
 
     Arguments:
       state = the dictionary from build_halo_state.
@@ -709,7 +721,7 @@ def freeze_probes(state):
 
 
 def frozen_meta():
-    """The settings the frozen values depend on (stored in _meta)."""
+    """Return the settings the frozen values depend on (stored in _meta)."""
     return {
         "example": EXAMPLE,
         "tatt": TATT,
@@ -720,7 +732,7 @@ def frozen_meta():
 
 
 def _max_relative_change(new, old):
-    """max |new - old|/|old| over the entries where old != 0."""
+    """Return max |new - old|/|old| over the entries where old != 0."""
     nonzero = old != 0
     return float(np.max(np.abs(new[nonzero] - old[nonzero])
                         / np.abs(old[nonzero])))
@@ -776,20 +788,24 @@ def _frozen_params():
 class TestFrozenReferences:
     """Every probe reproduces its frozen values, point by point.
 
-    The frozen file holds the values of the current implementation
-    (GSL fixed-order Gauss-Legendre integrals, linear tables) on the
-    probe grids, taken before any rewrite of halo.c. While the
-    implementation is unchanged they must agree to rounding
-    (FROZEN_RTOL). A ticket that rewrites a family replaces the
-    tolerance of its probes by the measured accuracy of the new code
-    (FROZEN_RTOL_BY_PROBE) in the same commit: the frozen values stay
-    the fixed yardstick of the whole campaign. The inputs are read
-    from the frozen file itself, so later edits of the grids above
-    cannot desynchronize a comparison.
+    The frozen file holds the values of the implementation at the
+    freeze (GSL fixed-order Gauss-Legendre integrals, linear tables) on
+    the probe grids. While the implementation is unchanged they must
+    agree to rounding (FROZEN_RTOL). A rewrite of a family of probes
+    replaces their tolerance by the measured accuracy of the new code
+    (FROZEN_RTOL_BY_PROBE), so the frozen values stay the fixed
+    yardstick. The inputs are read from the frozen file itself, so
+    later edits of the grids above cannot desynchronize a comparison.
     """
 
     @pytest.mark.parametrize("name", _frozen_params())
     def test_matches_frozen(self, frozen_reference, halo, name):
+        """One probe reproduces its frozen values within its tolerance.
+
+        pytest.mark.parametrize runs this method once per entry of
+        _frozen_params(), passing the probe name as name; halo and
+        frozen_reference are the module fixtures above.
+        """
         entry = frozen_reference["probes"].get(name)
         if entry is None:
             pytest.skip(f"{name} is not in frozen/halo_reference.json "
@@ -809,9 +825,9 @@ class TestFrozenReferences:
 class TestPhysicsInvariants:
     """Properties the physics demands of any correct implementation.
 
-    Each test states a fact that follows from the definitions - a
+    Each test states a fact that follows from the definitions (a
     published fitting formula, the mass normalization of a profile, the
-    large-scale limit of the halo model, a bound - and checks halo.c
+    large-scale limit of the halo model, a bound) and checks halo.c
     against it with a tolerance justified next to its constant. None of
     them refers to how halo.c integrates or tabulates, so they stay
     unchanged through every rewrite.
@@ -905,7 +921,7 @@ class TestPhysicsInvariants:
                     err_msg=f"conc(m={m:.1e}, a={d})")
 
     def test_conc_decreases_with_mass(self, halo):
-        """Massive halos formed late and are less concentrated: c(m)
+        """Massive halos form late and are less concentrated: c(m)
         falls monotonically with m at fixed a."""
         ci = halo["ci"]
         for d in CONC_A:
@@ -939,9 +955,10 @@ class TestPhysicsInvariants:
         omegam = float(halo["point"]["omegam"])
         x_end = 513.5*np.pi - 1.0/(513.5*np.pi)  # last lobe edge
         # x = k R: a smaller halo radius raises the physical k at a fixed
-        # x. Start at 1e-6 so the new 1e4 mass boundary still includes the
-        # large-scale power. Starting at 1e-4 omits 1e-4 of its variance;
-        # extending 1e-6 to 1e-8 changes that integral by only 3e-11.
+        # x. Start at 1e-6 so the 1e4 M_sun/h lower mass boundary still
+        # includes the large-scale power. Starting at 1e-4 omits 1e-4 of
+        # its variance; extending 1e-6 to 1e-8 changes that integral by
+        # only 3e-11.
         s = np.linspace(np.log(1.0e-6), np.log(x_end), SIGMA2_REF_NX)
         x = np.exp(s)
         w = 9.0*spherical_jn(1, x)**2*x*(s[1] - s[0])  # dx = x ds
@@ -960,7 +977,7 @@ class TestPhysicsInvariants:
     # ---- bias normalization ------------------------------------------------
     def test_bias_norm_endpoint_continuity(self, halo):
         """The last table node (a = 0.9999999) holds the real integral
-        like every other node - no sentinel value - and queries past it
+        like every other node (no sentinel value), and queries past it
         return that endpoint by constant extrapolation."""
         ci = halo["ci"]
         end = ci.bias_norm(a=BIAS_NORM_A_END)

@@ -8,8 +8,8 @@ through leftover internal state or colliding OpenMP threads).
 Every model build runs in its own worker subprocess. In this project
 both examples share one data set, so the isolation is preventive: it
 keeps the tests immune to the process abort that different data-set
-dimensions trigger inside cosmolike (roman_real has that layout), and
-every project keeps one architecture. The commands below stay the
+dimensions trigger inside cosmolike, and every project keeps one
+architecture. The commands below stay the
 same.
 
 # Table of contents
@@ -19,13 +19,15 @@ same.
     1. [The CFASTPT vs FASTPT comparison](#cfastpt_fastpt)
     2. [The Halofit vs EE2 checks](#halofit_ee2)
     3. [The EE2 race test](#ee2_race)
-    4. [Accuracy checks](#accuracy_checks)
-    5. [Baryonic feedback accuracy checks](#baryon_accuracy_checks)
-    6. [Baryonic feedback drift tests](#baryon_drift_tests)
-    7. [The photo-z convention checks](#photoz_conventions)
-    8. [The non-Limber galaxy-galaxy lensing check](#nonlimber_ggl)
-    9. [The non-Limber galaxy clustering check](#nonlimber_gg)
-    10. [The sector-ladder cache check](#cache_ladder)
+    4. [Scale-cut diagnostics](#scale_cut_diagnostics)
+    5. [Accuracy checks](#accuracy_checks)
+    6. [Baryonic feedback accuracy checks](#baryon_accuracy_checks)
+    7. [Baryonic feedback drift tests](#baryon_drift_tests)
+    8. [The photo-z convention checks](#photoz_conventions)
+    9. [The non-Limber galaxy-galaxy lensing check](#nonlimber_ggl)
+    10. [The non-Limber galaxy clustering check](#nonlimber_gg)
+    11. [The sector-ladder cache check](#cache_ladder)
+    12. [The halo-model checks](#halo_checks)
 3. [Appendix](#appendix)
     1. [FAQ: Do the tests keep their own data?](#frozen_copy)
     2. [FAQ: Why do the TATT tests use their own data vector?](#synthetic_vectors)
@@ -103,6 +105,8 @@ The test files and the configurations they cover:
 | 17 | `test_fastpt.py` | 3x2pt; IA modeling: TATT; the same comparison as test 16 on the 3x2pt likelihood (`roman_real.combo_3x2pt`) | the same pass rule as test 16, with the data-vector difference weighted by the 3x2pt masked inverse covariance |
 | 18 | `test_fastpt.py` | 2x2pt; IA modeling: TATT; the same comparison as test 16 on the 2x2pt likelihood (`roman_real.combo_2x2pt`) | the same pass rule as test 16; clustering carries no intrinsic alignment, so the TATT tables enter through galaxy-galaxy lensing alone, weighted by the 2x2pt masked inverse covariance |
 | 19 | `test_ee2.py` | cosmic shear; NLA with EE2 (`non_linear_emul: 1`) | race condition (OpenMP threading, including EE2's own threaded compute): fiducial alone vs after nine other cosmologies |
+| 20 | `test_halo_ia_race.py` | 3x2pt with Limber galaxy-galaxy lensing; IA modeling: halo model (`include_halo_IA: 1`, Fortuna et al. 2021) | race condition (OpenMP threading): the fiducial evaluated ten times on one model, the halo-model IA tables refilled before each evaluation, every result bitwise identical; runs only with `COCOA_HALO_SLOW=1` |
+| 21 | `test_halo_ia_race.py` | 3x2pt with Limber galaxy-galaxy lensing; IA modeling: halo model (`include_halo_IA: 1`, Fortuna et al. 2021) | thread count: the fiducial evaluated in fresh processes with 1, 4 and 8 OpenMP threads, every result bitwise identical; runs only with `COCOA_HALO_SLOW=1` |
 
 ### The CFASTPT vs FASTPT comparison (`test_fastpt.py`, tests 16-18) <a name="cfastpt_fastpt"></a>
 
@@ -177,9 +181,8 @@ Measured on 2026-09-23:
   $0.0012$ at the defaults and $0.00057$ pushed.
 
 > [!Warning]
-> The 3x2pt sweep does not run under `--mask=ones` (2026-09-23):
-> cosmolike stops at `IP::set_inv_cov: masked cov not positive
-> definite`. The shipped covariance is positive definite only under
+> The 3x2pt sweep does not run under `--mask=ones`: cosmolike stops
+> at `IP::set_inv_cov: masked cov not positive definite`. The shipped covariance is positive definite only under
 > the frozen scale cuts - on the full 2,115-point vector its
 > smallest eigenvalue is negative - so there is no all-ones 3x2pt
 > measurement.
@@ -317,11 +320,10 @@ overload returns finite values, that the scalar overloads agree with
 the matching array entries (they share the batch engines), and that
 the response functions behave as normalized cumulative fractions.
 
-- 2026-09-26: added with the cosmo2D_scuts batch (_work) refactor.
-  The low multipoles it pins (rf_C_ss at l = 3) were fatal before the
-  refactor: the retired exact-scalar branch underflowed k to 0 in its
-  normalization integrand and exited, which is what killed jupyter
-  kernels running the notebook derivative cells.
+The checked multipoles include $`\ell = 3`$ and 10. At $`\ell \le 20`$ an
+exact scalar evaluation would underflow $`k`$ to zero in the
+normalization integrand, where the C layer exits and takes a Jupyter
+kernel with it; the test requires finite values there.
 
 ### Accuracy checks (`test_accuracy.py`, A1-A6) <a name="accuracy_checks"></a>
 
@@ -334,7 +336,7 @@ setting raised at once:
 
 | setting | raised to | what it controls |
 |---------|-----------|------------------|
-| `accuracyboost` (cosmolike) | 2 | sizes of cosmolike's internal lookup tables, including the dyadic z grid of the power-spectrum tables |
+| `accuracyboost` (cosmolike) | 3 | sizes of cosmolike's internal lookup tables, including the dyadic z grid of the power-spectrum tables |
 | `integration_accuracy` (cosmolike) | 10 | extra refinement passes of cosmolike's numerical integrals |
 | `internal_accuracyboost` (cosmolike) | 2 | density of the C-FAST-PT convolution grid relative to the output table the likelihood interpolates; 1 is the legacy single-grid path |
 | `lmax` (cosmolike) | 200000 | highest multipole of the internal harmonic-space $C_\ell$ tables that cosmolike transforms into the real-space correlation functions; arcminute scales need very high $\ell$ |
@@ -351,11 +353,11 @@ moving the nodes (the construction is commented in
 
 `internal_accuracyboost` scales only the C-FAST-PT convolution
 grid; the output table the likelihood interpolates is unchanged.
-
-- 2026-09-25: the 0.5 default is converged. The lsst_y1 scan
-  measured $\Delta^T C^{-1} \Delta \le 10^{-9}$ against the
-  single-grid path down to 0.27, and `internal_accuracyboost: 1`
-  recovers that path exactly.
+The likelihood yamls set `internal_accuracyboost: 1`, which keeps the
+convolution grid equal to the output table: the exact single-grid
+path. Coarser grids also hold: the lsst_y1 scan of this setting
+measured $`\Delta^T C^{-1} \Delta \le 10^{-9}`$ against the single-grid
+path down to `internal_accuracyboost: 0.27`.
 
 When several settings move the $\chi^2$, settle them in cost order:
 raise cosmolike `accuracyboost` first (cheap), then CAMB
@@ -398,9 +400,8 @@ advisory check per feedback method (the three SP(k) fb relations,
 BCEmu, Flamingo, BACCOemu, and BCemu2025), at a fixed parameter
 point per method.
 
-Each check creates its data vector on the fly, by the same
-mechanism as the N-random-models check: the default-settings model
-writes its own theory vector during evaluation, that vector becomes
+Each check creates its data vector on the fly: the default-settings
+model writes its own theory vector during evaluation, that vector becomes
 the data of a temporary dataset, and the pushed-settings model
 evaluates at the same point against it. The fiducial $\chi^2$ is
 therefore zero by construction, nothing is stored in the snapshot,
@@ -588,6 +589,49 @@ analytic $(1+m_i)(1+m_j)$ block rescale to $10^{-12}$, a no-op update
 must change nothing, and both intrinsic-alignment models run (the
 TATT ladder exercises the FAST-PT rebuild machinery).
 
+### The halo-model checks (`test_halo*.py`, `test_hod_cell.py`) <a name="halo_checks"></a>
+
+These checks cover cosmolike's halo model: the halo mass function and
+bias, concentrations and NFW profiles, the HOD galaxy power that the
+likelihood key `include_HOD_GX: 1` selects, and the halo-model
+intrinsic alignment of Fortuna et al. (2021) that `include_halo_IA: 1`
+selects. Both keys default to 0, so the reference tests above never
+reach this code.
+
+| file | what it checks |
+|---|---|
+| `test_halo.py` | halo-model quantities at fixed points against `frozen/halo_reference.json` (relative tolerance $`10^{-12}`$); published fits and limits (Tinker et al. 2010 mass function and bias, Bhattacharya et al. 2013 concentrations, NFW normalization, two-halo limits); bitwise cache round trips; bitwise repeatability with 1, 4 and 8 OpenMP threads |
+| `test_halo_cache_consistency.py` | the sector-ladder cache check, extended to the HOD parameters, on the HOD 3x2pt data vector |
+| `test_hod_cell.py` | the HOD $`C_\ell^{gg}`$ and $`C_\ell^{gs}`$: exactly quadratic and linear in the magnification bias, a pure-magnification term equal to that of the standard calculation, a bitwise return to the standard spectra when `include_HOD_GX` goes back to 0, and the linear-bias limit at the lowest multipole |
+| `test_halo_ia_cache_consistency.py` | the sector-ladder cache check on the halo-model intrinsic-alignment parameters, and a bitwise round trip of `include_halo_IA` |
+| `test_halo_ia_race.py` | tests 20-21, race condition (OpenMP threading) with the halo-model intrinsic alignment: ten evaluations in a row with its tables refilled, and 1, 4 and 8 OpenMP threads, every result bitwise identical |
+| `test_halo_ia_accuracy.py` | numerical convergence of the halo-model intrinsic-alignment contribution: `accuracyboost: 1` and 2 and `integration_accuracy: 1`, 2 and 3 each within $`\Delta\chi^2 = 0.02`$ of a reference at `accuracyboost: 3` and `integration_accuracy: 3`; a data vector bitwise unchanged while `include_halo_IA` is 0 |
+
+Every file except `test_halo.py` runs only with `COCOA_HALO_SLOW=1`;
+in `test_halo.py` that variable adds the slow spectrum-table checks.
+The slow checks build several models and evaluate the 3x2pt data
+vector dozens of times. The frozen checks of `test_halo.py` skip while
+`frozen/halo_reference.json` is missing.
+
+#### Running the halo-model checks <a name="run_halo_checks"></a>
+
+We assume users are in the Conda cocoa environment from a previous
+`conda activate cocoa` command, that the shell is bash, and that the
+current folder is the cocoa main folder `cocoa/Cocoa`.
+
+**Step :one:**: activate the private Python environment by sourcing
+the script `start_cocoa.sh`
+
+    source start_cocoa.sh
+
+**Step :two:**: run the fast halo-model checks
+
+    python -m pytest ./projects/roman_real/tests/data_vector/test_halo.py
+
+**Step :three:**: run every halo-model check, the slow ones included
+
+    COCOA_HALO_SLOW=1 python -m pytest ./projects/roman_real/tests/data_vector/test_halo*.py ./projects/roman_real/tests/data_vector/test_hod_cell.py
+
 # Appendix <a name="appendix"></a>
 
 ## :interrobang: FAQ: Do the tests keep their own data? <a name="frozen_copy"></a>
@@ -598,8 +642,10 @@ files. Instead, `frozen/` holds:
 
 | `frozen/` entry | holds |
 |---|---|
-| `frozen_config_example{1,2}.py` | the complete cobaya configuration as a yaml string, plus the exact evaluation point |
+| `frozen_config_*.py` | one module per configuration (cosmic shear, 3x2pt, and 2x2pt): the complete cobaya configuration as a yaml string, plus the exact evaluation point |
 | `data/` | the tests' own copy of the data vectors, covariance, n(z), and masks |
+| `reference_chi2.json` | the six reference $`\chi^2`$ values: cosmic shear, 3x2pt, and 2x2pt, each with NLA and TATT |
+| `halo_reference.json` | the halo-model values `test_halo.py` compares against |
 | `EXAMPLE_EVALUATE{1,2}.yaml` | snapshots kept only so a human can diff how the live examples drifted since the freeze |
 
 In the configuration modules every option and every parameter is
@@ -678,7 +724,18 @@ the script `start_cocoa.sh`
 
     python ./projects/roman_real/tests/generate_frozen_reference.py --overwrite
 
-It rebuilds `frozen/` from the current project, prints the four new
-reference $\chi^2$ values, and rewrites the manifest. Review the printed
+**Step :three:**: add the feedback vectors of the drift tests
+
+    python ./projects/roman_real/tests/generate_frozen_reference.py --baryons
+
+The first command deletes and rebuilds `frozen/` from the current
+project, including the halo-model values of `test_halo.py`, prints the
+six new reference $\chi^2$ values, and rewrites the manifest. It does not
+write the per-method feedback vectors of `test_baryons.py`; the second
+command adds them and rewrites the manifest again. Review the printed
 $\chi^2$ values against the old references before committing: they define
 what every later test run compares against.
+
+> [!NOTE]
+> `--halo`: rewrite only `frozen/halo_reference.json` in an existing
+> snapshot, and the manifest with it.

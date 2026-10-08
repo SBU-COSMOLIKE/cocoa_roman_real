@@ -1,17 +1,17 @@
 """Unit test 5: the notebook-style direct cosmolike interface.
 
-The EXAMPLE_EVALUATE1.ipynb notebook drives cosmolike WITHOUT cobaya:
+The EXAMPLE_EVALUATE1.ipynb notebook drives cosmolike without cobaya:
 it runs CAMB itself, hands the resulting power spectra and distances
 to the compiled interface through set_cosmology, and calls
 compute_data_vector_masked directly (the functions interface.cpp binds
 from the cosmo2D wrapper layer). Tests 1-4 evaluate through the cobaya
 likelihood, so they never touch that call path, and an interface
 change can break every notebook while the yaml pipeline keeps passing.
-Two failures of exactly that kind motivated this test: init_IA grew a
-required third argument (ia_code), and the grid-monotonicity check
-added to the C layer aborts the whole process - in Jupyter, a dead
-kernel - when it receives a chi(z) grid with duplicated nodes. The
-test here:
+Two failures of that kind are the targets: a binding whose required
+arguments change (init_IA requires ia_code as its third argument), and
+the grid-monotonicity check of the C layer, which aborts the whole
+process (in Jupyter, a dead kernel) when it receives a chi(z) grid with
+duplicated nodes. The test here:
 
   5. rebuilds the notebook's call sequence against the frozen example1
      dataset at the frozen fiducial point and checks the chi2 stays
@@ -40,7 +40,7 @@ import json
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -54,8 +54,9 @@ import cocoa_test_utils as u
 EXAMPLE = "example1"
 
 # =============================================================================
-# WORKER LAYER (mirrors cocoa_test_utils Section 5, for this file's
-# computation; the shared _worker only knows the cobaya evaluations)
+# WORKER LAYER (mirrors the worker layer of cosmolike_core's
+# cocoa_testing.py for this file's computation; the shared _worker only
+# knows the cobaya evaluations)
 # =============================================================================
 # __file__ is this file's own path; the worker driver imports the
 # file by that absolute path (see _WORKER_DRIVER)
@@ -65,7 +66,7 @@ _THIS_FILE = os.path.abspath(__file__)
 # worker is never mistaken for a cobaya-evaluation worker.
 _WORKER_FLAG = "COCOA_TESTS_NOTEBOOK_WORKER"
 
-# The driver handed to `python -c` inside the worker: load THIS file
+# The driver handed to `python -c` inside the worker: load this file
 # by path and call its _worker with the result path.
 _WORKER_DRIVER = (
     "import importlib.util, sys\n"
@@ -307,7 +308,7 @@ def _notebook_chi2_impl():
     # nuisance vectors ordered by tomographic bin, zero-padded to the
     # 8 source bins exactly as the notebook passes them. The
     # comprehension collects roman_M1..roman_M8 in bin order:
-    # range(1, 9) runs from 1 and stops BEFORE 9
+    # range(1, 9) runs from 1 and stops before 9
     ci.set_nuisance_shear_calib(
         M=[point[f"roman_M{i}"] for i in range(1, 9)])
     ci.set_nuisance_shear_photoz(
@@ -349,7 +350,7 @@ def _worker(result_path):
 
 
 def notebook_interface_chi2():
-    """chi2 of the notebook call path, evaluated in a fresh worker.
+    """Return the chi2 of the notebook call path, from a fresh worker.
 
     Returns:
       the chi2 as a float.
@@ -368,22 +369,22 @@ def notebook_interface_chi2():
     if os.environ.get(_WORKER_FLAG) == "1":
         return _notebook_chi2_impl()
     # delete=False keeps the file when the with block closes it: only
-    # a fresh unique NAME is needed; the worker writes the file and
+    # a fresh unique name is needed; the worker writes the file and
     # the finally below removes it
     with tempfile.NamedTemporaryFile("w", suffix=".json",
                                      delete=False) as tmp:
         result_path = tmp.name
-    # dict(os.environ) is a COPY of the environment: the edits below
+    # dict(os.environ) is a copy of the environment: the edits below
     # reach only the worker subprocess, never this process
     environment = dict(os.environ)
     environment[_WORKER_FLAG] = "1"
     environment["OMP_NUM_THREADS"] = u.REQUIRED_OMP_THREADS
-    # subprocess.run starts the worker and BLOCKS until it exits;
+    # subprocess.run starts the worker and waits until it exits;
     # env=environment hands the child the edited environment copy
     completed = subprocess.run(
         [sys.executable, "-c", _WORKER_DRIVER, _THIS_FILE, result_path],
         env=environment)
-    # the finally below runs on EVERY exit from the try, an exception
+    # the finally below runs on every exit from the try, an exception
     # included, so the temporary file never outlives this call
     try:
         if completed.returncode != 0:
@@ -417,6 +418,7 @@ class TestNotebookInterface(unittest.TestCase):
     # this once, before the first test of the class
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state and load the frozen reference chi2 values."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.reference = u.load_reference()

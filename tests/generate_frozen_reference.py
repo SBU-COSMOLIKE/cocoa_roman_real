@@ -1,6 +1,6 @@
 """Maintainer tool: (re)create the frozen state the unit tests run on.
 
-Running this REDEFINES what the tests protect, so it refuses to run
+Running this redefines what the tests protect, so it refuses to run
 without the explicit --overwrite flag. Only run it when a change to
 the data vectors, n(z), covariance, examples, or likelihood defaults
 is deliberate, and review the printed chi2 values before committing:
@@ -9,21 +9,21 @@ they become the new references the tests compare against.
 What one run produces, all under tests/ (see cocoa_test_utils for how
 the tests consume each piece):
 
-  - frozen/data/: a copy of the CURRENT ../data folder.
+  - frozen/data/: a copy of the current ../data folder.
   - frozen/EXAMPLE_EVALUATE{1,2}.yaml: snapshots of the current
     examples, kept for humans to diff (the tests never load them).
   - frozen/frozen_config_example{1,2}.py: for each example, the model
-    is built from the CURRENT example yaml, cobaya resolves it against
-    the CURRENT likelihood defaults, and the complete resolved
+    is built from the current example yaml, cobaya resolves it against
+    the current likelihood defaults, and the complete resolved
     configuration is written back out as a yaml string, together with
     the exact evaluation point. Writing out every resolved option and
     parameter is what makes the tests independent of later edits to
     the live files.
   - frozen/reference_chi2.json: the four reference chi2 values
-    (example1/2, each with NLA and TATT), computed FROM the frozen
+    (example1/2, each with NLA and TATT), computed from the frozen
     modules just written, exactly the way the tests will compute them.
   - frozen/halo_reference.json: the halo.c ground truth of
-    test_halo.py - per-point values of every halo-model probe on the
+    test_halo.py: per-point values of every halo-model probe on the
     grids test_halo.py defines, at the configuration and HOD
     parameters it pins (test_halo.build_halo_state).
   - manifest_sha256.json: the SHA-256 pin of every frozen file.
@@ -50,7 +50,7 @@ import time
 os.environ["OMP_NUM_THREADS"] = "4"
 
 # __file__ is this script's own path; insert(0, ...) puts the tests/
-# folder FIRST on the module search path, so the import below finds
+# folder first on the module search path, so the import below finds
 # the harness no matter where the script was launched from
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cocoa_test_utils as u
@@ -93,7 +93,7 @@ def freeze_example(example, stamp):
     The expansion works by round trip through cobaya: build the model
     from the live example yaml (letting cobaya merge in the live
     likelihood defaults), then ask the model for its resolved
-    configuration with model.info() and store THAT. The resolved form
+    configuration with model.info() and store that. The resolved form
     lists every option and every parameter explicitly, so the frozen
     module no longer depends on any live default.
 
@@ -115,7 +115,7 @@ def freeze_example(example, stamp):
     live = yaml_load_file(os.path.join(PROJECT_DIR, cfg["provenance"]))
     # The evaluate sampler's override block is the example's fiducial
     # point; keep it before stripping the sampler from the info.
-    # dict(...) makes an independent COPY, so the pop below cannot
+    # dict(...) makes an independent copy, so the pop below cannot
     # take the block with it.
     override = dict(live["sampler"]["evaluate"]["override"])
     live.pop("sampler", None)
@@ -128,7 +128,7 @@ def freeze_example(example, stamp):
     # .get falls back to the plain likelihood name for the entries
     # that carry no source_likelihood key
     source_name = cfg.get("source_likelihood", cfg["likelihood"])
-    # pop removes the block from the dictionary AND hands it back, so
+    # pop removes the block from the dictionary and hands it back, so
     # the next line can re-insert it under the target name
     likelihood_block = live["likelihood"].pop(source_name)
     live["likelihood"][cfg["likelihood"]] = likelihood_block
@@ -191,7 +191,7 @@ def generate_tatt_datavector(dataset_name):
 
     The vector comes from the generating example named in
     u.TATT_GENERATORS, evaluated at the TATT point with datavector
-    printing enabled. It must be generated against the ORIGINAL frozen
+    printing enabled. It must be generated against the original frozen
     dataset (the TATT descriptor written here does not exist yet; the
     printed theory vector does not depend on which data vector it is
     compared against). Runs inside a --tatt-one worker subprocess: it
@@ -250,7 +250,7 @@ def generate_tatt_datavector(dataset_name):
     # removed; strip() trims surrounding whitespace before the match
     for line in descriptor.splitlines():
         if line.strip().startswith("data_file"):
-            # split("=", 1) cuts at the FIRST "=" only; [1] is the
+            # split("=", 1) cuts at the first "=" only; [1] is the
             # part after it, stripped of spaces: the file name
             original_vector = line.split("=", 1)[1].strip()
     with open(os.path.join(data_dir, original_vector)) as f:
@@ -288,15 +288,15 @@ def generate_tatt_datavector(dataset_name):
 def generate_baryon_datavector(label):
     """Write one feedback method's frozen data vector and descriptor.
 
-    The vector is the example1 theory prediction WITH the bfmt theory
+    The vector is the example1 theory prediction with the bfmt theory
     block computing this method's suppression, at the frozen fiducial
     point plus the method's cosmology override
     (u.BARYON_POINT_OVERRIDES, e.g. BACCOemu's omegab shift into its
-    training box). The DRIFT tests of test_baryons.py evaluate
+    training box). The drift tests of test_baryons.py evaluate
     against this vector: at freeze time the chi2 is zero by
     construction, so any later chi2 above the tolerance means
     cosmolike or the theory block changed its prediction. (The
-    ACCURACY checks of test_accuracy_baryons.py do not use these
+    accuracy checks of test_accuracy_baryons.py do not use these
     files: they regenerate their vector on the fly per run.) Runs
     inside a --baryon-one worker subprocess for the same isolation
     reasons as the other steps.
@@ -371,8 +371,8 @@ def generate_baryon_datavector(label):
 
 # The --mask reruns of the comparison sweeps read one frozen TATT
 # dataset descriptor per scale-cut mask: identical to the base TATT
-# descriptor except for its mask_file line (the entries of
-# cocoa_test_utils.FASTPT_MASK_DATASETS). variant -> (base, mask).
+# descriptor except for its mask_file line (the "ones" entry of the
+# fastpt_masks of cocoa_test_utils). variant -> (base, mask).
 TATT_MASK_VARIANTS = {
     "tatt_roman_real_ones.dataset": ("tatt_roman_real.dataset", "ones.mask"),
 }
@@ -426,10 +426,10 @@ def generate_halo_reference(stamp):
     parameters all live in test_halo.py, which this function imports,
     so the generator and the tests can never describe different
     states. It builds that state (a model at the frozen fiducial
-    point), evaluates every probe the current halo.c can evaluate, and
-    stores inputs and values together; the probes listed in
-    test_halo.HEAD_DEFECTS abort the process on the current halo.c and
-    are left out (the _meta block records the list). Runs inside a
+    point), evaluates every probe outside test_halo.HEAD_DEFECTS, and
+    stores inputs and values together; the listed probes would abort
+    the process and are left out (the _meta block records the list).
+    Runs inside a
     --halo-one worker subprocess: it builds a model (see main's note).
 
     Arguments:
@@ -470,11 +470,36 @@ def generate_halo_reference(stamp):
 
 
 def main():
-    # worker modes first: --freeze-one X and --tatt-one D each run a
-    # single model-building step and exit. The parent below spawns one
-    # subprocess per step: a process that initializes configurations
-    # with different data-set dimensions aborts inside cosmolike (see
-    # cocoa_test_utils), and one architecture serves every project.
+    """Run the mode the command-line flags select; return the exit code.
+
+    The flags are checked in this order, and the first one present wins:
+      --freeze-one, --baryon-one, --tatt-one, --halo-one
+          worker modes: one model-building step each, then exit;
+      --tatt-masks
+          rewrite the per-mask TATT descriptors and re-pin the manifest;
+      --baryons
+          add the per-method frozen baryon vectors and re-pin the
+          manifest;
+      --halo
+          rewrite frozen/halo_reference.json and re-pin the manifest;
+      --overwrite
+          the full freeze: recreate frozen/, copy the data and the
+          example snapshots, write the expanded configuration modules,
+          the TATT vectors and mask descriptors, the halo.c reference
+          and the four reference chi2 values, and hash everything into
+          the manifest last, so it covers every file written before.
+    Without any of them it prints the module docstring and refuses.
+
+    Returns:
+      0 on success, 1 when --overwrite is missing; some incremental and
+      worker modes return None, which sys.exit also treats as success.
+    """
+    # worker modes first: --freeze-one, --baryon-one, --tatt-one and
+    # --halo-one each run a single model-building step and exit. The
+    # parent spawns one subprocess per step: a process that initializes
+    # configurations with different data-set dimensions aborts inside
+    # cosmolike (see cocoa_test_utils), and one architecture serves
+    # every project.
     if "--freeze-one" in sys.argv:
         u.require_cocoa_environment()
         # sys.argv.index finds the flag's position in the argument
@@ -532,7 +557,7 @@ def main():
         return
     if "--baryons" in sys.argv:
         # incremental: add the per-method frozen baryon vectors of the
-        # DRIFT tests to an existing frozen state and re-pin the
+        # drift tests to an existing frozen state and re-pin the
         # manifest; nothing else changes
         import subprocess
 
@@ -664,7 +689,7 @@ def main():
         f.write("\n")
 
     # compute_manifest returns {relative path: sha256} for every file
-    # now under frozen/; writing it LAST means it covers every file
+    # now under frozen/; writing it last means it covers every file
     # the steps above produced
     manifest = {
         "_comment": "SHA-256 of every file under tests/frozen/; verified by "

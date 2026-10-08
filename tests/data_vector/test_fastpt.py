@@ -6,14 +6,14 @@ implementation built into the cosmolike interface (`IA_code: 0`, the
 default), and the python FAST-PT package used through the fastpt
 theory block (`IA_code: 1`).
 
-16. example1 (cosmic shear): the SAME 30 hard-coded points
+16. example1 (cosmic shear): the same 30 hard-coded points
      across the intrinsic-alignment prior (FASTPT_COMPARISON_POINTS:
      20 drawn across the prior boxes plus a one-parameter-at-a-time
      family; cosmology fixed at the frozen fiducial) evaluated three
-     times - with cfastpt, with FASTPT at the pass configuration
+     times: with cfastpt, with FASTPT at the pass configuration
      (FASTPT_LOW_SETTINGS, hard-coded), and with FASTPT at the
-     doubled boosts (FASTPT_HIGH_SETTINGS). Every block prints its theory vector at
-     every point, and the CFASTPT vector is the fiducial of that
+     doubled boosts (FASTPT_HIGH_SETTINGS). Every block prints its
+     theory vector at every point, and the CFASTPT vector is the fiducial of that
      point: its own chi2 against it is zero by construction, so the
      pass rule is the chi2 of the FASTPT(low) vector against it
      (delta^T C^-1 delta, a pure second-order deviation; a chi2
@@ -66,7 +66,7 @@ The design and the point values are shared with lsst_y1's tests
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -90,6 +90,7 @@ class TestCfastptVsFastptSweep(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 

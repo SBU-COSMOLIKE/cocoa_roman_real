@@ -1,14 +1,23 @@
 """
-Integration test for baryon suppression theory block with Cobaya/Cocoa.
+Checks of a BaryonSuppression theory block (module pyspk_theory) with Cobaya.
 
-This test verifies:
-1. Theory block loads in Cobaya correctly
-2. Parameters flow from sampler through provider to theory block
-3. Baryon suppression factors are computed and cached
-4. Likelihood receives suppression factors correctly
-5. Data vectors are modified as expected
+The block computes the baryonic suppression S(k, z) = P_baryons/P_dmo of
+the matter power spectrum (P_dmo: dark matter only) with the SP(k) model,
+whose parameters are alpha_spk, beta_spk and gamma_spk. Each check prints
+its outcome, and main() returns the exit code 0 only when all pass:
 
-Run: python test_baryon_integration.py
+1. the yaml text parses and names the block; building the Cobaya model may
+   fail (for example without the data files) and still counts as a pass;
+2. the block declares H0 and omegam as requirements;
+3. calculate() turns sampled parameters into a dict {z: S(k)};
+4. an out-of-range alpha, a z below the calibration range and a k below it
+   give S = 1 (the sub-checks print their result; only an exception fails).
+
+pyspk_theory is not part of this project: checks 2 to 4 need it importable
+(this script's folder is put first on the import path). The yaml paths are
+relative to cocoa/Cocoa, so run from there:
+
+    python ./projects/roman_real/scripts/baryons/test_baryon_integration.py
 """
 
 import numpy as np
@@ -18,7 +27,8 @@ import tempfile
 import shutil
 from pathlib import Path
 
-# Add local project to path
+# Put this script's folder first on sys.path, Python's module search list,
+# so a pyspk_theory.py placed next to it is importable.
 sys.path.insert(0, os.path.dirname(__file__))
 
 try:
@@ -34,7 +44,11 @@ except ImportError as e:
 
 
 def test_theory_block_loading():
-    """Test that baryon suppression theory block can be loaded by Cobaya."""
+    """Test that baryon suppression theory block can be loaded by Cobaya.
+
+    Returns:
+      True when the yaml parses and names the block, False otherwise.
+    """
     print("\n" + "=" * 70)
     print("TEST 1: Theory Block Loading")
     print("=" * 70)
@@ -212,7 +226,8 @@ sampler:
         except Exception as e:
             print(f"✗ Failed to load model: {e}")
             print("  Note: This may be expected if data files are not available")
-            # Don't fail - this test passes if the config is correct
+            # A model that fails to build still passes: this check requires
+            # only a well-formed configuration.
             return True
 
     except Exception as e:
@@ -224,7 +239,11 @@ sampler:
 
 
 def test_requirements_declaration():
-    """Test that likelihood correctly declares baryon_suppression requirement."""
+    """Test that the theory block declares its H0 and omegam requirements.
+
+    Returns:
+      True when get_requirements() names both, False otherwise.
+    """
     print("\n" + "=" * 70)
     print("TEST 2: Likelihood Requirements Declaration")
     print("=" * 70)
@@ -251,7 +270,11 @@ def test_requirements_declaration():
 
 
 def test_parameter_flow():
-    """Test parameter flow from sampler to theory block."""
+    """Test parameter flow from sampler to theory block.
+
+    Returns:
+      True when calculate() stores a baryon_suppression dict in the state.
+    """
     print("\n" + "=" * 70)
     print("TEST 3: Parameter Flow")
     print("=" * 70)
@@ -265,7 +288,10 @@ def test_parameter_flow():
         theory.log = Mock()
         theory.initialize()
 
-        # Mock provider with fiducial cosmology
+        # Mock() is a stand-in object that accepts any attribute or call.
+        # Here it replaces Cobaya's provider: get_param returns the fiducial
+        # H0 and Omega_m through side_effect, the function a Mock calls with
+        # the arguments it receives.
         theory.provider = Mock()
         theory.provider.get_param.side_effect = lambda x: {
             "H0": 67.32,
@@ -310,7 +336,11 @@ def test_parameter_flow():
 
 
 def test_edge_cases():
-    """Test edge cases: boundary parameters, z/k masking, error handling."""
+    """Test edge cases: boundary parameters, z/k masking, error handling.
+
+    Returns:
+      True unless an exception occurs; each sub-check prints its result.
+    """
     print("\n" + "=" * 70)
     print("TEST 4: Edge Cases and Error Handling")
     print("=" * 70)
@@ -330,7 +360,7 @@ def test_edge_cases():
             "Omega_m": 0.316,
         }[x]
 
-        # Test 1: Parameter at lower boundary
+        # 4a: alpha = 3.79, just below its lower bound 3.8: S must be 1
         print("\n  Test 4a: Parameter at lower boundary (alpha=3.8)")
         theory.requested_z = np.array([0.5])
         theory.requested_k = np.array([0.1])
@@ -343,7 +373,7 @@ def test_edge_cases():
         else:
             print("  ✗ Expected unity suppression for invalid parameter")
 
-        # Test 2: Redshift below calibration
+        # 4b: z = 0.1, below the calibration range: S must be 1
         print("\n  Test 4b: Redshift below calibration (z=0.1)")
         theory.requested_z = np.array([0.1])
         params = {"alpha_spk": 4.189, "beta_spk": 1.26, "gamma_spk": 0.42}
@@ -355,7 +385,7 @@ def test_edge_cases():
         else:
             print("  ✗ Expected unity suppression for low-z")
 
-        # Test 3: k below calibration
+        # 4c: k = 0.001, below the calibration range: S must be 1 there
         print("\n  Test 4c: Wavenumber below calibration (k=0.001 h/Mpc)")
         theory.requested_z = np.array([0.5])
         theory.requested_k = np.array([0.001, 0.1])
@@ -380,7 +410,11 @@ def test_edge_cases():
 
 
 def main():
-    """Run all integration tests."""
+    """Run the four checks and print a summary.
+
+    Returns:
+      0 when every check passes, 1 otherwise (the script's exit code).
+    """
     print("\n" + "=" * 70)
     print("BARYON SUPPRESSION THEORY BLOCK INTEGRATION TESTS")
     print("=" * 70)

@@ -7,7 +7,7 @@ writes its own theory vector during evaluation, that vector becomes
 the data of a temporary dataset (so the default chi2 against it is
 zero by construction, and nothing is stored in frozen/), and the
 pushed-settings model evaluates at the same point against it. Its
-chi2 IS the reported quantity,
+chi2 is the reported quantity,
 
     delta chi2 = chi2(high accuracy) - chi2(default)
 
@@ -19,7 +19,8 @@ additionally runs the one-knob-at-a-time scan with the Akino SP(k)
 method on, so a large delta names the knob causing it.
 
 The seven checks cover every method the bfmt theory block
-implements:
+implements (SP(k) maps the baryon fraction fb of halos, through one of
+three fb relations, to the suppression of the matter power):
 
   BF1. SP(k), power-law fb relation      BF2. SP(k), Akino et al. 2022
   BF3. SP(k), double power-law relation  BF4. BCEmu
@@ -51,7 +52,7 @@ cocoa environment active, start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -72,6 +73,7 @@ class TestBaryonAccuracyAdvisory(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 
@@ -85,7 +87,9 @@ class TestBaryonAccuracyAdvisory(unittest.TestCase):
         """
         # the default chi2 is zero by construction (the default
         # model produced the very vector it is compared with), so the
-        # pushed evaluation's chi2 IS the delta; only that is printed
+        # pushed evaluation's chi2 is the delta; only that is printed.
+        # delta == delta is False only for NaN, so the assertion
+        # rejects NaN and both infinities.
         delta = u.baryon_accuracy_delta(baryon)
         self.assertTrue(
             delta == delta and abs(delta) != float("inf"),
@@ -107,7 +111,7 @@ ACCURACY: {name}: {label}
         """
         print("", flush=True)
         for label, _, _ in u.ACCURACY_KNOBS:
-            # each knob's chi2 against the on-the-fly vector IS its
+            # each knob's chi2 against the on-the-fly vector is its
             # delta (the default against that vector is zero)
             delta = u.baryon_accuracy_delta("spk akino", knob=label)
             print(f"  KNOB {label:30s} delta chi2 = {delta:+12.6f}",

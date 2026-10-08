@@ -26,7 +26,7 @@ start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -53,6 +53,7 @@ class TestExample2TwoXTwo(unittest.TestCase):
     # this once, before the first test of the class
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state and load the frozen reference chi2 values."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.reference = u.load_reference()

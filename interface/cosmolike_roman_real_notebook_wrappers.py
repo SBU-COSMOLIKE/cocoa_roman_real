@@ -1,8 +1,9 @@
 """Notebook wrappers for the roman_real Cosmolike interface.
 
 The EXAMPLE_EVALUATE notebooks all drive the same compiled interface
-(cosmolike_roman_real_interface) through the same steps: run CAMB once
-(cnu.get_camb_cosmology), push the resulting power spectra and
+(cosmolike_roman_real_interface, imported as ci) through the same steps:
+run CAMB once (cnu.get_camb_cosmology; cnu is the shared package
+cosmolike_notebook_utils), push the resulting power spectra and
 distances into the interface with set_cosmology, set the nuisance
 parameters, and read off a spectrum, a correlation function, or the
 masked chi2. This module holds those steps once, so every notebook of
@@ -30,10 +31,35 @@ Three layers of state matter here:
   binning, the nonlinear emulator choice) live in _CONFIG and are
   set once per notebook with configure().
 
-Every wrapper accepts the same accuracy arguments and applies the
-same folds: CLAccuracyBoost multiplies by AccuracyBoost, the
-integration accuracy grows as |3 (CLAccuracyBoost - 1)|, and the
+Every wrapper accepts the same accuracy arguments and combines them the
+same way (_set_state): CLAccuracyBoost is multiplied by AccuracyBoost,
+the integration accuracy grows by |3 (CLAccuracyBoost - 1)|, and the
 C_ell table reaches lmax + 20000 (CLAccuracyBoost - 1).
+
+Arguments shared by the spectrum wrappers (C_ss_tomo_limber ... get_chi2
+and the response functions):
+
+  omegam, omegab, H0, ns, As_1e9, w, w0pwa = the cosmology (H0 in km/s/Mpc,
+          As_1e9 = 10^9 A_s, w0pwa = w0 + wa); defaults: the fiducial
+          constants below. mnu is always the module constant.
+  A1, A2, BTA, shear_photoz_bias, M = source nuisance vectors, one entry
+          per source bin (IA amplitudes, photo-z shifts, shear
+          calibration); None = the fiducial vector.
+  lens_photoz_bias, galaxy_bias_b1, galaxy_bias_b2, galaxy_bias_bmag,
+  galaxy_bias_b3nl, galaxy_bias_bk = lens nuisance vectors, one entry per
+          lens bin (the B1, B2, B_MAG, B3nl and BK of _set_state); None =
+          the fiducial vector.
+  PM    = point-mass amplitudes, one per lens bin; None = PM_FID.
+  baryon_sims = name of a hydro simulation whose baryonic suppression
+          multiplies the matter power, or None for none.
+  allsims = HDF5 file of the hydro simulations, or None for the file
+          init_cosmolike read from the dataset.
+  AccuracyBoost, kmax (1/Mpc), k_per_logint, CAMBAccuracyBoost,
+  CLAccuracyBoost, CLIntegrationAccuracy = accuracy settings (_set_state).
+  non_linear_emul = 1 (EuclidEmulator2) or 2 (CAMB halofit); None = the
+          configure()d value.
+  ntheta, theta_min_arcmin, theta_max_arcmin = the angular binning of the
+          real-space wrappers; None = the configure()d values.
 """
 
 import os
@@ -42,9 +68,11 @@ import sys
 import numpy as np
 from getdist import IniFile
 
-# the shared notebook utilities live in cosmolike_core; the compiled
-# interface is on the path already (each project's interface/
-# directory is part of the Cocoa PYTHONPATH)
+# The shared notebook utilities live in cosmolike_core, so that folder goes
+# first in Python's module search list (sys.path). ROOTDIR, the cocoa/Cocoa
+# folder, is set by start_cocoa.sh: a KeyError here means Cocoa was not
+# started. The compiled interface is on the path already (each project's
+# interface/ directory is part of the Cocoa PYTHONPATH).
 sys.path.insert(0, os.environ["ROOTDIR"] + "/external_modules/code/cosmolike_core")
 import cosmolike_notebook_utils as cnu
 import cosmolike_roman_real_interface as ci
@@ -143,8 +171,9 @@ _CONFIG = {
     "IA_redshift_evolution": 3,
     "IA_code": 0,               # 0 = C FASTPT (NLA always uses 0)
     "bias_model": [0, 0, 0, 1, 0, 0],    # n(z) photo-z conventions (mirror the likelihood yaml keys):
-    # interpolation 0 = cspline, 1 = linear, 2+ = Steffen monotone;
-    # z column 0 = Z_LOW (left bin edges), 1 = Z_MID (sample points)
+    # n(z) conventions, mirroring the likelihood yaml keys: interpolation
+    # 0 = cubic spline, 1 = linear, 2+ = Steffen (monotone); z column
+    # 0 = Z_LOW (left bin edges), 1 = Z_MID (sample points)
     "photoz_interpolation_type": 0,
     "photoz_zmid_convention": 0,
     # C-FAST-PT internal (convolution) grid / output grid; 1.0 = equal
@@ -183,7 +212,7 @@ def configure(**overrides):
 
 
 def init_cosmolike(CLprobe=None, with_data=False, lmax=None):
-    """One-time interface setup for a notebook session.
+    """Set up the compiled interface once per notebook session.
 
     Reads the project's .dataset file (the small text file listing
     the n(z), covariance, mask, and data-vector files), then runs
@@ -272,13 +301,18 @@ def _set_state(omegam, omegab, H0, ns, As_1e9, w, w0pwa,
     (power spectra, growth, distances from one CAMB run), and each
     nuisance group whose vectors were passed. A group passed as None
     is skipped, which leaves that part of the state at whatever the
-    interface holds, exactly as the per-probe notebook definitions
-    did (a cosmic-shear wrapper never touched galaxy bias).
+    interface holds (a cosmic-shear wrapper never touches galaxy
+    bias).
 
     Arguments:
-      omegam ... non_linear_emul = the cosmology and accuracy
-                 arguments, forwarded to cnu.get_camb_cosmology
-                 (kmax in h/Mpc; see its docstring for the grids).
+      omegam, omegab, H0, ns, As_1e9, w, w0pwa, AccuracyBoost, kmax,
+      k_per_logint, CAMBAccuracyBoost, CLAccuracyBoost, non_linear_emul
+               = the cosmology and accuracy arguments, forwarded to
+                 cnu.get_camb_cosmology together with the module
+                 constant mnu (kmax in 1/Mpc, before the CAMB boost;
+                 see its docstring for the grids).
+      CLIntegrationAccuracy = cosmolike's integration accuracy before
+                 the boost rule below.
       binning  = (ntheta, theta_min_arcmin, theta_max_arcmin) to
                  re-run init_binning (the real-space wrappers), or
                  None to keep the current binning.
@@ -306,9 +340,9 @@ def _set_state(omegam, omegab, H0, ns, As_1e9, w, w0pwa,
         CAMBAccuracyBoost=CAMBAccuracyBoost,
         CLAccuracyBoost=CLAccuracyBoost,
         non_linear_emul=non_linear_emul)
-    # the house accuracy folds: the overall boost multiplies the
-    # cosmolike boost, and the integration accuracy and the C_ell
-    # table length grow with it
+    # the accuracy rule shared by every wrapper: the overall boost
+    # multiplies the cosmolike boost, and the integration accuracy and
+    # the C_ell table length grow with it
     CLAccuracyBoost = CLAccuracyBoost * AccuracyBoost
     CLIntegrationAccuracy = max(
         0, CLIntegrationAccuracy + abs(3*(CLAccuracyBoost - 1.0)))
@@ -363,7 +397,11 @@ def _set_state(omegam, omegab, H0, ns, As_1e9, w, w0pwa,
 
 
 def _shear_defaults(M, shear_photoz_bias, A1, A2, BTA):
-    """Replaces None shear vectors with the fiducial ones."""
+    """Replaces None shear vectors with the fiducial ones.
+
+    Returns:
+      (M, shear_photoz_bias, A1, A2, BTA), in the argument order.
+    """
     if M is None:
         M = M_FID
     if shear_photoz_bias is None:
@@ -378,7 +416,13 @@ def _shear_defaults(M, shear_photoz_bias, A1, A2, BTA):
 
 
 def _clustering_defaults(lens_photoz_bias, B1, B2, B_MAG, B3nl, BK):
-    """Replaces None clustering vectors with the fiducial ones."""
+    """Replaces None clustering vectors with the fiducial ones.
+
+    B2, B_MAG, B3nl and BK default to zeros (ZEROS8).
+
+    Returns:
+      (lens_photoz_bias, B1, B2, B_MAG, B3nl, BK), in the argument order.
+    """
     if lens_photoz_bias is None:
         lens_photoz_bias = LENS_PHOTOZ_FID
     if B1 is None:
@@ -409,11 +453,13 @@ def C_ss_tomo_limber(ell, omegam=omegam, omegab=omegab, H0=H0, ns=ns,
     fiducials when passed as None.
 
     Arguments:
-      ell = 1D array of multipoles; the rest as in _set_state, with
-      the shear group only (this wrapper never touches clustering).
+      ell = 1D array of multipoles; the rest as listed in the module
+      docstring, with the shear group only (this wrapper never touches
+      clustering).
 
     Returns:
-      (EE, BB): two 3D arrays (n_ell, n_bin, n_bin).
+      (EE, BB): two 3D arrays (n_ell, n_bin, n_bin), the E- and B-mode
+      spectra of every source-bin pair.
     """
     if non_linear_emul is None:
         non_linear_emul = _CONFIG["non_linear_emul"]
@@ -440,6 +486,9 @@ def xi(ntheta=None, theta_min_arcmin=None, theta_max_arcmin=None,
     Same state build as C_ss_tomo_limber plus a re-binning, so the
     binning can change between calls without restarting the kernel;
     the binning arguments default to the configure()d values.
+
+    Arguments:
+      as listed in the module docstring (shear group only).
 
     Returns:
       (theta, xi_plus, xi_minus): theta in arcmin, xi 3D arrays
@@ -479,9 +528,14 @@ def C_gs_tomo_limber(ell, omegam=omegam, omegab=omegab, H0=H0, ns=ns,
                      non_linear_emul=None, allsims=None):
     """Galaxy-galaxy lensing spectra C_gs at multipoles ell.
 
-    Builds the shear AND clustering state (both samples enter ggl)
-    and evaluates ci.C_gs_tomo_limber. Pairs dropped at init time
-    via ggl_exclude come back as identically zero.
+    Builds both the shear and the clustering state (the source and
+    the lens samples both enter galaxy-galaxy lensing) and evaluates
+    ci.C_gs_tomo_limber. Pairs dropped at init time via ggl_exclude
+    come back as identically zero.
+
+    Arguments:
+      ell = 1D array of multipoles; the rest as listed in the module
+      docstring.
 
     Returns:
       3D array (n_ell, n_lens, n_source).
@@ -521,6 +575,10 @@ def C_gg_tomo(ell, limber, omegam=omegam, omegab=omegab, H0=H0, ns=ns,
     approximation, anything else the non-Limber computation, so the
     two can be compared on the same state.
 
+    Arguments:
+      ell = 1D array of multipoles; limber = 1 or another value (see
+      above); the rest as listed in the module docstring.
+
     Returns:
       3D array (n_ell, n_lens, n_lens).
     """
@@ -558,6 +616,9 @@ def gamma_t(ntheta=None, theta_min_arcmin=None, theta_max_arcmin=None,
 
     Full 3x2pt nuisance state (shear, clustering, point masses) plus
     a re-binning, then ci.w_gammat_tomo.
+
+    Arguments:
+      as listed in the module docstring.
 
     Returns:
       (theta, gammat): theta in arcmin, gammat a 3D array
@@ -606,6 +667,9 @@ def w_theta(ntheta=None, theta_min_arcmin=None, theta_max_arcmin=None,
 
     Clustering state plus a re-binning, then ci.w_gg_tomo.
 
+    Arguments:
+      as listed in the module docstring (clustering group only).
+
     Returns:
       (theta, wtheta): theta in arcmin, wtheta a 3D array
       (n_theta, n_lens, n_lens); the panels read the diagonal.
@@ -643,7 +707,7 @@ def get_chi2(omegam=omegam, omegab=omegab, H0=H0, ns=ns, As_1e9=As_1e9,
              k_per_logint=10, CAMBAccuracyBoost=1.0,
              CLAccuracyBoost=1.0, CLIntegrationAccuracy=0,
              non_linear_emul=None, allsims=None):
-    """chi2 of the masked data vector against the loaded data.
+    """Return the chi2 of the masked theory vector against the loaded data.
 
     Requires init_cosmolike(CLprobe=..., with_data=True) first: the
     probe selection fixes which blocks enter the masked vector, and
@@ -651,6 +715,9 @@ def get_chi2(omegam=omegam, omegab=omegab, H0=H0, ns=ns, As_1e9=As_1e9,
     compares against. The full 3x2pt nuisance state is set every
     call; blocks outside the selected probes simply never read
     theirs (a "xi" run ignores the clustering state).
+
+    Arguments:
+      as listed in the module docstring.
 
     Returns:
       float chi2.
@@ -681,6 +748,12 @@ def get_chi2(omegam=omegam, omegab=omegab, H0=H0, ns=ns, As_1e9=As_1e9,
 # ----------------------------------------------------------------------
 # Response functions (cosmic shear)
 # ----------------------------------------------------------------------
+# They locate the wavenumbers k (h/Mpc) a statistic X comes from:
+# dlnX/dlnk = (dX/dlnk)/X is the log-response of X to the matter power
+# at k, and the cumulative response RF(k_max) is the integral of
+# |dlnX/dlnk| over ln k below ln k_max divided by the full integral,
+# the fraction of the response from scales k < k_max (the scale-cut
+# statistic of arXiv:2011.06469, eq. 17).
 def dlnC_dlss_tomo_limber(k, ell, omegam=omegam, omegab=omegab, H0=H0,
                           ns=ns, As_1e9=As_1e9, w=w, w0pwa=w0pwa,
                           A1=None, A2=None, BTA=None,
@@ -690,10 +763,14 @@ def dlnC_dlss_tomo_limber(k, ell, omegam=omegam, omegab=omegab, H0=H0,
                           CAMBAccuracyBoost=1.0, CLAccuracyBoost=1.0,
                           CLIntegrationAccuracy=0,
                           non_linear_emul=None, allsims=None):
-    """Response d ln C_ss / d ln k at wavenumbers k, multipoles ell.
+    """Return the response d ln C_ss / d ln k at wavenumbers k, multipoles ell.
 
     Shear state as in C_ss_tomo_limber, then the interface's
     response evaluation.
+
+    Arguments:
+      k = 1D array of wavenumbers in h/Mpc; ell = 1D array of
+      multipoles; the rest as listed in the module docstring.
 
     Returns:
       array as ci.dlnC_ss_dlnk_tomo_limber returns it.
@@ -722,9 +799,13 @@ def dlnxi_dlnk_pm_tomo_limber(k, ntheta=None, theta_min_arcmin=None,
                               CAMBAccuracyBoost=1.0, CLAccuracyBoost=1.0,
                               CLIntegrationAccuracy=0,
                               non_linear_emul=None, allsims=None):
-    """Response d ln xi_pm / d ln k at wavenumbers k.
+    """Return the response d ln xi_pm / d ln k at wavenumbers k.
 
     Shear state plus a re-binning, as in xi.
+
+    Arguments:
+      k = 1D array of wavenumbers in h/Mpc; the rest as listed in the
+      module docstring.
 
     Returns:
       (theta, dlnxip_dlnk, dlnxim_dlnk).
@@ -759,9 +840,13 @@ def rf_C_ss_tomo_limber(k, ell, omegam=omegam, omegab=omegab, H0=H0,
                         CAMBAccuracyBoost=1.0, CLAccuracyBoost=1.0,
                         CLIntegrationAccuracy=0,
                         non_linear_emul=None, allsims=None):
-    """Cumulative response R(k_max) of C_ss.
+    """Return the cumulative response RF(k_max) of C_ss.
 
     Shear state as in C_ss_tomo_limber, then ci.rf_C_ss_tomo_limber.
+
+    Arguments:
+      k = 1D array of k_max values in h/Mpc; ell = 1D array of
+      multipoles; the rest as listed in the module docstring.
 
     Returns:
       array as ci.rf_C_ss_tomo_limber returns it.
@@ -788,9 +873,13 @@ def rf_xi_tomo_limber(k, ntheta=None, theta_min_arcmin=None,
                       k_per_logint=10, CAMBAccuracyBoost=1.0,
                       CLAccuracyBoost=1.0, CLIntegrationAccuracy=0,
                       non_linear_emul=None, allsims=None):
-    """Cumulative response R(k_max) of xi_pm.
+    """Return the cumulative response RF(k_max) of xi_pm.
 
     Shear state plus a re-binning, then ci.rf_xi_tomo_limber.
+
+    Arguments:
+      k = 1D array of k_max values in h/Mpc; the rest as listed in the
+      module docstring.
 
     Returns:
       (theta, rf_xip, rf_xim).
@@ -849,7 +938,9 @@ FISHER_PARAM_LABELS = [
     r"m_\mathrm{roman}^7", r"m_\mathrm{roman}^8",
 ]
 
-# flat priors clip the getdist contours of the unbounded parameters
+# Flat priors {index: (min, max)} on the parameters without Gaussian
+# priors (As_1e9, ns, H0, omegab, omegam and the two NLA numbers); they
+# truncate the getdist sample clouds, so the contours stay inside them.
 FISHER_FLAT_PRIORS = {
     0: (0.5, 5),
     1: (0.87, 1.07),
@@ -860,7 +951,9 @@ FISHER_FLAT_PRIORS = {
     6: (-5.0, 5.0),
 }
 
-# Gaussian priors on the calibration nuisances (index: (mean, sigma))
+# Gaussian priors {index: (mean, sigma)}: sigma = 0.005 on the eight shear
+# calibrations M (indices 15..22) and 0.002 on the eight source photo-z
+# shifts (indices 7..14)
 FISHER_GAUSSIAN_PRIORS = {
     15: (0.0, 0.005), 16: (0.0, 0.005), 17: (0.0, 0.005),
     18: (0.0, 0.005), 19: (0.0, 0.005), 20: (0.0, 0.005),
@@ -870,23 +963,27 @@ FISHER_GAUSSIAN_PRIORS = {
     13: (0.0, 0.002), 14: (0.0, 0.002),
 }
 
-# getdist samples for the Fisher contours come from this generator;
-# module-level so repeated plot calls consume one stream, as the
-# in-notebook implementation did with its own seeded generator
+# Random-number generator of the getdist sample clouds of the Fisher
+# contours. Seed 0 makes a fresh kernel reproduce the same figures; being
+# module-level, it makes repeated plot calls draw successive parts of one
+# stream instead of identical sample noise.
 _FISHER_RNG = np.random.default_rng(0)
 
 
 def fisher_fiducial_point():
-    """A fresh copy of the Fisher fiducial vector.
+    """Return a fresh copy of the Fisher fiducial vector.
 
-    Returns a copy so a notebook can shift entries for a forecast
-    without editing the module's fiducial in place.
+    A copy lets a notebook shift entries for a forecast without editing
+    the module's fiducial in place.
+
+    Returns:
+      1D float64 array in the FISHER_PARAM_NAMES layout.
     """
     return FISHER_PARAM_FID.copy()
 
 
 def get_dv(param=None, AccuracyBoost=1.0):
-    """Masked cosmic-shear data vector at a flat parameter vector.
+    """Return the masked cosmic-shear data vector at a flat parameter vector.
 
     The Fisher derivatives evaluate this at shifted copies of the
     fiducial vector; the layout is the one FISHER_PARAM_NAMES
@@ -898,7 +995,8 @@ def get_dv(param=None, AccuracyBoost=1.0):
     Arguments:
       param = 1D float array in the FISHER_PARAM_NAMES layout, or
               None for the fiducial vector.
-      AccuracyBoost = the house boost, forwarded to the state build.
+      AccuracyBoost = the overall accuracy boost, forwarded to
+              _set_state as AccuracyBoost and CLAccuracyBoost.
 
     Returns:
       1D float64 array: the masked data vector.
@@ -920,7 +1018,19 @@ def get_dv(param=None, AccuracyBoost=1.0):
 
 
 def get_ddv(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
-    """Derivative of get_dv along one parameter (cnu.get_ddv)."""
+    """Return the derivative of get_dv along one parameter (cnu.get_ddv).
+
+    Five-point finite-difference stencil with relative step h around CV.
+
+    Arguments:
+      index = position of the parameter in the FISHER_PARAM_NAMES layout.
+      h     = relative step (0.02 = two percent).
+      CV    = fiducial parameter vector, or None for FISHER_PARAM_FID.
+      AccuracyBoost = forwarded to every get_dv evaluation.
+
+    Returns:
+      1D array, d(masked data vector)/d(parameter).
+    """
     if CV is None:
         CV = FISHER_PARAM_FID
     return cnu.get_ddv(get_dv, index=index, h=h, CV=CV,
@@ -929,12 +1039,25 @@ def get_ddv(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
 
 def get_Fisher(CV=None, h=0.02, AccuracyBoost=3.1, ddv=None,
                priors=None, invcov=None):
-    """Fisher matrix from the 5-point-stencil derivatives.
+    """Return the Fisher matrix from the 5-point-stencil derivatives.
 
     Thin binding of cnu.get_Fisher to this project's data vector,
     priors, and masked inverse covariance (fetched from the
     interface when not passed, so init_cosmolike with data must
     have run).
+
+    Arguments:
+      CV     = fiducial parameter vector, or None for FISHER_PARAM_FID.
+      h      = relative derivative step (see get_ddv).
+      AccuracyBoost = forwarded to every data-vector evaluation.
+      ddv    = derivative function, or None for get_ddv.
+      priors = {index: (mean, sigma)}, or None for
+               FISHER_GAUSSIAN_PRIORS.
+      invcov = inverse covariance of the masked data vector, or None
+               for ci.get_inv_cov_masked().
+
+    Returns:
+      the Fisher matrix, an (n_params, n_params) array.
     """
     if CV is None:
         CV = FISHER_PARAM_FID
@@ -950,7 +1073,19 @@ def get_Fisher(CV=None, h=0.02, AccuracyBoost=3.1, ddv=None,
 
 def get_ddv_dkit(index=0, CV=None, AccuracyBoost=1.0, min_samples=7,
                  fallback_mode="poly_at_floor"):
-    """Derivative of get_dv via derivkit (cnu.get_ddv_dkit)."""
+    """Return the derivative of get_dv via derivkit (cnu.get_ddv_dkit).
+
+    derivkit fits polynomials through adaptively chosen samples and
+    differentiates the fit, so numerical noise averages out.
+
+    Arguments:
+      index, CV, AccuracyBoost = as in get_ddv.
+      min_samples, fallback_mode = forwarded to derivkit (see
+               cnu.get_ddv_dkit).
+
+    Returns:
+      1D array, d(masked data vector)/d(parameter).
+    """
     if CV is None:
         CV = FISHER_PARAM_FID
     return cnu.get_ddv_dkit(get_dv, index=index, CV=CV,
@@ -961,7 +1096,15 @@ def get_ddv_dkit(index=0, CV=None, AccuracyBoost=1.0, min_samples=7,
 
 def get_Fisher2(CV=None, AccuracyBoost=3.0, priors=None, invcov=None,
                 min_samples=7, fallback_mode="poly_at_floor"):
-    """Fisher matrix from the derivkit derivatives (cnu.get_Fisher2)."""
+    """Return the Fisher matrix from the derivkit derivatives (cnu.get_Fisher2).
+
+    Arguments:
+      CV, AccuracyBoost, priors, invcov = as in get_Fisher.
+      min_samples, fallback_mode = as in get_ddv_dkit.
+
+    Returns:
+      the Fisher matrix, an (n_params, n_params) array.
+    """
     if CV is None:
         CV = FISHER_PARAM_FID
     if priors is None:
@@ -977,7 +1120,16 @@ def get_Fisher2(CV=None, AccuracyBoost=3.0, priors=None, invcov=None,
 def plot_Fisher(F, mu, F2=None, root=None, select=None, labels=None,
                 names=None, filled=True, flat_priors=None,
                 chain_names=None):
-    """Fisher contour triangle via getdist (cnu.plot_Fisher)."""
+    """Draw the Fisher contour triangle via getdist (cnu.plot_Fisher).
+
+    labels, names and flat_priors default to this module's
+    FISHER_PARAM_LABELS, FISHER_PARAM_NAMES and FISHER_FLAT_PRIORS; the
+    sample clouds come from _FISHER_RNG. The other arguments are those of
+    cnu.plot_Fisher.
+
+    Returns:
+      the getdist subplot plotter holding the figure.
+    """
     if labels is None:
         labels = FISHER_PARAM_LABELS
     if names is None:
@@ -994,10 +1146,11 @@ def plot_Fisher(F, mu, F2=None, root=None, select=None, labels=None,
 # Baryonic feedback via the bfmt theory block
 # ----------------------------------------------------------------------
 def get_baryon_suppression(theory_options, point, z_grid, log10k_grid):
-    """Suppression S(k, z) from the bfmt theory block, on our grid.
+    """Return the suppression S(k, z) of the bfmt theory block on a given grid.
 
-    Builds a minimal Cobaya model (CAMB + bfmt + the unit
-    likelihood), requests the baryon_suppression product at the
+    Builds a minimal Cobaya model (CAMB, bfmt and Cobaya's "one"
+    likelihood, a constant that needs no data), requests the
+    baryon_suppression product at the
     given grid (k in 1/Mpc, as the Cosmolike likelihoods send it;
     the block converts to h/Mpc internally), evaluates it at this
     module's fiducial cosmology, and returns {z: S array over k}.
@@ -1023,6 +1176,10 @@ def get_baryon_suppression(theory_options, point, z_grid, log10k_grid):
                           + "/external_modules/code/baryon_suppression"},
                          **theory_options),
         },
+        # tau only completes CAMB's input (it does not change P(k));
+        # omch2 excludes the massive-neutrino density
+        # Omega_nu h^2 = mnu (3.046/3)^0.75/94.0708, so that omegam
+        # counts cold dark matter, baryons and neutrinos.
         "params": dict({
             "As": {"value": As_1e9*1e-9},
             "ns": ns, "H0": H0, "mnu": mnu, "tau": 0.0543,
@@ -1042,7 +1199,9 @@ def get_baryon_suppression(theory_options, point, z_grid, log10k_grid):
 
 
 def compute_probes(sup=None, ell=None):
-    """The four 3x2pt probes and the masked data vector, with
+    """Compute shear and ggl spectra, their real-space versions and chi2.
+
+    Returns C_ss, C_gs, xi_+/-, gamma_t and the masked data vector, with
     optional baryonic suppression folded into the nonlinear power.
 
     Requires init_cosmolike(CLprobe="3x2pt", with_data=True). sup =
@@ -1059,8 +1218,9 @@ def compute_probes(sup=None, ell=None):
 
     Returns:
       dict with ell, C_ss, C_gs, theta, xip, xim, gammat, dv, chi2,
-      and the z/log10k interpolation grids (for feeding
-      get_baryon_suppression).
+      and the z/log10k interpolation grids for feeding
+      get_baryon_suppression; log10k_grid is log10 of k in 1/Mpc, the
+      unit that function takes.
     """
     if ell is None:
         ell = np.arange(25., 3000., 15.)
@@ -1112,4 +1272,8 @@ def compute_probes(sup=None, ell=None):
     return {"ell": ell, "C_ss": C_ss, "C_gs": C_gs,
             "theta": theta, "xip": xip, "xim": xim, "gammat": gt,
             "dv": dv, "chi2": chi2,
-            "z_grid": z_interp_2D, "log10k_grid": log10k_interp_2D}
+            "z_grid": z_interp_2D,
+            # get_baryon_suppression takes k in 1/Mpc, but the CAMB helper
+            # returns this grid in h/Mpc: convert here, at the one place
+            # that links the two, so S(k) is evaluated at the physical k.
+            "log10k_grid": log10k_interp_2D + np.log10(H0/100.0)}

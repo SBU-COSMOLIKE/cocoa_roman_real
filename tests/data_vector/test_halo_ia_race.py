@@ -13,9 +13,9 @@ Why a race shows up as nondeterminism. Two threads writing the same
 scratch slot, a thread reading a row another thread has not finished,
 or a table read before its single-threaded warm-up completed: each of
 these makes the result depend on how the threads happened to be
-scheduled. Correct code has no such dependence - every table entry is
-an independent computation with a fixed summation order - so the same
-inputs must give the same BITS on every run and for every thread
+scheduled. Correct code has no such dependence (every table entry is
+an independent computation with a fixed summation order), so the same
+inputs must give the same bits on every run and for every thread
 count. A race, by contrast, shows up as run-to-run noise (it moves
 with scheduling) or as a thread-count dependence (it moves with the
 partition of the loops). Both checks below are therefore bitwise: no
@@ -28,21 +28,20 @@ perturbative-bias galaxies (include_HOD_GX = 0; HOD x halo IA aborts)
 and the halo-IA fiducial set through ci.set_nuisance_ia_halo:
 a_1h = 0.001 (F21 red galaxies), eta_1h = 0, z_pivot = 0.62; the
 red-fraction sigmoids {lg M_cen, width_cen, lg M_sat, width_sat} =
-{13, 0.5, 12.5, 0.7} (the student's defaults); the IA-population HOD
+{13, 0.5, 12.5, 0.7} (the defaults); the IA-population HOD
 {lg M_min, sigma_lgM, lg M_1, lg M_0, alpha, f_c} =
-{12, 0.3, 13.3, 11.5, 1, 1} (the Zheng et al. 2007 values of the IA
-port's table tests). The red-central 2-halo amplitude is the frozen
-point's roman_A1.
+{12, 0.3, 13.3, 11.5, 1, 1} (Zheng et al. 2007 values). The
+red-central 2-halo amplitude is the frozen point's roman_A1.
 
-  20. Ten in a row: on ONE model instance, the fiducial point is
+  20. Ten in a row: on one model instance, the fiducial point is
       evaluated ten times (cobaya's cache bypassed, cached = False),
       and before each of evaluations 2-10 the halo-IA tables are
-      forced to REFILL: one IA input is moved away (cycling through
+      forced to refill: one IA input is moved away (cycling through
       a_1h, the red-satellite sigmoid centre and the IA-HOD lg M_0,
       which changes the set of halos that do kernel work), the IA
-      probes are read at the moved state - which refills the tables
+      probes are read at the moved state (which refills the tables
       with different numbers and must change the probes, or the
-      refill was not forced - and the input is moved back. Every
+      refill was not forced), and the input is moved back. Every
       evaluation's chi2, masked data vector and IA probe vector must
       equal the first bit for bit. Run at REQUIRED_OMP_THREADS (4)
       threads.
@@ -83,7 +82,7 @@ import os
 import sys
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process. A
+# this must run before any cobaya/cosmolike import in the process. A
 # worker subprocess of this file (argv[1] == "--worker") keeps the
 # value its parent chose: test 21 spawns workers at 1, 4 and 8.
 _IS_WORKER = len(sys.argv) > 1 and sys.argv[1] == "--worker"
@@ -142,7 +141,7 @@ BITWISE = 5e-324
 # WORKER SIDE (runs inside the subprocesses)
 # =============================================================================
 def build_halo_ia_model():
-    """The frozen NLA 3x2pt model with the halo-model IA switched on.
+    """Build the frozen NLA 3x2pt model with the halo-model IA on.
 
     Arguments:
       none.
@@ -172,7 +171,9 @@ def set_ia_state(ci, ia_halo, ia_red, ia_hod):
 
 
 def ia_probes(ci):
-    """f_rc, P_dI^1h and P_II^1h at the probe points, as one flat vector.
+    """Return f_rc, P_dI^1h and P_II^1h at the probe points, as one flat
+    vector (np.atleast_1d turns the scalar f_rc into a 1-entry array so
+    np.concatenate can join it with the k arrays).
 
     Reading refills the halo-IA tables when their cache keys changed.
     """
@@ -185,7 +186,7 @@ def ia_probes(ci):
 
 
 def camb_inputs(model):
-    """The CAMB products the likelihood reads, as one flat vector.
+    """Return the CAMB products the likelihood reads, as one flat vector.
 
     The linear and nonlinear P(k) interpolators (read on a fixed (z, k)
     grid) and the comoving distances that set_cosmo_related consumes.
@@ -205,14 +206,16 @@ def camb_inputs(model):
 
 
 def evaluate(model, point, ci):
-    """One full evaluation; returns (chi2, masked data vector, IA probes)."""
+    """Evaluate once; return (chi2, masked data vector, IA probes)."""
     chi2 = u.evaluate_chi2(model, point)
     dv = np.array(ci.compute_data_vector_masked())
     return chi2, dv, ia_probes(ci)
 
 
 def race_worker(out_path):
-    """Test 20: ten evaluations of the fiducial, refill forced between."""
+    """Test 20 (worker side): ten evaluations of the fiducial, a refill
+    forced before each of evaluations 2-10; saves chi2, dv, probes and
+    away_changed (did each moved state change the probes) to out_path."""
     model, point, ci = build_halo_ia_model()
     fiducial = {"ia_halo": IA_HALO, "ia_red": IA_RED, "ia_hod": IA_HOD}
 
@@ -244,7 +247,9 @@ def race_worker(out_path):
 
 
 def threads_worker(out_path):
-    """Test 21: one evaluation at this process's OMP_NUM_THREADS."""
+    """Test 21 (worker side): one evaluation at this process's
+    OMP_NUM_THREADS; saves chi2, dv, probes, the CAMB inputs and the
+    flag-off data vector to out_path."""
     print(f"  worker OMP_NUM_THREADS = {os.environ.get('OMP_NUM_THREADS')}",
           flush=True)
     model, point, ci = build_halo_ia_model()
@@ -293,7 +298,8 @@ def run_worker(mode, threads):
 # PARENT SIDE (pytest)
 # =============================================================================
 def max_relative_difference(a, b):
-    """max |a/b - 1| over b != 0, and max |a - b| where b == 0."""
+    """Return the larger of max |a/b - 1| over b != 0 and max |a - b|
+    where b == 0 (initial=0.0 makes np.max return 0 for an empty set)."""
     nonzero = b != 0
     rel = np.abs(a[nonzero]/b[nonzero] - 1.0)
     absolute = np.abs(a[~nonzero] - b[~nonzero])
@@ -302,7 +308,8 @@ def max_relative_difference(a, b):
 
 
 def bitwise_verdict(vectors):
-    """'bitwise equal' or the largest difference against the first."""
+    """Return 'bitwise equal', or the largest difference of the vectors
+    against the first one."""
     worst = max(max_relative_difference(v, vectors[0]) for v in vectors[1:])
     if all(np.array_equal(v, vectors[0]) for v in vectors[1:]):
         return "bitwise equal"
@@ -355,10 +362,14 @@ TEST {number}: {label}
 @unittest.skipUnless(RUN_SLOW, "slow halo-IA race checks; set "
                      "COCOA_HALO_SLOW=1 to run")
 class TestHaloIARace(unittest.TestCase):
-    """Tests 20-21, sharing one frozen-state verification."""
+    """Tests 20-21, sharing one frozen-state verification.
+
+    unittest.skipUnless skips the whole class unless COCOA_HALO_SLOW=1.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 
