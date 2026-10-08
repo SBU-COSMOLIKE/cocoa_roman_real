@@ -4,14 +4,14 @@ The galaxy-galaxy lensing (ggl) spectrum C_l^gs enters the data vector
 through gamma_t(theta) in real space and directly in Fourier space. The
 likelihood yaml key adopt_limber_gs chooses how it is computed:
 
-  adopt_limber_gs: 0 (the default) - below l = 150 the exact
+  adopt_limber_gs = 0 (the default): below l = 150 the exact
       projection, computed by cosmolike's C_gs_tomo with the split of
       Fang, Krause, Eifler & MacCrann (arXiv:1911.11947): an FFTLog
       integral of the linear power spectrum plus, in Limber, what
       linear theory misses. In Fourier space each band center takes
       the Limber value plus the non-Limber correction interpolated
       between integer multipoles.
-  adopt_limber_gs: 1 - Limber approximation at every multipole.
+  adopt_limber_gs = 1: the Limber approximation at every multipole.
 
 The Limber approximation fails at low l for the lens-source pairs
 whose kernels overlap in redshift (lens bin = source bin, or the
@@ -21,8 +21,8 @@ to the exact projection because the delta chi2 below is too large to
 absorb (galaxy clustering has its own key, adopt_limber_gg; see
 test_nonlimber_gg.py). This test measures what Limber would cost.
 
-It evaluates the frozen 3x2pt fiducial (NLA) three times IN
-ONE PROCESS: non-Limber, Limber, non-Limber again, and computes
+It evaluates the frozen 3x2pt fiducial (NLA) three times in one
+process: non-Limber, Limber, non-Limber again, and computes
 
     delta chi2 = delta^T C^-1 delta,
     delta = dv(non-Limber) - dv(Limber),
@@ -55,7 +55,7 @@ start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -81,22 +81,34 @@ SETTINGS = (
 # magnitude below the measured value, so it only catches a dead flag.
 DCHI2_FLOOR = 1.0e-6
 
-# delta chi2 measured on 2026-09-27 (macOS, arm64), and the relative band
-# assertion 4 allows around it.
+# delta chi2 measured for this project (macOS, arm64), and the relative
+# band that assertion 4 allows around it.
 DCHI2_MEASURED = 0.4869
 DCHI2_RTOL = 0.05
 
 
 class TestNonLimberGGL(unittest.TestCase):
-    """Limber vs non-Limber ggl on the frozen fiducial."""
+    """Limber vs non-Limber ggl on the frozen fiducial.
+
+    setUpClass runs once: it moves to ROOTDIR, verifies every frozen
+    file against the SHA-256 manifest and loads the reference chi2
+    values.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state and load the frozen reference chi2 values."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.reference = u.load_reference()
 
     def test_nonlimber_ggl(self):
+        """Assertions 1-5 of the module docstring.
+
+        Each setting builds a new model with adopt_limber_gs overridden
+        in its likelihood block; compute_data_vector_masked returns the
+        full-precision vector of the last evaluation.
+        """
         import numpy as np
         import cosmolike_roman_real_interface as ci
 

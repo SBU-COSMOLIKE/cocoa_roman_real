@@ -4,20 +4,24 @@ Every reference in this suite is computed with the examples' default
 numerical settings. These checks answer: how much numerical error do
 those defaults carry? Each one re-evaluates a frozen configuration at
 its frozen point with the numerical knobs pushed far beyond the
-defaults (cosmolike: accuracyboost 2, integration_accuracy 10,
-lmax 200000, kmax_boltzmann 40; CAMB: AccuracyBoost 2.0,
-k_per_logint 50, kmax 50; the exact values live in
+defaults (cosmolike: accuracyboost 3, internal_accuracyboost 2,
+integration_accuracy 10, lmax 200000, kmax_boltzmann 40; CAMB:
+AccuracyBoost 2.0, k_per_logint 50, kmax 50; the exact values live in
 cocoa_test_utils.HIGH_ACCURACY_*) and reports
 
     delta chi2 = chi2(high accuracy) - chi2(default, frozen)
 
-There is NO pass/fail: how much numerical error an analysis tolerates
+There is no pass/fail: how much numerical error an analysis tolerates
 is a judgment call. The six checks cover the three probes with both
 IA models:
 
   A1. cosmic shear (example1), NLA      A2. cosmic shear, TATT
   A3. 2x2pt (example2_2x2pt), NLA       A4. 2x2pt, TATT
   A5. 3x2pt (example2), NLA             A6. 3x2pt, TATT
+
+A0, the K scan, runs first: each knob of
+cocoa_test_utils.ACCURACY_KNOBS alone on example2 (NLA), so a large
+delta can be attributed to the knob causing it.
 
 The TATT checks evaluate against their configuration's
 TATT-generated data vector (written at freeze time), so the
@@ -39,7 +43,7 @@ and to run the rest of the suite without it:
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -64,6 +68,7 @@ class TestAccuracyAdvisory(unittest.TestCase):
     # this once, before the first test of the class
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state and load the frozen reference chi2 values."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.reference = u.load_reference()

@@ -14,11 +14,10 @@ EE2's compute is OpenMP-threaded, so leaked state or a thread race
 inside it shifts the second fiducial value; the two must agree
 within RACE_TOLERANCE (1e-4).
 
-The physics gate on the modifications - the pre-modification build
-compiled side by side at test time and scored against the installed
-one - runs as test 18 of the lsst_y1 project (its
-tests/data_vector/test_ee2.py); the numbers are shared, so it is not repeated
-here.
+The physics gate on the modifications (the unmodified build compiled
+side by side at test time and scored against the installed one) runs
+as test 18 of the lsst_y1 project (its tests/data_vector/test_ee2.py);
+the numbers are shared, so it is not repeated here.
 
 To run (from the Cocoa/ folder, cocoa environment active,
 start_cocoa.sh sourced):
@@ -29,7 +28,7 @@ start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -53,6 +52,7 @@ class TestEE2Race(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 

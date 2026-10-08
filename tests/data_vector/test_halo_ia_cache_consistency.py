@@ -6,14 +6,13 @@ owner, ia_tables: the 1-halo spectra S_dI and S_II of the red
 satellites and the red-central fraction f_rc(a), tabulated on
 (a, ln k) over the source a range. Its refill is keyed on the
 cosmology, Ntable, the IA-halo nuisance tag (random_ia_halo), the
-source n(z) tag and the source photo-z tag - the last because the
-source a range the tables live on is re-read at every refill (the
-source-range invalidation class fixed in core commit 10c0193).
+source n(z) tag and the source photo-z tag; the last because the
+source a range the tables live on is re-read at every refill.
 cosmo2D.c reads those tables into the Limber C_l^ss and C_l^gs when
 include_halo_IA = 1, and its C_ss/C_gs caches key on the flag and on
-random_ia_halo. A partial-invalidation bug - one sector's update
-failing to rebuild a table another sector consumes - produces
-silently wrong spectra only in MIXED update sequences, which the
+random_ia_halo. A partial-invalidation bug (one sector's update
+failing to rebuild a table another sector consumes) produces
+silently wrong spectra only in mixed update sequences, which the
 per-point suites never exercise. This is
 test_halo_cache_consistency.py's ladder, applied to the IA sectors.
 
@@ -23,7 +22,7 @@ bias (include_HOD_GX = 0: HOD x halo IA aborts), include_halo_IA = 1.
 The sampled NLA amplitude roman_A1_* is the red-central (2-halo)
 amplitude in this model.
 
-The test walks a deterministic ladder IN ONE PROCESS, evaluating the
+The test walks a deterministic ladder in one process, evaluating the
 model after every step (each sector's later steps keep the earlier
 sectors at their last values, so the ladder ends at one well-defined
 point):
@@ -41,13 +40,12 @@ point):
 
 The IA-halo sector is not sampled: the ladder sets it through the
 interface setter, which redraws random_ia_halo only when a value
-changes, so every other table stays cached across a step - exactly
+changes, so every other table stays cached across a step: exactly
 the partial-invalidation case under test. The IA-halo fiducial is
 a_1h = 0.001 (F21 red), eta_1h = 0, z_pivot = 0.62, with the
-student's defaults for the rest (the red sigmoids {13.0, 0.5, 12.5,
-0.7} of the student's halo.c and notebook, and the IA HOD row the
-student hard-coded, Coupon et al. 2012 red galaxies M_r < -21.8:
-{13.17, 0.39, 14.53, 11.09, 1.27, 1.00}). After every step the test
+defaults for the rest: the red sigmoids {13.0, 0.5, 12.5, 0.7} and
+the IA HOD row of Coupon et al. 2012 red galaxies M_r < -21.8,
+{13.17, 0.39, 14.53, 11.09, 1.27, 1.00}. After every step the test
 records two vectors:
 
   dv = the masked 3x2pt data vector;
@@ -60,18 +58,18 @@ Assertions (test_halo_ia_cache_consistency):
   1. every ladder step changes the data vector; the cosmology and
      IA-halo steps also change the IA probes, and the NLA, shear-
      calibration and galaxy-bias steps leave them bitwise unchanged
-     (the tables read none of those parameters) - a dead sector flag
+     (the tables read none of those parameters); a dead sector flag
      would pass the later checks vacuously. The photo-z steps are
      checked on dv only: whether they move the IA probes depends on
      whether the shifts move the source a range, which the fresh-
      process check (5) covers either way;
   2. a no-op update (the final point again) leaves both vectors
      bitwise unchanged;
-  3. after a SCRAMBLE (every sector moved at once), returning to the
+  3. after a scramble (every sector moved at once), returning to the
      ladder's final point reproduces both vectors bit for bit;
-  4. a second model instance walking the MIRRORED ladder lands on the
+  4. a second model instance walking the mirrored ladder lands on the
      same vectors bit for bit;
-  5. a FRESH process (a subprocess: cosmolike's tables are
+  5. a fresh process (a subprocess: cosmolike's tables are
      per-process statics, so a second model instance in this process
      is not fresh) that evaluates the final point once, with every
      cache built from scratch, reproduces both vectors bit for bit.
@@ -100,7 +98,7 @@ active, start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import json
@@ -110,6 +108,8 @@ import sys
 import tempfile
 import unittest
 
+# The harness stays in the parent tests/ folder; put it on the module
+# search path so direct execution and the fresh subprocess also find it.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cocoa_test_utils as u
 
@@ -122,10 +122,10 @@ EXAMPLE = "example2"
 # {a_1h, eta_1h, z_pivot}: F21 red a_1h, no redshift evolution
 IA_HALO_FIDUCIAL = (0.001, 0.0, 0.62)
 # red-fraction sigmoids {lg M_cen, width_cen, lg M_sat, width_sat}
-# (the student's defaults)
+# (the defaults)
 IA_RED_FIDUCIAL = (13.0, 0.5, 12.5, 0.7)
 # IA-population HOD {lg M_min, sigma_lgM, lg M_1, lg M_0, alpha, f_c}
-# (the Coupon et al. 2012 row the student hard-coded)
+# (the default: Coupon et al. 2012 red galaxies, M_r < -21.8)
 IA_HOD_FIDUCIAL = (13.17, 0.39, 14.53, 11.09, 1.27, 1.00)
 
 # The IA-halo subsets, each with its per-move offsets {setter array:
@@ -180,6 +180,8 @@ PROBE_A = (0.25, 0.4, 0.55, 0.7, 0.85, 0.95)
 
 
 def _sector_of(name):
+    """Return the sector of a sampled-parameter name: the first SECTORS
+    pattern found in it ("other" matches any name)."""
     for sector, pat in SECTORS:
         if pat.search(name):
             return sector
@@ -187,7 +189,12 @@ def _sector_of(name):
 
 
 def _deltas_for(sector, names):
-    """{parameter: per-step delta} for this sector's sampled names."""
+    """Return {parameter: per-step delta} for one sector's sampled names.
+
+    A DELTAS key is an exact name (str) or a compiled regular expression
+    searched in the name; the conditional expression in the loop picks
+    the comparison that fits the key's type, and the first match wins.
+    """
     table = DELTAS.get(sector, {})
     out = {}
     for n in names:
@@ -199,7 +206,7 @@ def _deltas_for(sector, names):
 
 
 def build_ia_model():
-    """The frozen NLA 3x2pt model with the halo-model IA switched on.
+    """Build the frozen NLA 3x2pt model with the halo-model IA on.
 
     Returns:
       (model, fiducial point, compiled interface)
@@ -219,7 +226,7 @@ def build_ia_model():
 
 
 def point_at(fid, sector_deltas, steps):
-    """The sampled point with each sampled sector at its step count."""
+    """Return the sampled point with each sampled sector at its step."""
     point = dict(fid)
     for sector, step in steps.items():
         for n, d in sector_deltas.get(sector, {}).items():
@@ -228,8 +235,10 @@ def point_at(fid, sector_deltas, steps):
 
 
 def ia_halo_moves(step):
-    """How many times each IA-halo subset has moved after `step`
-    steps of the sector (step s moves subset (s - 1) mod 3)."""
+    """Return how many times each IA-halo subset has moved after `step`
+    steps of the sector (step s moves subset (s - 1) mod 3): subset j
+    moved at the steps s = j + 1, j + 1 + nsub, ..., which is
+    (step + nsub - 1 - j) // nsub of them (// is integer division)."""
     nsub = len(IA_HALO_SUBSETS)
     return tuple((step + nsub - 1 - j) // nsub for j in range(nsub))
 
@@ -254,7 +263,9 @@ def apply_ia_halo_state(ci, steps):
 
 
 def ia_probes(ci):
-    """The IA tables at fixed points, as one flat vector."""
+    """Return the IA tables at the fixed points as one flat vector:
+    per a, f_red_central then the 1-halo spectra at each k, then the
+    2-halo window at each k."""
     import numpy as np
 
     out = []
@@ -279,14 +290,20 @@ def evaluate(model, ci, fid, sector_deltas, steps):
 
 
 def sector_deltas_of(fid):
-    """{sector: {parameter: per-step delta}} for the sampled sectors."""
+    """Return {sector: {parameter: per-step delta}} for the sampled
+    sectors."""
     return {s: _deltas_for(s, [n for n in fid if _sector_of(n) == s])
             for s, _ in SECTORS}
 
 
 def fresh_worker(steps_json, out_path):
-    """Subprocess entry: evaluate the given ladder point ONCE, every
-    cache built from scratch, and save (dv, ia)."""
+    """Subprocess entry: evaluate the given ladder point once, every
+    cache built from scratch, and save (dv, ia).
+
+    Arguments:
+      steps_json = the {sector: step count} dict as json text
+      out_path   = the .npz file written with the arrays dv and ia
+    """
     import numpy as np
 
     steps = json.loads(steps_json)
@@ -296,7 +313,7 @@ def fresh_worker(steps_json, out_path):
 
 
 def _max_rel(a, b):
-    """Largest relative difference over b's nonzero entries."""
+    """Return max |a/b - 1| over the entries where b != 0 (0 if none)."""
     import numpy as np
 
     nz = b != 0
@@ -306,23 +323,34 @@ def _max_rel(a, b):
 @unittest.skipUnless(RUN_SLOW, "slow halo IA cache ladder; set "
                      "COCOA_HALO_SLOW=1 to run")
 class TestHaloIACacheConsistency(unittest.TestCase):
-    """IA-sector ladder cache-invalidation check, halo-model IA live."""
+    """IA-sector ladder cache-invalidation check, halo-model IA live.
+
+    unittest.skipUnless skips the whole class unless COCOA_HALO_SLOW=1.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 
     @classmethod
     def tearDownClass(cls):
+        """Switch the halo-model IA off again after the last test."""
         # the halo-IA gate is a process-wide static: leave it off for
         # the next test module's models
         import cosmolike_roman_real_interface as ci
         ci.init_include_halo_IA(0)
 
     def _walk(self, order):
-        """Walk the ladder in the given order; returns the final state
-        and the recorded vectors."""
+        """Walk the ladder in one order and check assertions 1-3.
+
+        Arguments:
+          order = "forward" or "mirrored" (the reversed sector order)
+
+        Returns:
+          (final steps, final data vector, final IA probes)
+        """
         import numpy as np
 
         model, fid, ci = build_ia_model()
@@ -392,6 +420,11 @@ class TestHaloIACacheConsistency(unittest.TestCase):
         return final_steps, final_dv, final_ia
 
     def test_halo_ia_cache_consistency(self):
+        """Both ladders, then assertions 4 (mirrored) and 5 (fresh process).
+
+        The fresh process reruns this file with --fresh (see the
+        __main__ block at the end), and the parent reads its .npz file.
+        """
         import numpy as np
 
         steps, dv_fwd, ia_fwd = self._walk("forward")
@@ -435,6 +468,8 @@ class TestHaloIACacheConsistency(unittest.TestCase):
             ": an IA table was not rebuilt when its inputs changed")
 
     def test_halo_ia_flag_flip(self):
+        """include_halo_IA 1 -> 0 -> 1 -> 0 at the fiducial point (see
+        the module docstring)."""
         import numpy as np
 
         model, fid, ci = build_ia_model()

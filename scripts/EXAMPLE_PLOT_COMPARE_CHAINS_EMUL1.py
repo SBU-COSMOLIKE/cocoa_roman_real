@@ -1,3 +1,21 @@
+"""Compare roman_real cosmic-shear posteriors from three theory pipelines.
+
+Draws one getdist triangle plot (1D and 2D marginalized posteriors) of the
+Metropolis-Hastings (MH) chains of configuration 1 (cosmic shear, NLA):
+
+  EXAMPLE_EMUL_MCMC1    the neural-network emulator of the whole
+                        cosmic-shear data vector (Halofit);
+  EXAMPLE_EMUL2_MCMC1   the hybrid pipeline: emulated distances and P(k)
+                        (the analytical syren formulas without the network
+                        corrections) and cosmolike projections;
+  EXAMPLE_MCMC1         cosmolike with CAMB (Halofit).
+
+The chains are read from projects/roman_real/chains/, where the figure
+example_compare_chains_emul1.pdf and hidden copies of the chains
+(.VM_P1_TMP*) are written. Run it once the three chains exist:
+
+    python ./projects/roman_real/scripts/EXAMPLE_PLOT_COMPARE_CHAINS_EMUL1.py
+"""
 import getdist.plots as gplot
 from getdist import MCSamples
 from getdist import loadMCSamples
@@ -7,7 +25,8 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 
-# GENERAL PLOT OPTIONS
+# Figure style: matplotlib's global settings (rcParams) for fonts, ticks,
+# grid and the saved-figure format (PDF, tight bounding box).
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
@@ -29,14 +48,24 @@ matplotlib.rcParams['savefig.format'] = 'pdf'
 
 parameter = [u'As_1e9', u'ns', u'H0', u'omegam', u'omegab', 
              u'roman_A1_1', u'roman_A1_2', u'chi2']
+# Alternative parameter lists: swap one in to inspect the source photo-z
+# shifts or the shear calibrations.
 #parameter = [u'As_1e9', u'ns', u'roman_DZ_S1', u'roman_DZ_S2', u'roman_DZ_S3', 
 #             u'roman_DZ_S4', u'roman_DZ_S5', u'roman_DZ_S6', u'roman_DZ_S7',
 #             u'roman_DZ_S8']
 #parameter = [u'As_1e9', u'ns', u'roman_M1', u'roman_M2', u'roman_M3', 
 #             u'roman_M4', u'roman_M5', u'roman_M6', u'roman_M7',
 #             u'roman_M8']
+# ROOTDIR, the cocoa/Cocoa folder, is set by start_cocoa.sh.
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
+# getdist analysis settings: Gaussian smoothing of the 1D and 2D densities
+# by 0.25 standard deviations, plot ranges that hold 99.5% of each 1D
+# posterior (range_confidence = 0.005), and fine histogram bins.
+# analysissettings drops the first 30% of each MH chain
+# as burn-in (ignore_rows = 0.3) when the chain is loaded; analysissettings2
+# keeps every row, for the saved copies (already cut) and for samplers whose
+# output needs no burn-in cut.
 analysissettings={'smooth_scale_1D':0.25,
                   'smooth_scale_2D':0.25,
                   'ignore_rows': u'0.3',
@@ -57,6 +86,10 @@ root_chains = (
   'EXAMPLE_MCMC1'
 )
 # --------------------------------------------------------------------------------
+# Each block loads one chain, adds the derived parameter chi2v2 and saves a
+# hidden text copy (a name starting with '.') in chaindir, which the
+# triangle plot reads. chi2v2 = chi2 + 2 minuslogprior is -2 ln(posterior)
+# up to a constant (chi2 = -2 ln L, minuslogprior = -ln prior).
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm post}}')
@@ -73,7 +106,9 @@ samples.addDerived(p.chi2+2*p.minuslogprior,name='chi2v2', label='{\\chi^2_{\\rm
 samples.saveAsText(chaindir + '/.VM_P1_TMP3')
 # --------------------------------------------------------------------------------
 
-#GET DIST PLOT SETUP
+# getdist triangle plot: the 1D posterior of each parameter on the
+# diagonal and the 2D contours of every pair below it; the settings fix
+# the figure width (inches), tick rotation, line widths and font sizes.
 g=gplot.getSubplotPlotter(chain_dir=chaindir,
                           analysis_settings=analysissettings2,
                           width_inch=10.5)
@@ -113,10 +148,14 @@ g.triangle_plot(
 
 # ----------------------------------------------------
 # ----------------------------------------------------
+# g.subplots[row, column] holds the axes of the triangle (row = y
+# parameter, column = x parameter); panel [2, 0] has As_1e9 on its x
+# axis, and the line below fixes that range.
 axarr = g.subplots
 # ----------------------------------------------------
 axarr[2,0].set_xlim([1.3,2.8])
 # ----------------------------------------------------
 # ----------------------------------------------------
 
+# Save the figure as a PDF in chaindir.
 g.export(os.path.join(chaindir,"example_compare_chains_emul1.pdf"))

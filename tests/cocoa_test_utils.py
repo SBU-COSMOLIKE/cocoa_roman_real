@@ -5,20 +5,19 @@ The machinery itself (frozen-state verification, the chi2 pipeline,
 worker-subprocess isolation, the race and baryon checks, the
 CFASTPT-vs-FASTPT comparison, and the terminal reports) lives in
 external_modules/code/cosmolike_core/cocoa_testing.py. This file
-carries what is roman_real's alone - the examples table (cosmic
+carries what is roman_real's alone: the examples table (cosmic
 shear and the 3x2pt/2x2pt combinations), the TATT point, the
 accuracy knobs, the dataset names, and the CFASTPT-vs-FASTPT
-comparison contract (tolerance and pinned FAST-PT settings) -
-and binds it to ONE cocoa_testing.CocoaTestHarness instance whose
-methods are re-exported under the historical names, so the test
-modules and generate_frozen_reference.py import everything from this
-module exactly as before.
+comparison contract (tolerance and pinned FAST-PT settings). It binds
+them to a single cocoa_testing.CocoaTestHarness instance and
+re-exports the instance's methods, and the core's functions, as
+module-level names, so the test modules and generate_frozen_reference.py
+import everything from this module.
 
-The frozen-state doctrine is unchanged: everything a test evaluates
-lives under tests/frozen/, pinned byte for byte by
-tests/manifest_sha256.json and verified before any model is built;
-refreshing the frozen state stays a deliberate maintainer action
-(generate_frozen_reference.py --overwrite).
+Frozen state: everything a test evaluates lives under tests/frozen/,
+pinned byte for byte by tests/manifest_sha256.json and verified before
+any model is built; refreshing the frozen state is a deliberate
+maintainer action (generate_frozen_reference.py --overwrite).
 """
 
 import os
@@ -61,14 +60,14 @@ TATT_POINT = {
     "roman_A2_2": -1.51541,
 }
 
-# The TATT variants evaluate against a data vector GENERATED WITH
-# TATT at the fiducial point. Reason: against an NLA-based vector the
+# The TATT variants evaluate against a data vector generated with TATT
+# itself at the fiducial point. Reason: against an NLA-based vector the
 # TATT chi2 sits away from its minimum, where it responds linearly
 # (not quadratically) to tiny numerical changes: harmless
 # rounding-level shifts would then eat much of the 0.2 chi2 band the
-# reference tests allow. Both examples share one data set, so a single full-length
-# vector generated from the example2 TATT model serves every
-# configuration (the other probes' masks select their sections).
+# reference tests allow. Both examples share one data set, so a single
+# full-length vector generated from the example2 TATT model serves
+# every configuration (the other probes' masks select their sections).
 TATT_GENERATORS = {
     "tatt_roman_real.dataset": "example2",
 }
@@ -147,15 +146,15 @@ ACCURACY_KNOBS = [
 # implementations: at each point both blocks print their theory data
 # vector, and the tested number is delta^T C^-1 delta with
 # delta = dv(FASTPT low) - dv(CFASTPT) and C^-1 the masked inverse
-# covariance - the chi2 OF the implementation difference, zero when
+# covariance: the chi2 of the implementation difference, zero when
 # the vectors agree. The raw chi2 values are printed only as
 # information: across the IA prior they are large, so their
 # difference rides the local chi2 slope and measures the distance
-# from the data, not the numerics. 0.2 is the house comfort band,
-# reachable because FASTPT_LOW_SETTINGS carries the converged
-# two-grid configuration (this project's own sweep: max delta chi2
-# 0.019438 there; the historical single-grid default reached 2248
-# across the prior).
+# from the data, not the numerics. 0.2 is the chi2 band of the
+# reference tests (CHI2_TOLERANCE), reachable because
+# FASTPT_LOW_SETTINGS carries the converged two-grid configuration
+# (this project's sweep: max delta chi2 0.019438 with it, 2248 across
+# the prior with a single grid).
 FASTPT_COMPARISON_TOLERANCE = 0.2
 
 # The python FAST-PT side has numerical settings of its own, read by
@@ -167,10 +166,11 @@ FASTPT_COMPARISON_TOLERANCE = 0.2
 # internal_accuracyboost the density of the internal grid the FFTLog
 # convolutions run on; a cubic spline in log k upsamples the terms
 # from one grid onto the other. Both boosts default to 1.0 = the
-# converged configuration, so low IS the default; it is hard-coded
-# here so the test keeps evaluating this exact configuration even if
-# the defaults later move. High doubles both boosts, so the advisory
-# column shows the residual grid response of low.
+# converged configuration, so the low settings are the defaults; they
+# are written out here so the test keeps evaluating this exact
+# configuration even if the defaults later move. High doubles both
+# boosts, so the advisory column shows the residual grid response of
+# low.
 FASTPT_LOW_SETTINGS = {
     "accuracyboost": 1.0,
     "internal_accuracyboost": 1.0,
@@ -206,8 +206,9 @@ NONLINEAR_COMPARISON_POINTS = _cct.NONLINEAR_COMPARISON_POINTS
 
 # ---- the harness -----------------------------------------------------------
 
-# ONE instance binds the shared machinery to this project's data;
-# everything below re-exports its surface under the historical names.
+# A single instance binds the shared machinery to this project's data;
+# the assignments below re-export its methods, and the core's
+# functions, under the module-level names the test modules import.
 _H = _cct.CocoaTestHarness(
     worker_file=__file__,
     interface_module="cosmolike_roman_real_interface",

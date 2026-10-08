@@ -2,13 +2,13 @@
 
 Each test evaluates the example1 configuration (NLA) with the bfmt
 theory block computing one feedback method, against that method's
-FROZEN data vector - the default-settings theory prediction written
+frozen data vector: the default-settings theory prediction written
 at freeze time by generate_frozen_reference.py --baryons, at the
 frozen fiducial point plus the method's cosmology override
 (cocoa_test_utils.BARYON_POINT_OVERRIDES). At freeze time the chi2
 against that vector was zero by construction, so the assertion
 
-    chi2 <= chi2_tolerance
+    chi2 <= CHI2_TOLERANCE (0.2)
 
 pins the whole feedback pipeline: a failure means cosmolike or the
 bfmt theory block changed its prediction since the freeze. This is
@@ -33,7 +33,7 @@ active, start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -54,6 +54,7 @@ class TestBaryonDrift(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 

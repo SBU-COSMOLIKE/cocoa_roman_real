@@ -18,8 +18,8 @@ NL2. example2 (3x2pt): the same comparison on the 3x2pt likelihood,
 
 There is no pass/fail: the numbers say how much of the statistical
 error budget the Halofit-vs-emulator difference consumes under the
-chosen scale cuts - the question "can Halofit be used on real data
-analysis at this mask". The checks read the --mask option of the
+chosen scale cuts, that is, whether Halofit can be used in a real-data
+analysis with this mask. The checks read the --mask option of the
 comparison sweeps (conftest.py): --mask=frozen (the default) keeps
 the frozen contract's example1.mask scale cuts, --mask=ones keeps
 every data point (no scale cuts).
@@ -39,7 +39,7 @@ README records the measurement).
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -63,6 +63,7 @@ class TestHalofitVsEE2(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 
@@ -70,8 +71,9 @@ class TestHalofitVsEE2(unittest.TestCase):
         """Cosmic shear: Halofit scored against EE2 at ten cosmologies.
 
         Advisory: the printed report is the product. The only
-        assertion is structural - every cosmology must have produced
-        a number.
+        assertion is structural: every cosmology must have produced
+        a number. COCOA_FASTPT_MASK carries the --mask option (copied
+        there by conftest.py).
         """
         mask = os.environ.get("COCOA_FASTPT_MASK", "frozen")
         dchi2s = u.halofit_vs_ee2_dchi2s("example1", mask=mask)

@@ -4,21 +4,21 @@ The galaxy clustering (gg) spectrum C_l^gg enters the data vector
 through w(theta) in real space and directly in Fourier space. The
 likelihood yaml key adopt_limber_gg chooses how it is computed:
 
-  adopt_limber_gg: 0 - below l = 150 the exact projection, computed by
+  adopt_limber_gg = 0: below l = 150 the exact projection, computed by
       cosmolike's C_cl_tomo with the split of Fang, Krause, Eifler &
       MacCrann (arXiv:1911.11947): an FFTLog integral of the linear
       power spectrum plus, in Limber, what linear theory misses. In
       Fourier space each band center takes the Limber value plus the
       non-Limber correction interpolated between integer multipoles.
-  adopt_limber_gg: 1 - Limber approximation at every multipole.
+  adopt_limber_gg = 1: the Limber approximation at every multipole.
 
 This project's default is adopt_limber_gg: 0 (non-Limber). The
 lens galaxy redshift distributions are narrow, so the Limber
 approximation fails at low l for the clustering auto spectra; this
 test measures by how much.
 
-It evaluates the frozen 3x2pt fiducial (NLA) three times IN ONE
-PROCESS: the default, the other setting, the default again, and
+It evaluates the frozen 3x2pt fiducial (NLA) three times in one
+process: the default, the other setting, the default again, and
 computes
 
     delta chi2 = delta^T C^-1 delta,
@@ -53,7 +53,7 @@ start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import sys
@@ -85,22 +85,34 @@ SETTINGS = (
 # dead flag.
 DCHI2_FLOOR = 1.0e-6
 
-# delta chi2 measured on 2026-09-28 (macOS, arm64), and the relative band
-# assertion 5 allows around it.
+# delta chi2 measured for this project (macOS, arm64), and the relative
+# band that assertion 4 allows around it.
 DCHI2_MEASURED = 8.583
 DCHI2_RTOL = 0.05
 
 
 class TestNonLimberGG(unittest.TestCase):
-    """Limber vs non-Limber galaxy clustering on the frozen fiducial."""
+    """Limber vs non-Limber galaxy clustering on the frozen fiducial.
+
+    setUpClass runs once: it moves to ROOTDIR, verifies every frozen
+    file against the SHA-256 manifest and loads the reference chi2
+    values.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state and load the frozen reference chi2 values."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.reference = u.load_reference()
 
     def test_nonlimber_gg(self):
+        """Assertions 1-5 of the module docstring.
+
+        Each setting builds a new model with adopt_limber_gg overridden
+        in its likelihood block; compute_data_vector_masked returns the
+        full-precision vector of the last evaluation.
+        """
         import numpy as np
         import cosmolike_roman_real_interface as ci
 
@@ -136,6 +148,8 @@ class TestNonLimberGG(unittest.TestCase):
                     sizes = ci.compute_data_vector_3x2pt_fourier_sizes()
                     nlen = int(like.ncl)
 
+        # tags maps each flag value (0, 1) to its report tag: a dict
+        # comprehension over the first two settings
         tags = {flag: tag for tag, flag in SETTINGS[:2]}
         dv_default = vectors[SETTINGS[0][0]]
         delta = vectors[tags[0]] - vectors[tags[1]]

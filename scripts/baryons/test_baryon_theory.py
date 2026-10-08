@@ -1,15 +1,24 @@
 """
-Unit tests for BaryonSuppression theory block.
+pytest unit tests of a BaryonSuppression theory block (module pyspk_theory).
 
-Tests:
-1. Direct instantiation and initialization
-2. Parameter validation (in-range, boundary, out-of-range)
-3. must_provide() parsing of z/k grids
-4. Calibration boundary masking (z, k ranges)
-5. NaN/Inf detection and graceful degradation
-6. Edge cases (invalid cosmology, empty grids, etc.)
+The block computes the baryonic suppression S(k, z) = P_baryons/P_dmo of
+the matter power spectrum (P_dmo: dark matter only) with the SP(k) model.
+The tests cover:
 
-Run: python -m pytest test_baryon_theory.py -v
+1. initialization: calibration ranges and parameter bounds; requirements;
+2. must_provide(): parsing of the requested z and k grids, and the error
+   when either grid is missing;
+3. parameter validation: alpha, beta or gamma out of bounds give S = 1;
+4. calibration ranges: z outside [0.125, 3] and k below 8.73e-3 give S = 1;
+5. the model selector: an unknown model, BCEmu (2) and PCA (3) give S = 1;
+6. the get_baryon_suppression accessor and the unity-suppression fallback.
+
+Cobaya's provider and logger are replaced by unittest.mock.Mock objects
+(stand-ins that accept any call and record it), and two tests patch
+pyspk_theory.LoggedError. pyspk_theory is not part of this project; it must
+be importable, or collection fails at the import below. Run:
+
+    python -m pytest test_baryon_theory.py -v
 """
 
 import numpy as np
@@ -28,7 +37,7 @@ class TestBaryonSuppressionInitialization:
     def test_initialize(self):
         """Test basic initialization sets up calibration ranges."""
         theory = BaryonSuppression()
-        # Mock logger
+        # Mock() accepts any call and records it: a stand-in for the logger
         theory.log = Mock()
         theory.initialize()
 
@@ -91,7 +100,8 @@ class TestMustProvide:
         theory.log = Mock()
         theory.log.side_effect = Mock()  # Make it raise
 
-        # Mock LoggedError to raise on call
+        # patch() replaces pyspk_theory.LoggedError inside the with-block by
+        # a stand-in that raises RuntimeError, so the error is observable
         from unittest.mock import patch
 
         with patch("pyspk_theory.LoggedError", side_effect=RuntimeError):
@@ -121,7 +131,8 @@ class TestParameterValidation:
         self.theory.log = Mock()
         self.theory.initialize()
 
-        # Mock provider with fiducial cosmology
+        # Mock provider: get_param returns the fiducial H0 and Omega_m
+        # (side_effect is the function a Mock calls with its arguments)
         self.theory.provider = Mock()
         self.theory.provider.get_param.side_effect = lambda x: {
             "H0": 67.32,
@@ -142,7 +153,7 @@ class TestParameterValidation:
             "gamma_spk": 0.42,
         }
 
-        # We expect this to call pyspk without logging warnings
+        # In range: pyspk runs and the state receives one entry per z
         self.theory.calculate(self.state, **params)
 
         # Should have created baryon_suppression in state
@@ -165,7 +176,7 @@ class TestParameterValidation:
                 sup_array, np.ones_like(self.theory.requested_k)
             )
 
-        # Check warning was logged
+        # The rejection is logged: some recorded logger call mentions "error"
         warning_calls = [
             call
             for call in self.theory.log.method_calls
@@ -281,7 +292,7 @@ class TestCalibrationBoundaries:
         assert sup[0] == 1.0  # k=0.001 < 8.73e-3
 
         # k >= 8.73e-3 should have actual suppression (< 1.0 typically)
-        # Note: we can't guarantee this without running pyspk, but we can check it's valid
+        # The value depends on pyspk; the check only requires a valid factor
         assert 0.01 <= sup[1] <= 1.0  # k=0.01 >= 8.73e-3
 
 
@@ -326,7 +337,8 @@ class TestModelSelector:
         sup = self.state["baryon_suppression"][0.5]
         np.testing.assert_array_almost_equal(sup, np.ones_like(self.theory.requested_k))
 
-        # Check warning was logged
+        # The warning calls are collected but not checked: the final assert
+        # is always true
         warning_calls = [
             str(call)
             for call in self.theory.log.method_calls
@@ -345,7 +357,7 @@ class TestModelSelector:
         sup = self.state["baryon_suppression"][0.5]
         np.testing.assert_array_almost_equal(sup, np.ones_like(self.theory.requested_k))
 
-        # Check warning was logged
+        # A warning that mentions PCA was logged
         warning_calls = [
             str(call)
             for call in self.theory.log.method_calls

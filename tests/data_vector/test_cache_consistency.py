@@ -4,12 +4,12 @@ cosmolike caches every expensive stage behind its own key: cosmology
 (distances, growth, power-spectrum tables), intrinsic alignment
 (FAST-PT tables under TATT), photo-z shifts (n(z) splines, lens
 efficiencies), and the shear calibrations (a pure data-vector
-rescale). A partial-invalidation bug - one sector's update path
-failing to rebuild a static another sector consumes - produces
-silently wrong data vectors only in MIXED update sequences, which the
+rescale). A partial-invalidation bug (one sector's update path
+failing to rebuild a static table another sector consumes) produces
+silently wrong data vectors only in mixed update sequences, which the
 per-point suites never exercise.
 
-The test walks a deterministic ladder IN ONE PROCESS, evaluating the
+The test walks a deterministic ladder in one process, evaluating the
 model after every step (each sector's later steps keep the earlier
 sectors at their last values, so the ladder ends at one well-defined
 point):
@@ -21,24 +21,24 @@ point):
     3 x shear-calibration steps (every M)
 
 (a sector the configuration samples no parameters in drops out of the
-ladder: separate DZ_L shifts when the lenses ARE the source sample, IA
+ladder: separate DZ_L shifts when the lenses are the source sample, IA
 amplitudes where the configuration fixes them)
 
-It records the final data vector, then evaluates one SCRAMBLE point
+It records the final data vector, then evaluates one scramble point
 (every sector moved at once, galaxy bias included; the chi2 is
 discarded) and returns to the ladder's final point: the pipeline must
 reproduce the recorded vector bit for bit. A second model instance
-walks the MIRRORED ladder (M -> DZ_L -> DZ_S -> IA -> cosmology) to
+walks the mirrored ladder (M -> DZ_L -> DZ_S -> IA -> cosmology) to
 the same final point: the answer must depend on the point, never on
 the invalidation history.
 
-Assertions, in each intrinsic-alignment model (NLA and TATT - the
+Assertions, in each intrinsic-alignment model (NLA and TATT; the
 TATT ladder exercises the FAST-PT rebuild machinery NLA never
 touches):
   1. every ladder step changes the data vector (a dead sector flag
      would pass the later checks vacuously);
   2. each M-only step rescales the masked vector by the analytic
-     (1+m_i)(1+m_j) block factors to 1e-12 relative - cosmic shear by
+     (1+m_i)(1+m_j) block factors to 1e-12 relative: cosmic shear by
      both bins' factors, gamma_t by the source factor, w by nothing;
   3. a no-op update (re-sending the current M values) leaves the
      vector bitwise unchanged;
@@ -60,13 +60,15 @@ start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import re
 import sys
 import unittest
 
+# The harness stays in the parent tests/ folder; put it on the module
+# search path so direct execution also finds it.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cocoa_test_utils as u
 
@@ -98,12 +100,16 @@ DELTAS = {
     "m": {re.compile(r"_M[0-9]+$"): 0.005},
     "bias": {re.compile(r"_B1_"): 0.05},
 }
+# NSTEP steps per sector. RESCALE_RTOL: an M step multiplies the vector by
+# exact factors, so the analytic rescale must hold to double rounding.
 NSTEP = 3
 SCRAMBLE_STEP = 4  # every sector at step 4, bias included
 RESCALE_RTOL = 1.0e-12
 
 
 def _sector_of(name):
+    """Return the sector of a sampled-parameter name: the first SECTORS
+    pattern found in it ("other" matches any name)."""
     for sector, pat in SECTORS:
         if pat.search(name):
             return sector
@@ -111,7 +117,12 @@ def _sector_of(name):
 
 
 def _deltas_for(sector, names):
-    """{parameter: per-step delta} for this sector's sampled names."""
+    """Return {parameter: per-step delta} for one sector's sampled names.
+
+    A DELTAS key is an exact name (str) or a compiled regular expression
+    searched in the name; the conditional expression in the loop picks
+    the comparison that fits the key's type, and the first match wins.
+    """
     table = DELTAS.get(sector, {})
     out = {}
     for n in names:
@@ -123,15 +134,25 @@ def _deltas_for(sector, names):
 
 
 class TestCacheConsistency(unittest.TestCase):
-    """Sector-ladder cache-invalidation check on the frozen fiducial."""
+    """Sector-ladder cache-invalidation check on the frozen fiducial.
+
+    setUpClass runs once: it moves to ROOTDIR and verifies every frozen
+    file against the SHA-256 manifest before any physics runs.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Move to ROOTDIR and verify the frozen state before any physics runs."""
         u.require_cocoa_environment()
         u.verify_frozen()
 
     def _point_at(self, fid, steps):
-        """The ladder point with each sector at its given step count."""
+        """Return the ladder point with each sector at its step count.
+
+        Arguments:
+          fid   = the fiducial point, {parameter: value}
+          steps = {sector: step count}; a parameter moves by step x delta
+        """
         point = dict(fid)
         for sector, step in steps.items():
             for n, d in self.sector_deltas[sector].items():
@@ -139,11 +160,20 @@ class TestCacheConsistency(unittest.TestCase):
         return point
 
     def _mpairs(self, like, np_):
-        """(i, j) source-bin shear-calibration factors per masked-vector
-        entry: cosmic shear scales by both bins, gamma_t (and the ks
-        cross where present) by the source bin, clustering, gk and kk
-        by nothing. Fourier data vectors use ncl per block, real ones
-        ntheta; the xi_pm split doubles the shear block in real space."""
+        """Return the shear-calibration source bins of every vector entry.
+
+        Row k of the returned [n_data, 2] integer array holds (i, j),
+        the source bins whose (1 + m) factors multiply entry k, with -1
+        for no factor: cosmic shear scales by both bins, gamma_t (and the
+        ks cross where present) by the source bin, clustering, gk and kk
+        by nothing. Fourier data vectors use ncl entries per bin pair,
+        real ones ntheta; the xi_pm split doubles the shear block in real
+        space.
+
+        Arguments:
+          like = the likelihood instance (bin counts, binning, ggl_exclude)
+          np_  = the numpy module
+        """
         import cosmolike_roman_real_interface as ci
         real = hasattr(ci, "compute_data_vector_3x2pt_real_sizes")
         sizes = [int(x) for x in
@@ -177,6 +207,11 @@ class TestCacheConsistency(unittest.TestCase):
         return fac
 
     def _run_ladder(self, tatt):
+        """Walk the forward and the mirrored ladder; assert checks 1-5.
+
+        Arguments:
+          tatt = True for the TATT configuration, False for NLA
+        """
         import numpy as np
         import cosmolike_roman_real_interface as ci
 
@@ -192,9 +227,10 @@ class TestCacheConsistency(unittest.TestCase):
             for s in ("cosmo", "dz_source", "m"):
                 self.assertTrue(self.sector_deltas[s],
                                 f"no sampled parameters in sector {s}")
-            # a sector nothing samples drops out of the ladder: lenses
-            # that ARE the source sample carry no separate DZ_L shifts,
-            # and roman_kl fixes every IA amplitude
+            # a sector nothing samples drops out of the ladder: here the
+            # lens photo-z shifts are derived from the source ones
+            # (roman_DZ_L<i> = roman_DZ_S<i>), so dz_lens drops out; a
+            # configuration that fixes every IA amplitude drops ia
             active = tuple(s for s in PHASES if self.sector_deltas[s])
 
             phases = active if order == "forward" else tuple(reversed(active))
@@ -271,9 +307,11 @@ class TestCacheConsistency(unittest.TestCase):
             "the answer depends on the invalidation history")
 
     def test_cache_consistency_nla(self):
+        """The ladder checks under NLA."""
         self._run_ladder(tatt=False)
 
     def test_cache_consistency_tatt(self):
+        """The ladder checks under TATT (FAST-PT rebuilds included)."""
         self._run_ladder(tatt=True)
 
 

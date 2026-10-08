@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+"""Plot the six one-parameter profiles of the roman_real w0waCDM example.
+
+For each parameter p in (w, w0pwa, As_1e9, ns, omegam, H0) the profile
+script EXAMPLE_EMUL_PROFILE2.py saves chains/EXAMPLE_EMUL_PROFILE2.<p>.txt:
+column 0 holds the fixed values of p, and column 1 the chi2 =
+-2 ln(posterior) (priors included) minimized over the other parameters.
+Each panel shows Delta chi2 = chi2 - min(chi2) and a fitted parabola.
+Where the parabola crosses Delta chi2 = 1, 4 and 9 it marks the 1, 2 and 3
+sigma intervals (the Gaussian rule for one parameter), drawn as dashed
+lines and printed in the panel.
+
+Reads and writes in projects/roman_real/chains/ (ROOTDIR must be set); the
+figure name has no extension, so savefig uses the rcParams format and
+writes example_plot_profile2.pdf.
+"""
 
 import os
 import numpy as np
@@ -6,7 +21,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import math
-# GENERAL PLOT OPTIONS
+# Figure style: matplotlib's global settings (rcParams) for fonts, ticks,
+# grid and the saved-figure format (PDF, tight bounding box).
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
@@ -28,6 +44,8 @@ matplotlib.rcParams['savefig.format'] = 'pdf'
 # ------------------------------------------------------------------------------
 fig = plt.figure(figsize=(15.1, 12.1))
 # ------------------------------------------------------------------------------
+# Six panels: a master grid of two rows, each split into three columns; ax
+# is the list of the six axes, top row first.
 master = gridspec.GridSpec(2, 
                            1, 
                            height_ratios=[1,1.1], 
@@ -58,7 +76,8 @@ for i in range(6):
                alpha=1.0,lw=1.0,
                label=params[i])
     
-    # fit a parabola
+    # Fit Delta chi2(x) with a parabola a x^2 + b x + c (np.polyfit with
+    # deg=2 returns [a, b, c]) and draw it on 300 points.
     coeffs = np.polyfit(x, y, deg=2)
     xfit = np.linspace(np.min(x), np.max(x), 300)
     yfit = np.polyval(coeffs, xfit)
@@ -85,7 +104,10 @@ for i in range(6):
     ax[i].set_xlim(data[0,0]-0.075*(data[-1,0]-data[0,0]),
                    x[-1]+0.075*(x[-1]-x[0]))
 # ------------------------------------------------------------------------------    
-    # get 1σ, 2σ and 3σ - print as vertical lines
+    # The parabola crosses Delta chi2 = y0 (1, 4, 9 for 1, 2, 3 sigma) at the
+    # roots of a x^2 + b x + (c - y0). The comprehension keeps the real parts
+    # of the real roots; a pair of crossings is stored in sigma_lines and
+    # drawn as dashed vertical lines.
     sigma_lines = {}
     for y0 in [1, 4, 9]:
         a, b, c = coeffs
@@ -99,7 +121,9 @@ for i in range(6):
                               color='grey', 
                               alpha=0.5, 
                               lw=1.0)
-    # Build annotation text
+    # Annotation: one line per interval with prec decimals, one digit past
+    # the leading digit of the profiled range; f"{lo:.{prec}f}" prints lo
+    # with prec decimals.
     lmap = {1: "1σ", 4: "2σ", 9: "3σ"}
     tlines = []
     prec = max(0, int(-math.floor(math.log10(x[-1] - x[0]))) + 1)

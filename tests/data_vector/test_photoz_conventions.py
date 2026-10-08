@@ -3,13 +3,13 @@
 The likelihood exposes two runtime knobs that control how the n(z)
 table files are turned into the smooth distributions the Limber
 integrals consume (both settable per likelihood in its yaml, both
-defaulting to the historical behavior):
+defaulting to 0):
 
-  photoz_interpolation_type - the stage-1 interpolant of the two-stage
+  photoz_interpolation_type: the stage-1 interpolant of the two-stage
       n(z) scheme: 0 = cubic spline (the default), 1 = linear,
       2+ = Steffen monotone (no overshoot: n(z) can never ring below
       zero around a sharp feature in the table).
-  photoz_zmid_convention - how the z column of the n(z) file is read:
+  photoz_zmid_convention: how the z column of the n(z) file is read:
       0 = Z_LOW (the default; the column holds left bin edges, so the
       tabulated value belongs at the cell center z + dz/2), 1 = Z_MID
       (the column holds the sample points themselves). The two
@@ -17,16 +17,16 @@ defaulting to the historical behavior):
       which is percent-level in cosmic shear.
 
 This test evaluates the frozen cosmic-shear fiducial under five
-settings IN ONE PROCESS: the default, each alternative, and the
+settings in one process: the default, each alternative, and the
 default again. For each alternative it measures
 
     delta chi2 = delta^T C^-1 delta,
     delta = dv(alternative) - dv(default),
 
-with C^-1 the masked inverse covariance from the compiled interface -
+with C^-1 the masked inverse covariance from the compiled interface:
 the same second-order construction the CFASTPT-vs-FASTPT sweep uses
 (the chi2 the alternative would score against a dataset whose data
-vector IS the default prediction), which never rides the slope of the
+vector is the default prediction), which never rides the slope of the
 distance to the shipped data.
 
 Running everything in one process is the point, not a convenience:
@@ -46,7 +46,7 @@ start_cocoa.sh sourced):
 import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
-# this must run before ANY cobaya/cosmolike import in the process.
+# this must run before any cobaya/cosmolike import in the process.
 os.environ["OMP_NUM_THREADS"] = "4"
 
 import shutil
@@ -70,22 +70,34 @@ SETTINGS = (
     ("default again (round trip)", 0, 0),
 )
 
-# The alternatives must be SEEN (a stale n(z) cache would give exactly
-# zero); the floors are orders of magnitude below the measured deltas,
-# so they only catch a dead flag, never normal numerical drift.
+# Each alternative must change the vector (a stale n(z) cache would give
+# exactly zero); the floors are orders of magnitude below the measured
+# deltas, so they only catch a dead flag, never normal numerical drift.
 DCHI2_FLOORS = {"linear": 1.0e-8, "steffen": 1.0e-8, "Z_MID": 1.0e-2}
 
 
 class TestPhotozConventions(unittest.TestCase):
-    """The five-setting sweep, sharing one frozen-state verification."""
+    """The five-setting sweep, sharing one frozen-state verification.
+
+    setUpClass runs once: it moves to ROOTDIR, verifies every frozen
+    file against the SHA-256 manifest and loads the reference chi2
+    values.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Verify the frozen state and load the frozen reference chi2 values."""
         u.require_cocoa_environment()
         u.verify_frozen()
         cls.reference = u.load_reference()
 
     def test_photoz_conventions(self):
+        """Every alternative changes the vector; the default round-trips.
+
+        Each setting builds a new model whose likelihood writes its
+        theory vector (print_datavector) into a temporary folder that
+        addCleanup deletes after the test.
+        """
         import numpy as np
         import cosmolike_roman_real_interface as ci
 
@@ -142,7 +154,7 @@ class TestPhotozConventions(unittest.TestCase):
             u.CHI2_TOLERANCE)
 
         # round trip: after all the flips, the default settings must
-        # reproduce the first vector identically - the cache rebuilt
+        # reproduce the first vector identically, the cache rebuilt
         # back to the same state
         _, dv_return = results[SETTINGS[-1][0]]
         self.assertTrue(

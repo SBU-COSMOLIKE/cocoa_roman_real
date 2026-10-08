@@ -1,5 +1,43 @@
+"""Sample the Roman real-space cosmic-shear posterior with Nautilus.
+
+The likelihood is roman_real.cosmic_shear evaluated by the neural-network
+emulator of the whole cosmic-shear data vector (use_emulator: 1, NLA
+intrinsic alignments).
+Model: w0waCDM (w and w0pwa = w0 + wa sampled).
+Nonlinear power of the emulator's training set: Halofit (Takahashi).
+
+Nautilus is a nested sampler: a set of live points shrinks from the prior
+toward high likelihood, giving weighted posterior samples and the
+Bayesian evidence log Z; neural networks learn the likelihood boundary to
+propose new points. Its prior here is uniform on the box that holds
+0.999999 of each cobaya prior, and the function it explores, likelihood,
+returns ln(prior) + ln(likelihood) from cobaya, so the non-uniform cobaya
+priors (the Gaussian nuisance priors) enter once, through that function.
+The posterior is therefore cobaya's; log Z is shifted by -ln(V), V the
+volume of the box.
+
+Outputs in <root>chains/: <outroot>.1.txt (columns: weight, the value of
+that function, the sampled parameters, chi2 = -2 times that value),
+.ranges, .paramnames and .covmat (for getdist), and the checkpoint
+<outroot>_checkpoint.hdf5, from which a rerun with the same names resumes.
+
+Run from cocoa/Cocoa with MPI through mpi4py.futures, for example (one
+command, wrapped here):
+
+    mpirun -n 12 --oversubscribe python -m mpi4py.futures
+        ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS2.py --root ./projects/roman_real/
+        --outroot EXAMPLE_EMUL_NAUTILUS2 --maxfeval 750000 --nlive 2048
+        --neff 15000 --flive 0.01 --nnetworks 5
+
+Pass --root: its default names another project.
+"""
 import warnings
 import os
+# The filters below silence warnings that would repeat at every
+# evaluation of a long run: scikit-learn's InconsistentVersionWarning
+# (a stored model made with another scikit-learn version), sacc's column
+# deprecation notice, numpy's invalid-value and overflow RuntimeWarnings,
+# and the UserWarnings matched by their message text.
 from sklearn.exceptions import InconsistentVersionWarning
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 warnings.filterwarnings(
@@ -87,6 +125,9 @@ parser.add_argument("--nnetworks",
                     nargs='?',
                     const=1,
                     default=4)
+# parse_known_args returns the options this parser defines and leaves
+# any other command-line argument in unknown instead of stopping with an
+# error (MPI launchers and mpi4py.futures may pass their own).
 args, unknown = parser.parse_known_args()
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -94,6 +135,13 @@ args, unknown = parser.parse_known_args()
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# The cobaya configuration as yaml text (a raw string, so the LaTeX
+# backslashes of the labels stay as written): the roman_real
+# cosmic-shear likelihood evaluated by the data-vector emulator
+# (use_emulator: 1), the priors of every sampled parameter, and the
+# emulator theory block (ord: its input parameters, in order;
+# fast_params: the shear calibrations, which cosmolike applies to the
+# emulated vector).
 yaml_string=r"""
 likelihood:
   roman_real.cosmic_shear:
@@ -417,8 +465,25 @@ theory:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# The cobaya Model evaluates the priors and the likelihood at a point;
+# no cobaya sampler is involved.
 model = get_model(yaml_load(yaml_string))
 def chi2(p):
+    """Return -2 ln(posterior) at a parameter point, priors included.
+
+    Arguments:
+      p = the sampled-parameter values in the order of
+          model.parameterization.sampled_params(), as a sequence or
+          as a dict (its values are taken in order)
+
+    Returns:
+      float, -2 (ln prior + ln likelihood); 1e20 where either is
+      infinite or NaN, so the samplers treat the point as excluded.
+      cached=False makes cobaya recompute the likelihood every time.
+
+    Raises:
+      ValueError when a parameter value is infinite or NaN.
+    """
     p = [float(v) for v in p.values()] if isinstance(p, dict) else p
     if np.any(np.isinf(p)) or  np.any(np.isnan(p)):
       raise ValueError(f"At least one parameter value was infinite (CoCoa) param = {p}")
@@ -435,6 +500,12 @@ def chi2(p):
     return -2.0*(res1+res2)
 
 def likelihood(params):
+  """Return the function Nautilus explores: -chi2/2 = ln(prior) +
+  ln(likelihood), or -inf for an excluded point.
+
+  Arguments:
+    params = the sampled-parameter values, in the sampled order
+  """
   res = chi2(params)
   if (res > 1.e19 or np.isinf(res) or  np.isnan(res)):
     return -np.inf
@@ -446,11 +517,15 @@ def likelihood(params):
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# MPIPoolExecutor hands likelihood evaluations to the MPI processes that
+# `python -m mpi4py.futures` starts
 from mpi4py.futures import MPIPoolExecutor
 
+# The block below runs only when the file is executed as a script.
 if __name__ == '__main__':
     print(f"nlive={args.nlive}, output={args.root}chains/{args.outroot}")
-    # Build Nautilus Prior from Cobaya
+    # Nautilus prior: uniform on the bounds that hold 0.999999 of each
+    # cobaya prior (dist=(low, high) is a uniform distribution)
     NautilusPrior = Prior()                                       # Nautilus Call 
     dim    = model.prior.d()                                      # Cobaya call
     bounds = model.prior.bounds(confidence=0.999999)              # Cobaya call
@@ -466,6 +541,10 @@ if __name__ == '__main__':
                       n_live=args.nlive,
                       n_networks=args.nnetworks,
                       resume=True)
+    # run until n_eff effective samples (or n_like_max evaluations);
+    # f_live ends the exploration phase once the live set holds less than
+    # that fraction of the evidence, and the exploration points are left
+    # out of the posterior
     sampler.run(f_live=args.flive,
                 n_eff=args.neff,
                 n_like_max=args.maxfeval,
@@ -473,7 +552,8 @@ if __name__ == '__main__':
                 discard_exploration=True)
     points, log_w, log_l = sampler.posterior()
     
-    # Save output file ---------------------------------------------------------
+    # the weighted samples: weight, value of the explored function, the
+    # sampled parameters, chi2 --------------------------------------------
     os.makedirs(os.path.dirname(f"{args.root}chains/"),exist_ok=True)
     np.savetxt(f"{args.root}chains/{args.outroot}.1.txt",
                np.column_stack((np.exp(log_w), log_l, points, -2*log_l)),
@@ -481,12 +561,13 @@ if __name__ == '__main__':
                header=f"nlive={args.nlive}, maxfeval={args.maxfeval}, log-Z ={sampler.log_z}\n"+' '.join(names),
                comments="# ")
     
-    # Save a range files -------------------------------------------------------
+    # .ranges: the bounds of each parameter, for getdist --------------------
     rows = [(str(n),float(l),float(h)) for n,l,h in zip(names,bounds[:,0],bounds[:,1])]
     with open(f"{args.root}chains/{args.outroot}.ranges", "w") as f: 
       f.writelines(f"{n} {l:.5e} {h:.5e}\n" for n, l, h in rows)
 
-    # Save a paramname files ---------------------------------------------------
+    # .paramnames: name and LaTeX label per column; the * of chi2* marks a
+    # derived parameter ---------------------------------------------------
     param_info = model.info()['params']
     latex  = [param_info[x]['latex'] for x in names]
     names.append("chi2*")
@@ -495,7 +576,8 @@ if __name__ == '__main__':
                np.column_stack((names,latex)),
                fmt="%s")
 
-    # Save a cov matrix --------------------------------------------------------
+    # .covmat: the parameter covariance of the saved samples, read back with
+    # getdist --------------------------------------------------------------
     samples = loadMCSamples(f"{args.root}chains/{args.outroot}",
                             settings={'ignore_rows': u'0.0'})
     np.savetxt(f"{args.root}chains/{args.outroot}.covmat",

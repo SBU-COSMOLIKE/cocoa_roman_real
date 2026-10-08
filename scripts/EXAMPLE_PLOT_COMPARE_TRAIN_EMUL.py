@@ -1,3 +1,18 @@
+"""Compare the parameter distributions of three emulator training sets.
+
+The cosmic-shear emulator is trained on data vectors computed at parameter
+points drawn from a Gaussian built from a Fisher covariance and tempered by
+a temperature T: a larger T gives a wider training set. This script draws
+one getdist triangle plot of the points of the T = 256, 128 and 64 sets
+(w0wa_params_train_cs_<T>, written by the dataset generator; see the README
+section "Training Roman ML emulators").
+
+The sets are read from projects/roman_real/chains/, where the figure
+example_compare_train_emul.pdf and hidden copies of the sets (.VM_P1_TMP*)
+are written. Run it with:
+
+    python ./projects/roman_real/scripts/EXAMPLE_PLOT_COMPARE_TRAIN_EMUL.py
+"""
 import getdist.plots as gplot
 from getdist import MCSamples
 from getdist import loadMCSamples
@@ -7,7 +22,8 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 
-# GENERAL PLOT OPTIONS
+# Figure style: matplotlib's global settings (rcParams) for fonts, ticks,
+# grid and the saved-figure format (PDF, tight bounding box).
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
@@ -29,8 +45,13 @@ matplotlib.rcParams['savefig.format'] = 'pdf'
 
 parameter = [u'As_1e9', u'ns', u'H0', u'omegam', u'omegab', u'w0pwa', u'w',
              u'roman_A1_1', u'roman_A1_2', u'roman_DZ_S1']
+# ROOTDIR, the cocoa/Cocoa folder, is set by start_cocoa.sh.
 chaindir  = os.environ['ROOTDIR'] + "/projects/roman_real/chains/"
 
+# getdist analysis settings: Gaussian smoothing of the 1D and 2D densities
+# by 0.25 standard deviations, plot ranges that hold 99.5% of each 1D
+# distribution (range_confidence = 0.005), fine histogram bins, and every
+# row kept (ignore_rows = 0: a training set has no burn-in).
 analysissettings={'smooth_scale_1D':0.25,
                   'smooth_scale_2D':0.25,
                   'ignore_rows': u'0.0',
@@ -44,6 +65,8 @@ root_chains = (
   'w0wa_params_train_cs_64',
 )
 # --------------------------------------------------------------------------------
+# Each block loads one training set and saves a hidden text copy (a name
+# starting with '.') in chaindir, which the triangle plot reads.
 samples=loadMCSamples(chaindir + root_chains[0],settings=analysissettings)
 p = samples.getParams()
 samples.saveAsText(chaindir + '/.VM_P1_TMP1')
@@ -57,7 +80,9 @@ p = samples.getParams()
 samples.saveAsText(chaindir + '/.VM_P1_TMP3')
 # --------------------------------------------------------------------------------
 
-#GET DIST PLOT SETUP
+# getdist triangle plot: the 1D posterior of each parameter on the
+# diagonal and the 2D contours of every pair below it; the settings fix
+# the figure width (inches), tick rotation, line widths and font sizes.
 g=gplot.getSubplotPlotter(chain_dir=chaindir,
                           analysis_settings=analysissettings,
                           width_inch=10.5)
@@ -96,10 +121,14 @@ g.triangle_plot(
 
 # ----------------------------------------------------
 # ----------------------------------------------------
+# g.subplots[row, column] holds the axes of the triangle (row = y
+# parameter, column = x parameter); panel [2, 0] has As_1e9 on its x
+# axis, and the line below fixes that range.
 axarr = g.subplots
 # ----------------------------------------------------
 axarr[2,0].set_xlim([1.3,2.8])
 # ----------------------------------------------------
 # ----------------------------------------------------
 
+# Save the figure as a PDF in chaindir.
 g.export(os.path.join(chaindir,"example_compare_train_emul.pdf"))

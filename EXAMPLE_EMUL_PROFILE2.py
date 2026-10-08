@@ -1,5 +1,44 @@
+"""Profile one parameter of Roman real-space cosmic shear with annealed emcee.
+
+The likelihood is roman_real.cosmic_shear evaluated by the neural-network
+emulator of the whole cosmic-shear data vector (use_emulator: 1, NLA
+intrinsic alignments).
+Model: w0waCDM (w and w0pwa = w0 + wa sampled).
+Nonlinear power of the emulator's training set: Halofit (Takahashi).
+The yaml's prior block adds Gaussian priors on the cosmological
+parameters and the NLA amplitudes, which keep the search inside the
+emulator's training region.
+
+For each value of the profiled parameter on a grid around the minimum,
+the other parameters are minimized (min_chi2 with that parameter held);
+the curve of minimized chi2 = -2 ln(posterior) against the held value is
+the profile. The minimum comes from --minfile (the output row of
+EXAMPLE_EMUL_MINIMIZE2.py) or is computed first. The grid has the
+minimum at its center and the half-width of [x0 - factor sigma,
+x0 + factor sigma] clipped to the prior bounds (sigma from --cov, a chain
+covariance, or from the prior, which caps factor at 1); --numpts sets its
+size (an odd count: 11 for --numpts 10 or 11).
+
+Output: <root>chains/<outroot>.<param>.txt, one row per grid point:
+[held value, chi2, every sampled parameter, the chi2 of each likelihood,
+the prior chi2].
+
+Run from cocoa/Cocoa with MPI, for example (one command, wrapped here):
+
+    mpirun -n 12 --oversubscribe python ./projects/roman_real/EXAMPLE_EMUL_PROFILE2.py
+        --root ./projects/roman_real/ --cov chains/EXAMPLE_EMUL_MCMC2.covmat
+        --outroot EXAMPLE_EMUL_PROFILE2 --factor 3 --nstw 450 --numpts 10
+        --profile 1 --minfile ./projects/roman_real/chains/EXAMPLE_EMUL_MIN2.txt
+
+--profile is the zero-based index of the parameter in the sampled order.
+"""
 import warnings
 import os
+# The filters below silence warnings that would repeat at every
+# evaluation of a long run: scikit-learn's InconsistentVersionWarning
+# (a stored model made with another scikit-learn version), sacc's column
+# deprecation notice, numpy's invalid-value and overflow RuntimeWarnings,
+# and the UserWarnings matched by their message text.
 from sklearn.exceptions import InconsistentVersionWarning
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 warnings.filterwarnings(
@@ -92,6 +131,9 @@ parser.add_argument("--cov",
                     nargs='?',
                     const=1,
                     default=None)
+# parse_known_args returns the options this parser defines and leaves
+# any other command-line argument in unknown instead of stopping with an
+# error (MPI launchers and mpi4py.futures may pass their own).
 args, unknown = parser.parse_known_args()
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -99,6 +141,13 @@ args, unknown = parser.parse_known_args()
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# The cobaya configuration as yaml text (a raw string, so the LaTeX
+# backslashes of the labels stay as written): the roman_real
+# cosmic-shear likelihood evaluated by the data-vector emulator
+# (use_emulator: 1), the priors of every sampled parameter, and the
+# emulator theory block (ord: its input parameters, in order;
+# fast_params: the shear calibrations, which cosmolike applies to the
+# emulated vector).
 yaml_string=r"""
 likelihood:
   roman_real.cosmic_shear:
@@ -428,8 +477,25 @@ theory:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# The cobaya Model evaluates the priors and the likelihood at a point;
+# no cobaya sampler is involved.
 model = get_model(yaml_load(yaml_string))
 def chi2(p):
+    """Return -2 ln(posterior) at a parameter point, priors included.
+
+    Arguments:
+      p = the sampled-parameter values in the order of
+          model.parameterization.sampled_params(), as a sequence or
+          as a dict (its values are taken in order)
+
+    Returns:
+      float, -2 (ln prior + ln likelihood); 1e20 where either is
+      infinite or NaN, so the samplers treat the point as excluded.
+      cached=False makes cobaya recompute the likelihood every time.
+
+    Raises:
+      ValueError when a parameter value is infinite or NaN.
+    """
     p = [float(v) for v in p.values()] if isinstance(p, dict) else p
     if np.any(np.isinf(p)) or  np.any(np.isnan(p)):
       raise ValueError(f"At least one parameter value was infinite (CoCoa) param = {p}")
@@ -445,6 +511,15 @@ def chi2(p):
       return 1e20
     return -2.0*(res1+res2)
 def chi2v2(p):
+    """Return the chi2 of each likelihood and of the prior at a point.
+
+    Arguments:
+      p = the sampled-parameter values, as in chi2
+
+    Returns:
+      numpy array [-2 ln L_1, ..., -2 ln L_n, -2 ln prior], one entry
+      per likelihood of the model, then the prior.
+    """
     p = [float(v) for v in p.values()] if isinstance(p, dict) else p
     point = dict(zip(model.parameterization.sampled_params(), p))
     logposterior = model.logposterior(point, as_dict=True)
@@ -464,12 +539,43 @@ def min_chi2(x0,
              nwalkers=5,
              pool=None):
 
+    """Find the minimum of chi2 with an annealed emcee search.
+
+    emcee is an ensemble sampler: nwalkers points (walkers) move together,
+    and each proposal is built from the positions of other walkers. The
+    search samples exp(-chi2/(2T)) at decreasing temperatures, so the
+    colder stages gather the walkers near the minimum (see the stage loop
+    below): T = 1, 0.25, 0.1, 0.005, 0.001 for a free minimization, and
+    T = 0.3, 0.1, 0.005, 0.001 with a held parameter, whose starting point
+    is already near the minimum. The starting point competes with the
+    stage results, so the returned point is never worse than x0.
+
+    Arguments:
+      x0       = starting point, the sampled-parameter values
+      cov      = covariance [ndim, ndim] of the starting clouds
+      fixed    = index of a parameter held at x0[fixed], or -1 for none
+      nstw     = emcee steps per walker per temperature
+      nwalkers = number of walkers
+      pool     = an MPI pool that evaluates the walkers, or None
+
+    Returns:
+      the best point (the held parameter left out)
+    """
     def mychi2(params, *args):
+        """Return chi2/T at params, with the fixed parameter put back.
+
+        *args collects the extra positional arguments into the tuple
+        args = (z, fixed, T): the held value, its index (> -1 when a
+        parameter is held) and the temperature.
+        """
         z, fixed, T = args
         params = np.array(params, dtype='float64')
         if fixed > -1:
             params = np.insert(params, fixed, z)
         return chi2(p=params)/T
+    # Profile mode: parameter `fixed` is held at z = x0[fixed], so the
+    # walkers move in the other ndim - 1 dimensions: its entry leaves x0,
+    # and its row and column leave cov.
     if fixed > -1:
         z      = x0[fixed]
         x0     = np.delete(x0, (fixed))
@@ -477,9 +583,13 @@ def min_chi2(x0,
         cov = np.delete(cov, (fixed), axis=0)
         cov = np.delete(cov, (fixed), axis=1)
     else:
+        # no held parameter: the index -2 (any value <= -1) disables
+        # the re-insertion in mychi2
         args = (0.0, -2.0, 1.0)
 
     def logprob(params, *args):
+        """Return the log probability -chi2/(2T) that emcee samples;
+        -inf marks an excluded point (chi2 = 1e20, inf or NaN)."""
         res = mychi2(params, *args)
         if (res > 1.e19 or np.isinf(res) or  np.isnan(res)):
           return -np.inf
@@ -487,14 +597,23 @@ def min_chi2(x0,
           return -0.5*res
     
     class GaussianStep:
+       """Gaussian draws around a point, covariance stepsize * cov.
+
+       An instance is called like a function (that is what __call__
+       defines): GaussianStep(stepsize=s)(x) is one draw centered on x.
+       """
        def __init__(self, stepsize=0.2):
+           """Store the draw covariance stepsize * cov."""
            self.cov = stepsize*cov
        def __call__(self, x):
+           """Return one draw centered on x, an array of shape [1, ndim]."""
            return np.random.multivariate_normal(x, self.cov, size=1)
     
     ndim        = int(x0.shape[0])
     nwalkers    = int(nwalkers)
     nstw        = int(nstw)
+    # the annealing ladder (colder start with a held parameter); the
+    # starting clouds have covariance (T/3) cov
     if fixed == -1:
       temperature = np.array([1.0, 0.25, 0.1, 0.005, 0.001], dtype='float64')
     else:
@@ -504,6 +623,11 @@ def min_chi2(x0,
     partial_samples = [x0]
     partial = [mychi2(x0, *args)]
 
+    # Stage i: nwalkers walkers start from a Gaussian cloud around the best
+    # point so far (covariance stepsz[i] * cov = (T_i/3) cov), run nstw
+    # emcee steps each on exp(-chi2/(2 T_i)), and the stage's best sample
+    # seeds the next stage. The moves mix differential evolution (80%)
+    # and its snooker variant (20%), both built from other walkers.
     for i in range(len(temperature)):
         x = [] # Initial point
         for j in range(nwalkers):
@@ -519,12 +643,14 @@ def min_chi2(x0,
                          nstw, 
                          skip_initial_state_check=True)
         samples = sampler.get_chain(flat=True, discard=0)
+        # the stage's sample with the highest log probability; get_chain
+        # and get_log_prob list the samples in the same order
         j = np.argmin(-1.0*np.array(sampler.get_log_prob(flat=True)))
         partial_samples.append(samples[j])
         partial.append(mychi2(samples[j], *args))
         x0 = copy.deepcopy(samples[j])
         sampler.reset()
-    # min chi2 from the entire emcee runs
+    # the best point over every stage
     j = np.argmin(np.array(partial))
     return partial_samples[j]
 # ------------------------------------------------------------------------------
@@ -534,6 +660,11 @@ def min_chi2(x0,
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 def prf(x0, nstw, cov, fixed=-1, nwalkers=5, pool=None):
+    """Run min_chi2 from x0 (converted to a float64 array).
+
+    The name refers to the profile step; with fixed = -1 it is a plain
+    minimization. The arguments and the result are those of min_chi2.
+    """
     res =  min_chi2(x0=np.array(x0, dtype='float64'), 
                     fixed=fixed,
                     cov=cov, 
@@ -547,16 +678,24 @@ def prf(x0, nstw, cov, fixed=-1, nwalkers=5, pool=None):
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# The block below runs only when the file is executed as a script.
+# MPIPool (schwimmbad) makes MPI rank 0 the master, which runs the
+# code below; every other rank waits in pool.wait() and evaluates the
+# walkers the master sends until the master closes the pool.
 if __name__ == '__main__':
     with MPIPool() as pool:
         if not pool.is_master():
             pool.wait()
             sys.exit(0)
+        # ndim sampled parameters; nwalkers = max(3 ndim, number of MPI
+        # processes), so every rank has a walker to evaluate
         dim      = model.prior.d()     
         nwalkers = max(3*dim, pool.comm.Get_size())
         nstw = args.nstw
 
-        # 1st: load the cov. matrix --------------------------------------------
+        # 1st: the covariance that sets sigma and the starting clouds: --cov
+        # (a chain covmat, path relative to --root) or the prior, with which
+        # the grid half-width is capped at 1 sigma -------------------------
         if args.cov is None:
           cov = model.prior.covmat(ignore_external=False) # cov from prior
           factor = min(1.0, args.factor)
@@ -565,7 +704,8 @@ if __name__ == '__main__':
           factor = args.factor
         sigma = np.sqrt(np.diag(cov))
 
-        # 2nd: Get minimum --------------------------------------------------
+        # 2nd: the minimum, from --minfile (a minimization row: the sampled
+        # parameters first, chi2 last) or computed here (slow) --------------
         if args.minfile is not None: # load minimum from running MCMC
           x0 = np.loadtxt(args.minfile)
           chi20 = x0[-1]
@@ -584,17 +724,19 @@ if __name__ == '__main__':
           chi20 = chi2(x0)
           print(f"Global Min: params = {x0}, and chi2 = {chi20}")
 
-        # Test consistency of the min and profile codes
+        # The minimum must reproduce its chi2 under this script's
+        # configuration (within 0.02): a minimum from another setup fails
         if (abs(chi2(x0)-chi20)>0.02):
           raise ValueError("Inconsistency Min and Profile setups")
 
-        # 3rd: Set the parameter profile range ---------------------------------
+        # 3rd: the profile grid ---------------------------------------------
         start = np.zeros(model.prior.d(), dtype='float64')
         stop  = np.zeros(model.prior.d(), dtype='float64')
         start = x0 - factor*sigma
         stop  = x0 + factor*sigma
         
-        # We need to respect the YAML priors
+        # clip [x0 - factor sigma, x0 + factor sigma] to the bounds holding
+        # 0.999999 of each prior's mass
         bounds0 = model.prior.bounds(confidence=0.999999)
         for i in range(model.prior.d()):
             if (start[i] < bounds0[i][0]):
@@ -602,6 +744,9 @@ if __name__ == '__main__':
             if (stop[i] > bounds0[i][1]):
               stop[i] = bounds0[i][1]
 
+        # the grid is centered on the minimum with the clipped range's
+        # half-width; an even number of points, plus the minimum's own value
+        # inserted in the middle (index numpts//2)
         half_range = (stop[args.profile] - start[args.profile]) / 2.0
        
         numpts = args.numpts-1 if args.numpts%2 == 1 else args.numpts 
@@ -612,20 +757,22 @@ if __name__ == '__main__':
         numpts=numpts+1
         param = np.insert(param, numpts//2, x0[args.profile])
         
-        # 4th Print to the terminal ---------------------------------------------
+        # 4th: print the profiled parameter and its grid ---------------------
         names = list(model.parameterization.sampled_params().keys()) # Cobaya Call
         print(f"nstw (evals/Temp/walkers)={args.nstw}, "
               f" param={names[args.profile]}\n"
               f"profile param values = {param}")
         
-        # 5th: Set the vectors that will hold the final result -----------------
+        # 5th: result rows, copies of the minimum with the profiled column set
+        # to the grid; the middle row's chi2 is the minimum's ----------------
         xf = np.tile(x0, (numpts, 1))
         xf[:,args.profile] = param
 
         chi2res = np.zeros(numpts)  
         chi2res[numpts//2] = chi20
         
-        # 5th: run from midpoint to right --------------------------------------
+        # 6th: from the middle to the right end; each minimization starts from
+        # the previous grid point's result -----------------------------------
         tmp = np.array(xf[numpts//2,:], dtype='float64')
         for i in range(numpts//2+1,numpts): 
             tmp[args.profile] = param[i]
@@ -640,7 +787,7 @@ if __name__ == '__main__':
             chi2res[i] = chi2(xf[i,:])
             print(f"Partial ({i+1}/{numpts}): params={tmp}, and chi2={chi2res[i]}")
         
-        # 6th: run from midpoint to left ---------------------------------------
+        # 7th: from the middle to the left end -------------------------------
         tmp = np.array(xf[numpts//2,:], dtype='float64')
         for i in range(numpts//2-1, -1, -1):
             tmp[args.profile] = param[i]
@@ -655,11 +802,11 @@ if __name__ == '__main__':
             chi2res[i] = chi2(xf[i,:])
             print(f"Partial ({i+1}/{numpts}): params={tmp}, and chi2={chi2res[i]}")
         
-        # 8th Append derived parameters ----------------------------------------
+        # 8th: append chi2v2 (each likelihood, the prior) ---------------------
         xf = np.column_stack((xf, 
                               np.array([chi2v2(d) for d in xf], dtype='float64')))
 
-        # 9th Save output file -------------------------------------------------    
+        # 9th: save [grid value, chi2, row] per grid point -------------------
         os.makedirs(os.path.dirname(f"{args.root}chains/"),exist_ok=True)
         hd = [names[args.profile],"chi2"] + names
         hd = hd + list(model.info()['likelihood'].keys()) + ["prior"]
