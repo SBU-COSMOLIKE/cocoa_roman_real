@@ -30,33 +30,23 @@ Also see the documentation for [external baryonic feedback](#roman_baryonic_feed
 From `Cocoa/Readme` instructions:
 
 > [!Note]
-> We provide several cosmolike projects that can be loaded and compiled using `setup_cocoa.sh` and `compile_cocoa.sh` scripts. To activate them, comment the following lines on `set_installation_options.sh` 
+> `setup_cocoa.sh` and `compile_cocoa.sh` install the cosmolike projects that `set_installation_options.sh` selects: a commented `IGNORE_*_CODE` key enables a project, and an active key skips it. The shipped file enables roman_real:
 > 
 >     [Adapted from Cocoa/set_installation_options.sh shell script]
->     (...)
->
->     # ------------------------------------------------------------------------------
->     # The keys below control which cosmolike projects will be installed and compiled
->     # ------------------------------------------------------------------------------
 >     #export IGNORE_COSMOLIKE_LSST_Y1_CODE=1
->     #export IGNORE_COSMOLIKE_DES_Y3_CODE=1
->     #export IGNORE_COSMOLIKE_ROMAN_FOURIER_CODE=1
->     export IGNORE_COSMOLIKE_ROMAN_REAL_CODE=1
->
->     (...)
-> 
->     # ------------------------------------------------------------------------------
->     # Cosmolike projects below -------------------------------------------
->     # ------------------------------------------------------------------------------
+>     export IGNORE_COSMOLIKE_DES_Y3_CODE=1
+>     #export IGNORE_COSMOLIKE_DESXPLANCK_CODE=1
+>     export IGNORE_COSMOLIKE_ROMAN_FOURIER_CODE=1
+>     #export IGNORE_COSMOLIKE_ROMAN_REAL_CODE=1
+>     export IGNORE_COSMOLIKE_ROMAN_KL_CODE=1
 >     (...)
 >     export ROMAN_REAL_URL="https://github.com/CosmoLike/cocoa_roman_real.git"
 >     export ROMAN_REAL_NAME="roman_real"
->     #Pin the project version with at most one of the keys below (COMMIT, BRANCH, or TAG).
->     #If more than one is set, COMMIT wins over BRANCH, and BRANCH wins over TAG.
->     #If none is set, Cocoa loads the latest commit on the repository default branch.
->     #export ROMAN_REAL_GIT_BRANCH="main"
->     #export ROMAN_REAL_GIT_COMMIT="abc"
->     export ROMAN_REAL_GIT_TAG="v4.10.7"
+>     export ROMAN_REAL_GIT_TAG="v5.05"
+>
+> Each released project is pinned to a tag. To select another revision, set
+> only one of its `GIT_COMMIT`, `GIT_BRANCH` or `GIT_TAG` keys: a commit takes
+> precedence over a branch, and a branch over a tag.
 
 
 > [!NOTE]
@@ -208,6 +198,12 @@ model).
 > [!TIP]
 > For the sampled parameters of each model, their validity ranges, and the `bfmt`
 > options, see `Cocoa/external_modules/code/baryon_suppression/README.md`.
+
+> [!NOTE]
+> [EXAMPLE_EVALUATE3.ipynb](EXAMPLE_EVALUATE3.ipynb) runs six of these methods
+> (the three SP(k) relations, BCEmu, Flamingo and BCemu2025) through the `bfmt`
+> block on the 3x2pt data vector. It needs the packages of the first step above;
+> see [Exploring notebooks](#notebooks).
 
 # Running ML emulators <a name="roman_examples_emul"></a>
 
@@ -841,9 +837,10 @@ The repository `emulators_code` provides the script `dataset_generator_lensing.p
 
 The `tests/` folder holds unit tests for the likelihoods of this
 project: they compare each likelihood against stored reference
-values, check for race conditions from OpenMP threading, and measure
-the numerical error of the default accuracy settings. The
-tests read nothing from the live project;
+values, check for race conditions from OpenMP threading, measure
+the numerical error of the default accuracy settings, and check the
+halo-model code behind the `include_HOD_GX` and `include_halo_IA`
+likelihood keys. The tests read nothing from the live project;
 [tests/README.md](tests/README.md) describes every test, the tests'
 own data snapshot, and how to refresh it.
 
@@ -913,10 +910,31 @@ jupyter notebook --no-browser --port=8888
 
 | Notebook | Contents |
 |---|---|
-| [EXAMPLE_EVALUATE1.ipynb](EXAMPLE_EVALUATE1.ipynb) | Data-vector exploration through the project wrappers; inspect the setup cells before running. |
-| [EXAMPLE_EVALUATE2.ipynb](EXAMPLE_EVALUATE2.ipynb) | Data-vector exploration through the project wrappers; inspect the setup cells before running. |
-| [EXAMPLE_EVALUATE3.ipynb](EXAMPLE_EVALUATE3.ipynb) | Data-vector exploration through the project wrappers; inspect the setup cells before running. |
+| [EXAMPLE_EVALUATE1.ipynb](EXAMPLE_EVALUATE1.ipynb) | Cosmic shear of `EXAMPLE_EVALUATE1.yaml`: how $`C_\ell^{EE}`$ and $`\xi_\pm`$ respond to cosmology, intrinsic alignment, angular binning, tabulated hydrodynamical feedback and accuracy settings; the likelihood $`\chi^2`$, halofit against EuclidEmulator2, Fisher forecasts, and the wavenumbers each measurement responds to. |
+| [EXAMPLE_EVALUATE2.ipynb](EXAMPLE_EVALUATE2.ipynb) | Galaxy–galaxy lensing and clustering of the 3x2pt example `EXAMPLE_EVALUATE2.yaml`: $`C_\ell^{gs}`$, $`\gamma_t`$, $`C_\ell^{gg}`$ with and without the Limber approximation, $`w(\theta)`$, tabulated hydrodynamical feedback, accuracy settings, the 3x2pt $`\chi^2`$, and halofit against EuclidEmulator2. |
+| [EXAMPLE_EVALUATE3.ipynb](EXAMPLE_EVALUATE3.ipynb) | Baryonic feedback from the `bfmt` theory block: six methods applied to the 3x2pt data vector, the $`\chi^2`$ of each prediction against the stored data vector, the table `chains/EXAMPLE_EVALUATE3.datavectors`, and one-parameter sweeps of each method's suppression. |
 | [EXAMPLE_EVALUATE_COVARIANCE.ipynb](EXAMPLE_EVALUATE_COVARIANCE.ipynb) | G, SSC, cNG, total, separate 1h–4h matter trispectra and matrix diagnostics. |
+
+> [!NOTE]
+> `EXAMPLE_EVALUATE3.ipynb` needs the `bfmt` packages of the
+> [baryonic feedback section](#roman_baryonic_feedback). Its parameter
+> sweeps run CAMB about 130 times and take tens of minutes.
+
+The three data-vector notebooks call the wrappers in
+`interface/cosmolike_roman_real_notebook_wrappers.py`; the covariance
+notebook calls the survey adapter `covariance/roman_real_covariance.py`.
+Read the notebooks in this order:
+
+```mermaid
+flowchart TD
+  A["EXAMPLE_EVALUATE1: cosmic shear"] --> B["EXAMPLE_EVALUATE2: 3x2pt"]
+  B --> C["EXAMPLE_EVALUATE3: bfmt feedback"]
+  B --> D["EXAMPLE_EVALUATE_COVARIANCE: G, SSC, cNG"]
+  W["cosmolike_roman_real_notebook_wrappers.py"] --> A
+  W --> B
+  W --> C
+  S["roman_real_covariance.py"] --> D
+```
 
 Choose the Python kernel from the activated Cocoa environment and restart it
 after recompiling. The [covariance guide](covariance/README.md) explains the
@@ -1011,6 +1029,6 @@ Check interpolation, quadrature, input-power sampling and transform cutoffs
 separately at fixed cosmology and measurement bins. Narrow n(z) overlaps
 particularly require a quadrature check; increasing `accuracyboost` alone
 is not that check. The [data-vector test guide](tests/data_vector/README.md)
-and [covariance test guide](tests/covariance/README.md) state what each suite
-actually verifies. A passing regression or a larger boost is not a general
+and [covariance test guide](tests/covariance/README.md) state what each set of
+tests actually verifies. A passing regression or a larger boost is not a general
 claim of survey or Fisher convergence.
