@@ -1218,8 +1218,9 @@ def compute_probes(sup=None, ell=None):
 
     Returns:
       dict with ell, C_ss, C_gs, theta, xip, xim, gammat, dv, chi2,
-      and the z/log10k interpolation grids (for feeding
-      get_baryon_suppression).
+      and the z/log10k interpolation grids for feeding
+      get_baryon_suppression; log10k_grid is log10 of k in 1/Mpc, the
+      unit that function takes.
     """
     if ell is None:
         ell = np.arange(25., 3000., 15.)
@@ -1271,4 +1272,8 @@ def compute_probes(sup=None, ell=None):
     return {"ell": ell, "C_ss": C_ss, "C_gs": C_gs,
             "theta": theta, "xip": xip, "xim": xim, "gammat": gt,
             "dv": dv, "chi2": chi2,
-            "z_grid": z_interp_2D, "log10k_grid": log10k_interp_2D}
+            "z_grid": z_interp_2D,
+            # get_baryon_suppression takes k in 1/Mpc, but the CAMB helper
+            # returns this grid in h/Mpc: convert here, at the one place
+            # that links the two, so S(k) is evaluated at the physical k.
+            "log10k_grid": log10k_interp_2D + np.log10(H0/100.0)}
