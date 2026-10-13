@@ -37,14 +37,15 @@ class _cosmolike_prototype_base(DataSetLikelihood):
 
     # ------------------------------------------------------------------------   
     tmp=int(1000 + 250*self.accuracyboost)
-    self.z_interp_1D = np.concatenate((np.linspace(0.0,3.0,max(100,int(0.80*tmp))),
-                                       np.linspace(3.0,50.1,max(100,int(0.40*tmp))),
+    self.z_interp_1D = np.concatenate((np.linspace(0.0,3.0,max(100,int(0.80*tmp)),endpoint=False),
+                                       np.linspace(3.0,50.1,max(100,int(0.40*tmp)),endpoint=False),
                                        np.linspace(1070,1100,max(50,int(0.10*tmp)))),axis=0)
     self.len_z_interp_1D = len(self.z_interp_1D)
 
     tmp=int(min(120 + 20*self.accuracyboost,250))
-    self.z_interp_2D = np.concatenate((np.linspace(0,3.0,max(50,int(0.75*tmp))), 
-                                       np.linspace(3.01,50.1,max(30,int(0.25*tmp)))),axis=0)
+    # zmax of the hybrid emulator is 50 (why 50? Only relevant if CMB lensing included)
+    self.z_interp_2D = np.concatenate((np.linspace(0,3.0,max(50,int(0.75*tmp)),endpoint=False), 
+                                       np.linspace(3.0,49.99,max(30,int(0.25*tmp)))),axis=0)
     self.len_z_interp_2D = len(self.z_interp_2D)
     
     self.log10k_interp_2D = np.linspace(-4.99,2.0,int(1250+250*self.accuracyboost))
@@ -114,8 +115,12 @@ class _cosmolike_prototype_base(DataSetLikelihood):
         HINFO_DIR  = '/xdisk/timeifler/yijiezhu/cocoa_demo/Cocoa/hinfo'
         HINFO_STEM = 'fixng_ms_sub_red'
         APPLY_SHEAR = 1   # 1: distortion chi -> shear, 1/(2R) per shape leg
-        LOS_MODE    = 1   # 0: monopole as is; 1: LA mu=0 factors (index-0
-                          # files only); 2: mu=0 from index-0,2,4 files
+        LOS_MODE    = 3   # 3 (recommended): hybrid, dE x 3/2 from the index-0
+                          #   file, EE/BB rebuilt at mu=0 from the index-0,2,4
+                          #   files (+ NGP window correction on EE/BB)
+                          # 2: mu=0 from index-0,2,4 files for all spectra
+                          # 1: LA mu=0 factors (index-0 files only)
+                          # 0: monopole as is
         # ---------------------------------------------------------------------
         ci.init_IA_sim(SIM_DIR,
                        [11, 17, 19,25, 28, 33, 37, 40, 42, 47, 50, 53, 55, 59, 63, 67, 72, 78, 84, 91, 98],

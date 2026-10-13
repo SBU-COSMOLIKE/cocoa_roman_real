@@ -182,7 +182,8 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       "Shape convention of the sim IA tables. apply_shear=1 converts the "
       "measured distortion to shear (1/(2R) per shape leg, R = 1 - e_rms^2); "
       "los_mode: 0 monopole as is, 1 LA mu=0 factors (dE x 3/2, EE x 15/8, "
-      "index-0 files only; default), 2 mu=0 from the index-0,2,4 files.",
+      "index-0 files only), 2 mu=0 from the index-0,2,4 files, 3 hybrid "
+      "(dE/dB x 3/2 from index 0, EE/BB at mu=0 from index 0,2,4; default).",
       py::arg("apply_shear").none(false).noconvert(),
       py::arg("los_mode").none(false).noconvert()
     );
