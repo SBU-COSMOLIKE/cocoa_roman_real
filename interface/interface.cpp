@@ -164,6 +164,53 @@ PYBIND11_MODULE(cosmolike_roman_real_interface, m)
       (py::arg("include_halo_IA") = 0).none(false)
     );
 
+  // simulation-tabulated IA (sim_IA.c; nuisance.IA_code = 3)
+  m.def("init_IA_sim",
+      &cosmolike_interface::init_IA_sim,
+      "Load simulation-measured IA P(k,z) tables (P<TAG><l>_sn<sn>_nfold"
+      "<nfold>.dat in dir) and set IA_MODEL = NLA, IA_code = 3. Call after "
+      "init_IA. sn and zlist: snapshot numbers and their redshifts",
+      py::arg("dir").none(false),
+      py::arg("sn").none(false),
+      py::arg("zlist").none(false),
+      py::arg("nfold").none(false).noconvert()
+    );
+
+  m.def("set_IA_sim_shape_convention",
+      &cosmolike_interface::set_IA_sim_shape_convention,
+      "apply_shear = 1: distortion -> shear, 1/(2R) per shape leg, "
+      "R = 1 - e_rms^2; los_mode: 0 monopole, 1 LA mu=0 factors, "
+      "2 mu=0 from l = 0, 2, 4 files, 3 hybrid (default)",
+      py::arg("apply_shear").none(false).noconvert(),
+      py::arg("los_mode").none(false).noconvert()
+    );
+
+  m.def("set_IA_sim_erms",
+      &cosmolike_interface::set_IA_sim_erms,
+      "Per-snapshot e_rms for the sim IA shear conversion; snapshots not "
+      "listed (or e_rms <= 0) are interpolated in z",
+      py::arg("sn").none(false),
+      py::arg("erms").none(false)
+    );
+
+  m.def("set_IA_sim_erms_hinfo",
+      &cosmolike_interface::set_IA_sim_erms_hinfo,
+      "Read e_rms = (e1z_rms + e2z_rms)/2 from <dir>/hinfo_<stem>_sn<sn>_"
+      "nfold<n>.dat; snapshots in skip are interpolated in z",
+      py::arg("dir").none(false),
+      py::arg("stem").none(false),
+      py::arg("skip").none(false)
+    );
+
+  m.def("set_IA_sim_window",
+      &cosmolike_interface::set_IA_sim_window,
+      "NGP mesh-window correction of the sim EE/BB tables: apply (0/1), "
+      "box size in Mpc/h and mesh size ng (default 205 Mpc/h, 1024: TNG300)",
+      py::arg("apply").none(false).noconvert(),
+      py::arg("boxsize_hMpc").none(false),
+      py::arg("ng").none(false).noconvert()
+    );
+
 
   m.def("init_baryons_contamination",
       py::overload_cast<std::string, std::string>(

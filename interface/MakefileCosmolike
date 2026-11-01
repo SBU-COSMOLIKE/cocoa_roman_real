@@ -172,6 +172,7 @@ CSOURCES += \
 		${ROOTDIR}/external_modules/code/cosmolike/baryons.c \
 		${ROOTDIR}/external_modules/code/cosmolike/cosmo3D.c \
 		${ROOTDIR}/external_modules/code/cosmolike/cosmo2D.c \
+		${ROOTDIR}/external_modules/code/cosmolike/sim_IA.c \
 		${ROOTDIR}/external_modules/code/cosmolike/cosmo2D_scuts.c \
 		${ROOTDIR}/external_modules/code/cosmolike/halo.c \
 		${ROOTDIR}/external_modules/code/cosmolike/IA.c \
@@ -201,6 +202,7 @@ OBJECTC += \
 		./bias.o \
 		./cosmo3D.o \
 		./cosmo2D.o \
+		./sim_IA.o \
 		./cosmo2D_scuts.o \
 		./halo.o \
 		./IA.o \

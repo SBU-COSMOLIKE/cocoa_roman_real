@@ -372,9 +372,14 @@ class _cosmolike_prototype_base(DataSetLikelihood):
         # (IA_code = 0), so get_requirements, which Cobaya calls after
         # initialize, does not request the Python FAST-PT theory block.
         self.IA_code = 0
+      # IA_code = 3: simulation-tabulated IA (sim_IA.c). init_IA accepts
+      # only the FAST-PT codes, so it runs with code 0 (NLA, no one-loop
+      # spectra needed) and init_IA_sim then sets IA_code = 3.
       ci.init_IA(ia_model = int(self.IA_model), 
                 ia_redshift_evolution = int(self.IA_redshift_evolution),
-                ia_code = int(self.IA_code))
+                ia_code = 0 if int(self.IA_code) == 3 else int(self.IA_code))
+      if int(self.IA_code) == 3:
+        self._init_sim_IA()
 
       if self.probe != "xi":
         # bias_model: one redshift-evolution code per bias parameter, in the
@@ -429,6 +434,40 @@ class _cosmolike_prototype_base(DataSetLikelihood):
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
   # ------------------------------------------------------------------------
+
+  def _init_sim_IA(self):
+    """Load the simulation IA tables (IA_code = 3) from the yaml keys.
+
+    Keys (likelihood block of the yaml):
+      sim_IA_dir          folder with P<TAG><l>_sn<sn>_nfold<n>.dat
+      sim_IA_snapshots    list of snapshot numbers
+      sim_IA_redshifts    their redshifts (same length, any order)
+      sim_IA_nfold        nfold value in the file names (default 1)
+      sim_IA_apply_shear  1 = distortion -> shear, needs e_rms (default 1)
+      sim_IA_los_mode     0 monopole, 1 LA, 2 multipole, 3 hybrid (default 3)
+      sim_IA_hinfo_dir    folder with hinfo_<stem>_sn<sn>_nfold<n>.dat
+      sim_IA_hinfo_stem   the <stem> of those files
+      sim_IA_erms         or: list of e_rms per snapshot (instead of hinfo)
+      sim_IA_window       [apply, boxsize in Mpc/h, ng]; default [1, 205, 1024]
+                          (TNG300) - set it for any other simulation
+    """
+    sn = [int(x) for x in getattr(self, "sim_IA_snapshots")]
+    zs = [float(x) for x in getattr(self, "sim_IA_redshifts")]
+    ci.init_IA_sim(str(getattr(self, "sim_IA_dir")), sn, zs,
+                   int(getattr(self, "sim_IA_nfold", 1)))
+    apply_shear = int(getattr(self, "sim_IA_apply_shear", 1))
+    ci.set_IA_sim_shape_convention(apply_shear,
+                                   int(getattr(self, "sim_IA_los_mode", 3)))
+    window = getattr(self, "sim_IA_window", None)
+    if window is not None:
+      ci.set_IA_sim_window(int(window[0]), float(window[1]), int(window[2]))
+    if apply_shear == 1:
+      erms = getattr(self, "sim_IA_erms", None)
+      if erms is not None:
+        ci.set_IA_sim_erms(sn, [float(x) for x in erms])
+      else:
+        ci.set_IA_sim_erms_hinfo(str(getattr(self, "sim_IA_hinfo_dir")),
+                                 str(getattr(self, "sim_IA_hinfo_stem")), [])
 
   def get_requirements(self):
     """Return the products Cobaya's theory blocks must compute for logp.
