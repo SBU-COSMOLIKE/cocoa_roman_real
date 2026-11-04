@@ -285,6 +285,7 @@ ee2_suite = _cct_suites.ee2_suite
 nonlinear_suite = _cct_suites.nonlinear_suite
 photoz_conventions_suite = _cct_suites.photoz_conventions_suite
 nonlimber_suite = _cct_suites.nonlimber_suite
+lowrank_gg_suite = _cct_suites.lowrank_gg_suite
 cache_ladder_suite = _cct_suites.cache_ladder_suite
 baryon_accuracy_suite = _cct_suites.baryon_accuracy_suite
 baryon_drift_suite = _cct_suites.baryon_drift_suite
