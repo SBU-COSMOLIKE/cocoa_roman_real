@@ -23,6 +23,16 @@ flowchart TD
   K["Covariance build"] --> C
 ```
 
+The data-vector sector includes the setting-sequence tests
+(`data_vector/test_setting_sequences.py`): they change cosmolike
+settings in one process, as a notebook does between evaluations, and
+compare every result bit for bit with a separate process that saw only
+the final settings. A change the loaded data layout cannot follow must
+stop with a clear message instead of returning numbers computed from
+the earlier settings. The sequences here include the galaxy-galaxy
+lensing exclusion list replaced in one process, with and without the
+explicit pair recount.
+
 We assume Cocoa and this project are installed, the Cocoa Conda environment
 is active, the shell is Bash, and the current folder is `cocoa/Cocoa/`.
 
