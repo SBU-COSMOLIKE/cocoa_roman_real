@@ -8,8 +8,13 @@ nonlimber_accuracyboost: 1.0
 pk_z_refinement: 1
 # early-exit tolerances of the non-Limber real-space C_l (w(theta), gamma_t);
 # 0 = no early exit (Fisher derivatives); accuracyboost > 1 shrinks them
-nonlimber_tolerance_gg: 0.002
-nonlimber_tolerance_gs: 0.01
+# 0 here: the exit errs by up to delta chi2 = 16, mostly gamma_t (tests/data_vector/README.md)
+nonlimber_tolerance_gg: 0.0
+nonlimber_tolerance_gs: 0.0
+# the FKEM non-Limber cap (limits.LMAX_NOLIMBER): C_gg and C_gs are
+# non-Limber below it and Limber above; 150 is the cosmolike default
+# 200 here: cap 150 errs by up to delta chi2 = 48 in the example box (tests/data_vector/README.md)
+lmax_nonlimber: 200
 integration_accuracy: 0
 # n(z) interpolation: 0 = cubic spline, 1 = linear, 2+ = Steffen (monotone)
 # 0: original midpoint curve (default); 1: histogram + Akima.

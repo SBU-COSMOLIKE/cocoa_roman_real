@@ -5,8 +5,10 @@ The non-Limber real-space C_l switch a lens bin (gg) or a lens-source
 pair (gs) to Limber once they agree with Limber within a tolerance; the
 switch multipole moves with the parameters and puts steps into
 finite-difference derivatives. init_nonlimber_tolerance sets the
-tolerances (likelihood keys nonlimber_tolerance_gg = 0.002 and
-nonlimber_tolerance_gs = 0.01 by default; 0 = no early exit). The
+tolerances (core defaults 0.002 for gg and 0.01 for gs; 0 = no early
+exit). This project's likelihood keys nonlimber_tolerance_gg and
+nonlimber_tolerance_gs are 0: production runs without the early
+exit, and tests 2-4 and 8 switch it on with the core defaults. The
 shared factory (cosmolike_core/cocoa_testing_suites.py,
 nonlimber_tolerance_suite) documents the checks. On example2:
 
@@ -20,13 +22,14 @@ The stencil noise is the whitened fourth difference of five evaluations
 the w0, wa and roman_B1_8 columns.
 
 Measured on 2026-11-18 (OMP 4), then bounded:
-  - test 3: delta^T C^-1 delta = 2.58e-2 (gamma_t 2.09e-2, w(theta)
+  - test 3: tolerance 0 against the core defaults moves the vector
+    by delta^T C^-1 delta = 2.58e-2 (gamma_t 2.09e-2, w(theta)
     1.9e-3); bound 0.06;
   - test 4: sigma (w0, wa, bias) = 6.91e-3, 2.29e-3, 2.29e-3 at the
-    default tolerances and 1.60e-3, 1.05e-4, 5e-12 at 0; bound 2e-3;
-  - test 5: FKEM caps 150/200/300 give w0 1.60e-3/1.65e-3/1.76e-3 and
-    wa 1.05e-4/1.06e-4/1.00e-4; margin 0.15;
-  - test 6: SVD/FKEM ratio at most 1.25 (wa, cap 300); margin 0.5.
+    core defaults and 1.60e-3, 1.05e-4, 5e-12 at 0; bound 2e-3;
+  - test 5: FKEM caps 150/200 give w0 1.60e-3/1.65e-3 and
+    wa 1.05e-4/1.06e-4; margin 0.1;
+  - test 6: SVD/FKEM ratio at most 1.007 (wa, cap 150); margin 0.1.
 
 To run (from the Cocoa/ folder, cocoa environment active,
 start_cocoa.sh sourced):
@@ -54,11 +57,12 @@ import cocoa_test_utils as u
 TestNonLimberTolerance = u.nonlimber_tolerance_suite(
     u, name="TestNonLimberTolerance", example="example2",
     bias_parameter="roman_B1_8",
+    expected_defaults=(0.0, 0.0),
     change_bound=0.06,
     noise_bound=0.002,
-    handoff_margin=0.15,
+    handoff_margin=0.1,
     svd_rule='not_larger',
-    svd_margin=0.5)
+    svd_margin=0.1)
 
 # __name__ is "__main__" only when this file runs directly as a
 # script; pytest imports the module instead, so this block stays
