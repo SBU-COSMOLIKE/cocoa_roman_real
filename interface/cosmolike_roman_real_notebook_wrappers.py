@@ -1154,6 +1154,288 @@ def plot_Fisher(F, mu, F2=None, root=None, select=None, labels=None,
 
 
 # ----------------------------------------------------------------------
+# Fisher forecasting with free dark energy (w0, wa)
+# ----------------------------------------------------------------------
+# DRAFT comments (Fable rewrites the final text).
+#
+# The FoM-noise estimate of the notebooks (cnu.get_stencil_noise,
+# cnu.get_fom_noise_weights, cnu.predict_fom_noise) is quoted for the
+# dark-energy figure of merit FoM(w0, wa), so its Fisher matrices need
+# w0 and wa among the parameters. The layouts below open them; the
+# cosmological-constant layout above (FISHER_PARAM_NAMES) stays as it is
+# for the Fisher sections that pin w0 = -1, wa = 0.
+#
+# Two layouts, both with the cosmology first and w0, wa at indices 5
+# and 6, so the pair of the figure of merit has the same indices in
+# both:
+#   - FISHER_W0WA_*: cosmic shear (EXAMPLE_EVALUATE1), 25 parameters:
+#     the 7 cosmological ones, the two NLA numbers, the 8 source photo-z
+#     shifts and the 8 shear calibrations;
+#   - FISHER_3X2PT_*: 3x2pt (EXAMPLE_EVALUATE2), 33 parameters: the 25
+#     above and the 8 linear lens biases b_1. The lens photo-z shifts are
+#     the source ones (EXAMPLE_EVALUATE2.yaml sets
+#     roman_DZ_L<i> = roman_DZ_S<i>, lens = source), so one shift moves
+#     both n(z) of bin i.
+# The fiducial wa = 0 sits at |p0| <= 1e-12, so cnu.get_ddv and
+# cnu.get_stencil_noise step it by the absolute amount h; every other
+# parameter with a nonzero fiducial takes the relative step h p0. The
+# neutrino mass stays at the module constant mnu = 0.06 eV: the
+# EXAMPLE_EVALUATE2.yaml prior on mnu starts at 0.06, so the fiducial
+# sits on its lower wall, where a Gaussian forecast has no meaning.
+FISHER_W0WA_PARAM_FID = np.array(
+    [As_1e9, ns, H0, omegab, omegam, w, w0pwa - w,
+     roman_A1_1, roman_A1_2,
+     roman_DZ_S1, roman_DZ_S2, roman_DZ_S3, roman_DZ_S4,
+     roman_DZ_S5, roman_DZ_S6, roman_DZ_S7, roman_DZ_S8,
+     roman_M1, roman_M2, roman_M3, roman_M4,
+     roman_M5, roman_M6, roman_M7, roman_M8], dtype="float64")
+
+FISHER_W0WA_PARAM_NAMES = [
+    "As_1e9", "ns", "H0", "omegab", "omegam", "w0", "wa",
+    "roman_A1_1", "roman_A1_2",
+    "zshift_1", "zshift_2", "zshift_3", "zshift_4", "zshift_5",
+    "zshift_6", "zshift_7", "zshift_8",
+    "M_1", "M_2", "M_3", "M_4", "M_5", "M_6", "M_7", "M_8",
+]
+
+FISHER_W0WA_PARAM_LABELS = [
+    r"10^{9} A_s", r"n_s", r"H_0", r"\Omega_b", r"\Omega_m",
+    r"w_0", r"w_a",
+    r"A_\mathrm{1IA,roman}^1", r"A_\mathrm{1IA,roman}^2",
+    r"\Delta z_\mathrm{s,roman}^1", r"\Delta z_\mathrm{s,roman}^2",
+    r"\Delta z_\mathrm{s,roman}^3", r"\Delta z_\mathrm{s,roman}^4",
+    r"\Delta z_\mathrm{s,roman}^5", r"\Delta z_\mathrm{s,roman}^6",
+    r"\Delta z_\mathrm{s,roman}^7", r"\Delta z_\mathrm{s,roman}^8",
+    r"m_\mathrm{roman}^1", r"m_\mathrm{roman}^2", r"m_\mathrm{roman}^3",
+    r"m_\mathrm{roman}^4", r"m_\mathrm{roman}^5", r"m_\mathrm{roman}^6",
+    r"m_\mathrm{roman}^7", r"m_\mathrm{roman}^8",
+]
+
+# Gaussian priors {index: (mean, sigma)} of EXAMPLE_EVALUATE1.yaml and
+# EXAMPLE_EVALUATE2.yaml: sigma = 0.002 on the eight source photo-z
+# shifts (indices 9..16) and 0.005 on the eight shear calibrations
+# (indices 17..24). Both layouts hold these entries at these indices.
+FISHER_W0WA_GAUSSIAN_PRIORS = {
+    9: (0.0, 0.002), 10: (0.0, 0.002), 11: (0.0, 0.002),
+    12: (0.0, 0.002), 13: (0.0, 0.002), 14: (0.0, 0.002),
+    15: (0.0, 0.002), 16: (0.0, 0.002),
+    17: (0.0, 0.005), 18: (0.0, 0.005), 19: (0.0, 0.005),
+    20: (0.0, 0.005), 21: (0.0, 0.005), 22: (0.0, 0.005),
+    23: (0.0, 0.005), 24: (0.0, 0.005),
+}
+
+# Flat priors of the yamls on the first six parameters (As_1e9, ns, H0,
+# omegab, omegam and w0), as {index: (min, max)}. They only truncate the
+# getdist sample clouds of plot_Fisher. With select = [0, ..., 6] the
+# positions in select equal these indices, as cnu.plot_Fisher requires.
+# wa gets no box: the yamls bound w0 + wa, not wa.
+FISHER_W0WA_FLAT_PRIORS = {
+    0: (0.5, 5),
+    1: (0.87, 1.07),
+    2: (55.0, 91.0),
+    3: (0.03, 0.07),
+    4: (0.1, 0.9),
+    5: (-3.0, -0.01),
+}
+
+# The 3x2pt layout: the 25 entries above followed by the eight linear
+# biases b_1 of the lens bins (indices 25..32), whose yaml priors are
+# flat (0.4 to 4), so they add no Gaussian prior.
+FISHER_3X2PT_PARAM_FID = np.concatenate(
+    (FISHER_W0WA_PARAM_FID, np.array(B1_FID, dtype="float64")))
+
+FISHER_3X2PT_PARAM_NAMES = FISHER_W0WA_PARAM_NAMES + [
+    "b1_1", "b1_2", "b1_3", "b1_4", "b1_5", "b1_6", "b1_7", "b1_8",
+]
+
+FISHER_3X2PT_PARAM_LABELS = FISHER_W0WA_PARAM_LABELS + [
+    r"b_\mathrm{1,roman}^1", r"b_\mathrm{1,roman}^2",
+    r"b_\mathrm{1,roman}^3", r"b_\mathrm{1,roman}^4",
+    r"b_\mathrm{1,roman}^5", r"b_\mathrm{1,roman}^6",
+    r"b_\mathrm{1,roman}^7", r"b_\mathrm{1,roman}^8",
+]
+
+
+def get_dv_w0wa(param=None, AccuracyBoost=1.0):
+    """Return the masked cosmic-shear data vector with w0 and wa free.
+
+    DRAFT docstring (Fable rewrites the final text).
+
+    The same evaluation as get_dv, in the FISHER_W0WA_PARAM_NAMES
+    layout: w0 = param[5] and wa = param[6] reach CAMB (PPF dark
+    energy) as w = w0 and w0pwa = w0 + wa.
+
+    Arguments:
+      param = 1D float array in the FISHER_W0WA_PARAM_NAMES layout, or
+              None for FISHER_W0WA_PARAM_FID.
+      AccuracyBoost = the overall boost, passed to _set_state both as
+              AccuracyBoost and as CLAccuracyBoost (as in get_dv), so
+              the cosmolike boost there is AccuracyBoost squared.
+
+    Returns:
+      1D float64 array: the masked data vector (masked entries 0).
+    """
+    if param is None:
+        param = FISHER_W0WA_PARAM_FID
+    w0 = param[5]
+    wa = param[6]
+    A1 = [param[7], param[8], 0, 0, 0, 0, 0, 0]
+    shear_photoz_bias = [param[9], param[10], param[11], param[12],
+                         param[13], param[14], param[15], param[16]]
+    M = [param[17], param[18], param[19], param[20],
+         param[21], param[22], param[23], param[24]]
+    # positional arguments of _set_state: omegam, omegab, H0, ns, As_1e9
+    # (param[4] down to param[0]), w = w0, w0pwa = w0 + wa,
+    # AccuracyBoost, kmax = 10 [1/Mpc], k_per_logint = 10,
+    # CAMBAccuracyBoost = 1, CLAccuracyBoost = AccuracyBoost,
+    # CLIntegrationAccuracy = 0 and the configured non_linear_emul,
+    # the values get_dv passes
+    _set_state(param[4], param[3], param[2], param[1], param[0],
+               w0, w0 + wa,
+               AccuracyBoost, 10.0, 10, 1.0,
+               AccuracyBoost, 0, _CONFIG["non_linear_emul"],
+               M=M, shear_photoz_bias=shear_photoz_bias,
+               A1=A1, A2=A2_FID, BTA=BTA_FID)
+    return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
+
+
+def get_ddv_w0wa(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
+    """Return the derivative of get_dv_w0wa along one parameter (cnu.get_ddv).
+
+    Arguments:
+      index = position of the parameter in the FISHER_W0WA_PARAM_NAMES
+              layout.
+      h     = relative step (0.02 = two percent); the absolute step for
+              wa, whose fiducial is 0.
+      CV    = fiducial vector, or None for FISHER_W0WA_PARAM_FID.
+      AccuracyBoost = forwarded to every get_dv_w0wa evaluation.
+
+    Returns:
+      1D array, d(masked data vector)/d(parameter).
+    """
+    if CV is None:
+        CV = FISHER_W0WA_PARAM_FID
+    return cnu.get_ddv(get_dv_w0wa, index=index, h=h, CV=CV,
+                       AccuracyBoost=AccuracyBoost)
+
+
+def get_dv_3x2pt(param=None, AccuracyBoost=1.0):
+    """Return the masked 3x2pt data vector with w0 and wa free.
+
+    DRAFT docstring (Fable rewrites the final text).
+
+    The FISHER_3X2PT_PARAM_NAMES layout: the cosmic-shear entries of
+    get_dv_w0wa, then the linear lens biases b_1 (param[25:33]). Each
+    photo-z shift moves the source and the lens n(z) of its bin
+    (lens = source, as in EXAMPLE_EVALUATE2.yaml). The other lens
+    nuisances keep the values get_chi2 uses: b_2, b_mag, b_3nl and b_k
+    at 0 and the point-mass amplitudes at PM_FID. The probes in the
+    vector are the ones init_cosmolike selected (CLprobe="3x2pt",
+    with_data=True for the mask).
+
+    Arguments:
+      param = 1D float array in the FISHER_3X2PT_PARAM_NAMES layout, or
+              None for FISHER_3X2PT_PARAM_FID.
+      AccuracyBoost = as in get_dv_w0wa (the cosmolike boost is
+              AccuracyBoost squared).
+
+    Returns:
+      1D float64 array: the masked data vector (masked entries 0).
+    """
+    if param is None:
+        param = FISHER_3X2PT_PARAM_FID
+    w0 = param[5]
+    wa = param[6]
+    A1 = [param[7], param[8], 0, 0, 0, 0, 0, 0]
+    photoz_bias = [param[9], param[10], param[11], param[12],
+                   param[13], param[14], param[15], param[16]]
+    M = [param[17], param[18], param[19], param[20],
+         param[21], param[22], param[23], param[24]]
+    B1 = [param[25], param[26], param[27], param[28],
+          param[29], param[30], param[31], param[32]]
+    # the same positional arguments as get_dv_w0wa; the lens photo-z
+    # shifts are the source ones (lens = source)
+    _set_state(param[4], param[3], param[2], param[1], param[0],
+               w0, w0 + wa,
+               AccuracyBoost, 10.0, 10, 1.0,
+               AccuracyBoost, 0, _CONFIG["non_linear_emul"],
+               M=M, shear_photoz_bias=photoz_bias,
+               A1=A1, A2=A2_FID, BTA=BTA_FID,
+               lens_photoz_bias=photoz_bias, B1=B1, B2=ZEROS8,
+               B_MAG=ZEROS8, B3nl=ZEROS8, BK=ZEROS8, PM=PM_FID)
+    return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
+
+
+def get_ddv_3x2pt(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
+    """Return the derivative of get_dv_3x2pt along one parameter (cnu.get_ddv).
+
+    Arguments:
+      index = position of the parameter in the FISHER_3X2PT_PARAM_NAMES
+              layout.
+      h, AccuracyBoost = as in get_ddv_w0wa.
+      CV    = fiducial vector, or None for FISHER_3X2PT_PARAM_FID.
+
+    Returns:
+      1D array, d(masked data vector)/d(parameter).
+    """
+    if CV is None:
+        CV = FISHER_3X2PT_PARAM_FID
+    return cnu.get_ddv(get_dv_3x2pt, index=index, h=h, CV=CV,
+                       AccuracyBoost=AccuracyBoost)
+
+
+def get_Fisher_w0wa(CV=None, h=0.02, AccuracyBoost=1.0, invcov=None):
+    """Return the cosmic-shear Fisher matrix with w0, wa free (cnu.get_Fisher).
+
+    Five-point-stencil derivatives of get_dv_w0wa plus the Gaussian
+    priors FISHER_W0WA_GAUSSIAN_PRIORS.
+
+    Arguments:
+      CV     = fiducial vector, or None for FISHER_W0WA_PARAM_FID.
+      h      = relative derivative step (absolute for wa).
+      AccuracyBoost = forwarded to every data-vector evaluation.
+      invcov = inverse covariance of the masked data vector, or None
+               for ci.get_inv_cov_masked() (init_cosmolike with data
+               must have run).
+
+    Returns:
+      the Fisher matrix, a (25, 25) array in the
+      FISHER_W0WA_PARAM_NAMES layout.
+    """
+    if CV is None:
+        CV = FISHER_W0WA_PARAM_FID
+    if invcov is None:
+        invcov = ci.get_inv_cov_masked()
+    return cnu.get_Fisher(get_ddv_w0wa, CV=CV, h=h,
+                          AccuracyBoost=AccuracyBoost,
+                          priors=FISHER_W0WA_GAUSSIAN_PRIORS, invcov=invcov)
+
+
+def get_Fisher_3x2pt(CV=None, h=0.02, AccuracyBoost=1.0, invcov=None):
+    """Return the 3x2pt Fisher matrix with w0, wa free (cnu.get_Fisher).
+
+    Five-point-stencil derivatives of get_dv_3x2pt plus the Gaussian
+    priors FISHER_W0WA_GAUSSIAN_PRIORS (the biases have flat priors).
+
+    Arguments:
+      CV     = fiducial vector, or None for FISHER_3X2PT_PARAM_FID.
+      h, AccuracyBoost, invcov = as in get_Fisher_w0wa (init_cosmolike
+               with CLprobe="3x2pt" and data must have run).
+
+    Returns:
+      the Fisher matrix, a (33, 33) array in the
+      FISHER_3X2PT_PARAM_NAMES layout.
+    """
+    if CV is None:
+        CV = FISHER_3X2PT_PARAM_FID
+    if invcov is None:
+        invcov = ci.get_inv_cov_masked()
+    return cnu.get_Fisher(get_ddv_3x2pt, CV=CV, h=h,
+                          AccuracyBoost=AccuracyBoost,
+                          priors=FISHER_W0WA_GAUSSIAN_PRIORS, invcov=invcov)
+
+
+# ----------------------------------------------------------------------
 # Baryonic feedback via the bfmt theory block
 # ----------------------------------------------------------------------
 def get_baryon_suppression(theory_options, point, z_grid, log10k_grid):
