@@ -61,7 +61,7 @@ import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
 # this must run before any cobaya/cosmolike import in the process.
-os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = os.environ.get("COCOA_TEST_OMP_THREADS", "4")
 
 import sys
 
@@ -282,7 +282,7 @@ HOD_LGMMIN_STEP = 0.1
 CACHE_CHANGE_FLOOR = 1.0e-6
 
 # Thread counts of the determinism check (the default is 4).
-DETERMINISM_THREADS = (1, 8)
+DETERMINISM_THREADS = (1, int(os.environ.get("COCOA_TEST_OMP_THREADS", "8")))
 
 # =============================================================================
 # PUBLISHED FITS, RECOMPUTED IN NUMPY
@@ -1211,7 +1211,7 @@ class TestDeterminism:
                                   equal_nan=True), f"{name} not repeatable"
 
     def test_thread_count(self, halo):
-        """Tables rebuilt with 1 and 8 threads equal the 4-thread ones."""
+        """Serial and selected parallel refills equal the original table."""
         ci = halo["ci"]
         reference = evaluate_fast(halo)
         default_threads = int(os.environ["OMP_NUM_THREADS"])

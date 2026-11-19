@@ -17,19 +17,19 @@ nonlimber_tolerance_suite) documents the checks. On example2:
     path with the early exit, so tests 3 and 4 measure what the
     tolerance does here.
 
-The stencil noise is the whitened fourth difference of five evaluations
-(cosmolike_notebook_utils.fisher.get_stencil_noise, step h = 0.025) of
-the w0, wa and roman_B1_8 columns.
+The whitened fourth difference of five evaluations is measured with
+cosmolike_notebook_utils.fisher.get_stencil_noise, using h = 0.025 for
+w0, wa and roman_B1_8. This statistic includes smooth fourth-order
+curvature as well as possible numerical noise.
 
-Measured on 2026-11-18 (OMP 4), then bounded:
-  - test 3: tolerance 0 against the core defaults moves the vector
-    by delta^T C^-1 delta = 2.58e-2 (gamma_t 2.09e-2, w(theta)
-    1.9e-3); bound 0.06;
-  - test 4: sigma (w0, wa, bias) = 6.91e-3, 2.29e-3, 2.29e-3 at the
-    core defaults and 1.60e-3, 1.05e-4, 5e-12 at 0; bound 2e-3;
-  - test 5: FKEM caps 150/200 give w0 1.60e-3/1.65e-3 and
-    wa 1.05e-4/1.06e-4; margin 0.1;
-  - test 6: SVD/FKEM ratio at most 1.007 (wa, cap 150); margin 0.1.
+The FKEM/SVD comparison sets both the clustering and galaxy-shear caps
+to the same requested value, 150 or 200, for each engine. Otherwise a
+changed galaxy-shear cap can contaminate the clustering-engine comparison.
+The production state is restored after the measurements. The empirical
+bounds below are unchanged; the 2026-11-19 run with six OpenMP workers
+passed all these checks, as recorded in refreeze_record_20261119.json.
+Passing these diagnostics does not by itself establish Fisher convergence
+with respect to endpoint, sampling density or step size.
 
 To run (from the Cocoa/ folder, cocoa environment active,
 start_cocoa.sh sourced):
@@ -41,7 +41,7 @@ import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
 # this must run before any cobaya/cosmolike import in the process.
-os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = os.environ.get("COCOA_TEST_OMP_THREADS", "4")
 
 import sys
 import unittest
@@ -52,8 +52,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))))
 import cocoa_test_utils as u
 
-# The bounds below come from this project's measurement (the values
-# are in the comment of the module docstring above).
+# These empirical bounds were retained during the endpoint refreeze;
+# the module docstring explains what their diagnostics do and do not test.
 TestNonLimberTolerance = u.nonlimber_tolerance_suite(
     u, name="TestNonLimberTolerance", example="example2",
     bias_parameter="roman_B1_8",

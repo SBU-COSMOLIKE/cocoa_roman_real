@@ -10,7 +10,7 @@
     "frozen/data/baryon_bcemu2025.dataset": "9834d4bafb8734ff57f9ebc125816b15c169fbba3fed98e9a2fa35a1cf435aba",
     "frozen/data/baryon_bcemu2025.modelvector": "32881c7d6885fa095c19c1e4db9a0663a05fd31bbffb7b99bcfb58bd4b4ac3d2",
     "frozen/data/baryon_flamingo.dataset": "ee0bce4b777f182ed2b8e25544b27ed67ea1197728f95f4b60f15bf3632ddd17",
-    "frozen/data/baryon_flamingo.modelvector": "14f06755a9eb46df354393b32e96184ffb8a32cae58e7cf69fac3bf38d5cde02",
+    "frozen/data/baryon_flamingo.modelvector": "d97b8d74d54f3fa4f636d87576387a61c3c84c1be08bda6dc202db2d64c151fb",
     "frozen/data/baryon_spk_akino.dataset": "ed3f9804d3fab331da644f5ae50b401a5ce8fda306867a8f011c43e987ebdbd1",
     "frozen/data/baryon_spk_akino.modelvector": "563b05821027fc82df44e4892508fdcacd188c1b6f41c09c1645758f79f9d5c8",
     "frozen/data/baryon_spk_double_power_law.dataset": "2843119c1dfd641890bede9428606b268af0004d05a6cb5cd6e837aaf367714b",
@@ -29,12 +29,12 @@
     "frozen/data/ones.mask": "5e3b27f81de0046e468599b957665024f5b42a97cb47797ad85c5769fff1ce5f",
     "frozen/data/pca.txt": "52b50538e307c1ee8787266fc022dc9366c75b3a92045ddd01c455a4d0d75de5",
     "frozen/data/tatt_roman_real.dataset": "d66ecdd2fd29ef5a3137fae6372d890aa4a8cae70c76743d65648cbff344ab6a",
-    "frozen/data/tatt_roman_real.modelvector": "b9c23dd378529c293d7a6e6a285a9badd8b25c35cb6b8eb5afd0de1e642ac52b",
+    "frozen/data/tatt_roman_real.modelvector": "3eaff0a27499f69f4a61b620c10bff2619e4b1e7d39ce80fd8d3f66667ae4d95",
     "frozen/data/tatt_roman_real_ones.dataset": "39ac1c6895a20bde1ee366c9b3be81a76dfd5cacef84b76bdc035781b459fc15",
-    "frozen/frozen_config_example1.py": "7af8d0e526c22c74e6bc09565aa5e49cecb4ac75cf583ac9cbde1cd27bcecb25",
-    "frozen/frozen_config_example2.py": "48f96d51d7cabeb59d2f339b122528c36972d24ade1a6f6bc0f12eb0d2d87aee",
-    "frozen/frozen_config_example2_2x2pt.py": "4e9d23a9dff908c48171f368720bd311476d5d2bbfc1f598b2cd0111b2960bb2",
+    "frozen/frozen_config_example1.py": "c87172db317b0ad6d0b3ba8545f6046f4a5ab0f80c8860cd83d2111ae84cefdd",
+    "frozen/frozen_config_example2.py": "fbd685b6bb82230bcbbcde2d7f3ffc6b7f260a7ff72623a5f7dbbd9caa1b24a8",
+    "frozen/frozen_config_example2_2x2pt.py": "c4715a60385514c126cf4ead380eeb701dcedc90aecd6c6f0eca8aa06c17de32",
     "frozen/halo_reference.json": "ae3a15f7ff6f56e9d33f2c7265af1d14d630619ffeffb27b3ca6ff6bc9de6400",
-    "frozen/reference_chi2.json": "e46e6bb808d5b19ca630559bfdbd66676b26fb5702f8308ae06208c664330813"
+    "frozen/reference_chi2.json": "7ba07aac207ff4d166afc8f65b172034984ca5952d34a82cd2e764960709bee5"
   }
 }

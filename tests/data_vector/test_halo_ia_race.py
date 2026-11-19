@@ -87,7 +87,7 @@ import sys
 # value its parent chose: test 21 spawns workers at 1, 4 and 8.
 _IS_WORKER = len(sys.argv) > 1 and sys.argv[1] == "--worker"
 if not _IS_WORKER:
-    os.environ["OMP_NUM_THREADS"] = "4"
+    os.environ["OMP_NUM_THREADS"] = os.environ.get("COCOA_TEST_OMP_THREADS", "4")
 
 import subprocess
 import tempfile
@@ -130,6 +130,9 @@ PROBE_K = np.array([0.1, 1.0, 10.0, 50.0]) * COVERH0   # (c/H0)^-1
 
 # ---- test 21 ----------------------------------------------------------------
 THREAD_COUNTS = ("1", "4", "8")
+if "COCOA_TEST_OMP_THREADS" in os.environ:
+    # Compare serial with the explicitly allocated parallel team.
+    THREAD_COUNTS = ("1", os.environ["COCOA_TEST_OMP_THREADS"])
 
 # The smallest positive double: |delta| < BITWISE holds only for
 # delta == 0, so report_race_test's verdict matches the bitwise
@@ -408,11 +411,11 @@ class TestHaloIARace(unittest.TestCase):
                 f"{max_relative_difference(result['probes'][i], result['probes'][0]):.3e})")
 
     def test_x21_halo_ia_thread_count(self):
-        """1, 4 and 8 threads give the same bits."""
+        """The selected serial and parallel teams give the same bits."""
         result = {n: run_worker("threads", n) for n in THREAD_COUNTS}
         verdicts = report_thread_test(
             21, "example2 (3x2pt, NLA + halo IA) determinism: "
-            "OMP_NUM_THREADS = 1 / 4 / 8", result)
+            "OMP_NUM_THREADS = " + " / ".join(THREAD_COUNTS), result)
 
         attribution = (f"(CAMB inputs: {verdicts['camb']}; flag-off data "
                        f"vector: {verdicts['dv_off']})")

@@ -51,7 +51,7 @@ import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
 # this must run before any cobaya/cosmolike import in the process.
-os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = os.environ.get("COCOA_TEST_OMP_THREADS", "4")
 
 import sys
 import unittest
@@ -63,9 +63,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 import cocoa_test_utils as u
 
 # The engine delta chi2 of this project's frozen fiducial, measured
-# at OMP 4 with rank 5 and the path's l cap of 150 (the likelihood
-# defaults): see assertion 4 of the module docstring.
-DCHI2_MEASURED = 5.813680e-03
+# with rank 5 and the SVD cap of 200; FKEM uses its separate cap
+# of 200. The reference metadata records the validation thread count.
+# See assertion 4 of the module docstring.
+DCHI2_MEASURED = 0.0001584491202
 
 # The shared factory (cosmolike_core/cocoa_testing_suites.py) builds
 # the class; assigning its return value to the usual module-level name

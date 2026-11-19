@@ -4,7 +4,7 @@ The galaxy-galaxy lensing (ggl) spectrum C_l^gs enters the data vector
 through gamma_t(theta) in real space and directly in Fourier space. The
 likelihood yaml key adopt_limber_gs chooses how it is computed:
 
-  adopt_limber_gs = 0 (the default): below l = 150 the exact
+  adopt_limber_gs = 0 (the default): below l = 200 the exact
       projection, computed by cosmolike's C_gs_tomo with the split of
       Fang, Krause, Eifler & MacCrann (arXiv:1911.11947): an FFTLog
       integral of the linear power spectrum plus, in Limber, what
@@ -56,7 +56,7 @@ import os
 
 # OpenMP reads OMP_NUM_THREADS when the compiled libraries load, so
 # this must run before any cobaya/cosmolike import in the process.
-os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = os.environ.get("COCOA_TEST_OMP_THREADS", "4")
 
 import sys
 import unittest
@@ -72,7 +72,7 @@ import cocoa_test_utils as u
 # is what makes pytest collect it here, with unchanged test ids.
 TestNonLimberGGL = u.nonlimber_suite(
     u, name="TestNonLimberGGL", kind="ggl",
-    measured=0.4582, default=0)
+    measured=0.4581598049, default=0)
 
 # __name__ is "__main__" only when this file runs directly as a
 # script; pytest imports the module instead, so this block stays

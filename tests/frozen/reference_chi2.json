@@ -1,13 +1,13 @@
 {
   "_meta": {
     "chi2_tolerance": 0.2,
-    "generated_utc": "2026-11-18T21:39:27Z",
-    "omp_num_threads": "4"
+    "generated_utc": "2026-11-19T08:16:46Z",
+    "omp_num_threads": "6"
   },
-  "example1_nla": 0.0038632524942033043,
+  "example1_nla": 0.0038632524942033035,
   "example1_tatt": 0.0033453125478825423,
-  "example2_2x2pt_nla": 0.11598427142074363,
-  "example2_2x2pt_tatt": 1.6450966024108302e-11,
-  "example2_nla": 0.13907859758444144,
-  "example2_tatt": 2.4292946350918013e-11
+  "example2_2x2pt_nla": 0.11610855753188618,
+  "example2_2x2pt_tatt": 2.4212893296068636e-11,
+  "example2_nla": 0.13913451894270798,
+  "example2_tatt": 3.214317092036672e-11
 }

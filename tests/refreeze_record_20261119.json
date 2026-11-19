@@ -1,0 +1,826 @@
+{
+  "date": "2026-11-19",
+  "scope": "Update numerical references at the chosen project endpoint; also record cumulative drift since their previous generation.",
+  "previous_reference_project_commit": "4b678934e4599ff4b73ad52a4e4089679225954d",
+  "previous_reference_commit_description": "Turn off the non-Limber early exit and raise the non-Limber cap to 200\n\nProduction now runs w(theta) and gamma_t without the early exit\n(nonlimber_tolerance_gg/gs = 0) and with lmax_nonlimber = 200 (new yaml\nkey). Only the non-Limber gamma_t / w(theta) multipoles move; xi is bit for\nbit. Frozen references and measured constants regenerated.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+  "project_commit_before_refreeze": "c20646ccdee7f1d0386a61a4f59e99acd7c4d8c5",
+  "endpoint_feature_core_commit": "f8a80548d3a0e26caa861cb6dec51022d8be03fb",
+  "installed_binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+  "source_identity_note": "The feature commit identifies the endpoint implementation. The binary hash identifies the exact executable used in these tests; later unrelated source commits are not a claim of a newer compiled binary.",
+  "nonlimber_zmax": 4.5,
+  "endpoint_grid_scope": "Changing only the endpoint at a fixed radial node count also changes dlnchi=log(chimax/chimin)/(nchi-1) and dlnk=dlnchi. These checks isolate the endpoint control, but do not separate finite-domain error from sampling error; that requires a joint endpoint/node-count refinement.",
+  "omp_threads": 6,
+  "blas_threads": 1,
+  "configuration_changes": [
+    {
+      "example": "example1",
+      "changes": [
+        [
+          [
+            "likelihood",
+            "roman_real.cosmic_shear",
+            "nonlimber_accuracyboost"
+          ],
+          1.0,
+          4.0
+        ],
+        [
+          [
+            "likelihood",
+            "roman_real.cosmic_shear",
+            "nonlimber_zmax"
+          ],
+          null,
+          4.5
+        ]
+      ],
+      "errors": [],
+      "live_parameter_changes_not_adopted": [],
+      "live_prior_changes_not_adopted": [],
+      "live_fixed_params_changes_not_adopted": []
+    },
+    {
+      "example": "example2",
+      "changes": [
+        [
+          [
+            "likelihood",
+            "roman_real.combo_3x2pt",
+            "nonlimber_accuracyboost"
+          ],
+          1.0,
+          4.0
+        ],
+        [
+          [
+            "likelihood",
+            "roman_real.combo_3x2pt",
+            "nonlimber_lowrank_lmax"
+          ],
+          150,
+          200
+        ],
+        [
+          [
+            "likelihood",
+            "roman_real.combo_3x2pt",
+            "nonlimber_zmax"
+          ],
+          null,
+          4.5
+        ]
+      ],
+      "errors": [],
+      "live_parameter_changes_not_adopted": [],
+      "live_prior_changes_not_adopted": [],
+      "live_fixed_params_changes_not_adopted": []
+    },
+    {
+      "example": "example2_2x2pt",
+      "changes": [
+        [
+          [
+            "likelihood",
+            "roman_real.combo_2x2pt",
+            "nonlimber_accuracyboost"
+          ],
+          1.0,
+          4.0
+        ],
+        [
+          [
+            "likelihood",
+            "roman_real.combo_2x2pt",
+            "nonlimber_lowrank_lmax"
+          ],
+          150,
+          200
+        ],
+        [
+          [
+            "likelihood",
+            "roman_real.combo_2x2pt",
+            "nonlimber_zmax"
+          ],
+          null,
+          4.5
+        ]
+      ],
+      "errors": [],
+      "live_parameter_changes_not_adopted": [],
+      "live_prior_changes_not_adopted": [],
+      "live_fixed_params_changes_not_adopted": []
+    }
+  ],
+  "endpoint_only_comparisons": [
+    {
+      "project": "roman_real",
+      "example": "example1",
+      "tatt": false,
+      "all_limber": false,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 0
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.0,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    },
+    {
+      "project": "roman_real",
+      "example": "example1",
+      "tatt": true,
+      "all_limber": false,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 0
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.0,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    },
+    {
+      "project": "roman_real",
+      "example": "example2_2x2pt",
+      "tatt": false,
+      "all_limber": false,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 769
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 101
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.00013284385692058628,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    },
+    {
+      "project": "roman_real",
+      "example": "example2_2x2pt",
+      "tatt": true,
+      "all_limber": false,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 769
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 101
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.0001328438569205523,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    },
+    {
+      "project": "roman_real",
+      "example": "example2",
+      "tatt": false,
+      "all_limber": false,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 769
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 101
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.00013310599774914823,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    },
+    {
+      "project": "roman_real",
+      "example": "example2",
+      "tatt": false,
+      "all_limber": true,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 0
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.0,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    },
+    {
+      "project": "roman_real",
+      "example": "example2",
+      "tatt": true,
+      "all_limber": false,
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed": 0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed": 769
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed": 101
+        }
+      ],
+      "endpoint": 4.5,
+      "difference_chi2": 0.00013310599774906027,
+      "binary_sha256": "085ae225e4ec38eb366f4b64760ced4ac8d7e2aff36b9033ea355cb46dbd07af",
+      "driver_sha256": "93062dce4b4cc4d0579a677eb391c5e0292a0659c1c1d8aa141cb8b8c5238ebe",
+      "driver_version": "20261119_bitwise_restore_v1",
+      "round_trip_exact": true,
+      "round_trip_bitwise": true
+    }
+  ],
+  "cumulative_serialized_vector_comparison": [
+    {
+      "file": "baryon_baccoemu.modelvector",
+      "before_sha256": "d4756b773194966ea199ba762707c4a08902348124aa3ede4d5e7e1369d268ec",
+      "after_sha256": "d4756b773194966ea199ba762707c4a08902348124aa3ede4d5e7e1369d268ec",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "baryon_bcemu.modelvector",
+      "before_sha256": "12b758f02966ce15268245adef4b5b982d484eb4df86eaa8f76ec3be93196ba4",
+      "after_sha256": "12b758f02966ce15268245adef4b5b982d484eb4df86eaa8f76ec3be93196ba4",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "baryon_bcemu2025.modelvector",
+      "before_sha256": "32881c7d6885fa095c19c1e4db9a0663a05fd31bbffb7b99bcfb58bd4b4ac3d2",
+      "after_sha256": "32881c7d6885fa095c19c1e4db9a0663a05fd31bbffb7b99bcfb58bd4b4ac3d2",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "baryon_flamingo.modelvector",
+      "before_sha256": "14f06755a9eb46df354393b32e96184ffb8a32cae58e7cf69fac3bf38d5cde02",
+      "after_sha256": "d97b8d74d54f3fa4f636d87576387a61c3c84c1be08bda6dc202db2d64c151fb",
+      "file_bytes_identical": false,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        25
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        25
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        25
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 25,
+          "changed_rows_any_bit_column": 25,
+          "max_absolute_change": 1.0000000502143058e-13
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "baryon_spk_akino.modelvector",
+      "before_sha256": "563b05821027fc82df44e4892508fdcacd188c1b6f41c09c1645758f79f9d5c8",
+      "after_sha256": "563b05821027fc82df44e4892508fdcacd188c1b6f41c09c1645758f79f9d5c8",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "baryon_spk_double_power_law.modelvector",
+      "before_sha256": "4aab99a79cd0f743d99bbac7a1ec63b270e918c7f4a21a9c431451e83833401a",
+      "after_sha256": "4aab99a79cd0f743d99bbac7a1ec63b270e918c7f4a21a9c431451e83833401a",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "baryon_spk_power_law.modelvector",
+      "before_sha256": "f6f8d762c0e970b9d4c8f4c49b8a7ebf100057a740a1cf14f9092e492e158ce4",
+      "after_sha256": "f6f8d762c0e970b9d4c8f4c49b8a7ebf100057a740a1cf14f9092e492e158ce4",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "example1.modelvector",
+      "before_sha256": "52afec9bcb4b0073a688dbee0c79e5bb56dd3b2eb0081850dfa2366f5a3717e3",
+      "after_sha256": "52afec9bcb4b0073a688dbee0c79e5bb56dd3b2eb0081850dfa2366f5a3717e3",
+      "file_bytes_identical": true,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        0
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        0
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        }
+      ],
+      "status": "classified"
+    },
+    {
+      "file": "tatt_roman_real.modelvector",
+      "before_sha256": "b9c23dd378529c293d7a6e6a285a9badd8b25c35cb6b8eb5afd0de1e642ac52b",
+      "after_sha256": "3eaff0a27499f69f4a61b620c10bff2619e4b1e7d39ce80fd8d3f66667ae4d95",
+      "file_bytes_identical": false,
+      "old_shape": [
+        2115,
+        2
+      ],
+      "new_shape": [
+        2115,
+        2
+      ],
+      "changed_numeric_entries_per_column": [
+        0,
+        850
+      ],
+      "changed_bit_entries_per_column": [
+        0,
+        850
+      ],
+      "changed_serialized_tokens_per_column": [
+        0,
+        850
+      ],
+      "blocks": [
+        {
+          "block": "ss",
+          "entries": 1080,
+          "changed_rows_any_numeric_column": 0,
+          "changed_rows_any_bit_column": 0,
+          "max_absolute_change": 0.0
+        },
+        {
+          "block": "gs",
+          "entries": 915,
+          "changed_rows_any_numeric_column": 749,
+          "changed_rows_any_bit_column": 749,
+          "max_absolute_change": 6.868000000010858e-10
+        },
+        {
+          "block": "gg",
+          "entries": 120,
+          "changed_rows_any_numeric_column": 101,
+          "changed_rows_any_bit_column": 101,
+          "max_absolute_change": 3.3329999999873183e-07
+        }
+      ],
+      "status": "classified"
+    }
+  ],
+  "interpretation": "The endpoint comparisons hold the binary, physical parameters and all other numerical controls fixed. Their cosmic shear and individually Limber blocks must be identical. Changes in those blocks in the separate old-reference comparison cannot be attributed to the endpoint. That comparison spans the older source history and any deliberately updated numerical settings.",
+  "attribution_limit": "This record measures each changed observable block. It does not assign cumulative historical differences to individual commits without an independent comparison.",
+  "validation": {
+    "full_run_xml_counts": {
+      "tests": 151,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 24
+    },
+    "accepted_failures": [],
+    "retry_evidence": null,
+    "quick_tests_log_sha256": "e906c088598168398bcd33fb47dbce9369dac6976900691cbdf10a3e6ab0fe13",
+    "reference_manifest_sha256": "6f8702b6a2a6d785246ab49a6b8ef5cd03952803d5db2a89a7dfb318417c9817",
+    "shared_test_helper": {
+      "commit": "2bc4500a9a55c1c4dcbe26952e0cfd658846fdc5",
+      "sha256": "6a8e26c462f825bcb0efa6255f4db1c3082c771f6e3853aa420d4e33fbbf39b0",
+      "purpose": "Match galaxy-shear and clustering caps in FKEM/SVD stencil comparisons; unchanged assertion bounds."
+    },
+    "post_run_source_changes": "Only the tolerance-test module docstring/comments were updated after execution; executable AST is unchanged."
+  },
+  "reference_chi2_before": {
+    "_meta": {
+      "chi2_tolerance": 0.2,
+      "generated_utc": "2026-11-18T21:39:27Z",
+      "omp_num_threads": "4"
+    },
+    "example1_nla": 0.0038632524942033043,
+    "example1_tatt": 0.0033453125478825423,
+    "example2_2x2pt_nla": 0.11598427142074363,
+    "example2_2x2pt_tatt": 1.6450966024108302e-11,
+    "example2_nla": 0.13907859758444144,
+    "example2_tatt": 2.4292946350918013e-11
+  },
+  "reference_chi2_after": {
+    "_meta": {
+      "chi2_tolerance": 0.2,
+      "generated_utc": "2026-11-19T08:16:46Z",
+      "omp_num_threads": "6"
+    },
+    "example1_nla": 0.0038632524942033035,
+    "example1_tatt": 0.0033453125478825423,
+    "example2_2x2pt_nla": 0.11610855753188618,
+    "example2_2x2pt_tatt": 2.4212893296068636e-11,
+    "example2_nla": 0.13913451894270798,
+    "example2_tatt": 3.214317092036672e-11
+  },
+  "protected_halo_reference_sha256": "ae3a15f7ff6f56e9d33f2c7265af1d14d630619ffeffb27b3ca6ff6bc9de6400"
+}

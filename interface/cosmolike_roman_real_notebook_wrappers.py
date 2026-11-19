@@ -75,6 +75,7 @@ from getdist import IniFile
 # interface/ directory is part of the Cocoa PYTHONPATH).
 sys.path.insert(0, os.environ["ROOTDIR"] + "/external_modules/code/cosmolike_core")
 import cosmolike_notebook_utils as cnu
+from cosmolike_notebook_utils.fisher import nonlimber_derivative_mode
 import cosmolike_roman_real_interface as ci
 
 
@@ -159,6 +160,20 @@ PM_FID = [roman_PM1, roman_PM2, roman_PM3, roman_PM4,
 # remaining entries are shared by the current notebooks and sit here
 # so a future notebook can change them the same way.
 _CONFIG = {
+    # Galaxy projection choices of the likelihood YAML.
+    "nonlimber_accuracyboost": 4.0,
+    "adopt_limber_gs": 0,
+    "adopt_limber_gg": 0,
+    "include_HOD_GX": 0,
+    "include_halo_IA": 0,
+    "nonlimber_lowrank_gg": 0,
+    "nonlimber_lowrank_rank": 5,
+    "nonlimber_lowrank_lmax": 200,
+    # Base early-exit tolerances; Fisher reads temporarily use zero.
+    "nonlimber_tolerance_gg": 0.0,
+    "nonlimber_tolerance_gs": 0.0,
+    # FKEM multipole cap, separate from the low-rank engine cap.
+    "lmax_nonlimber": 200,
     # Upper redshift, independent of sampling; matches this project YAML.
     "nonlimber_zmax": 4.5,
     "lmax": 100000,             # base of the internal C_ell tables
@@ -267,6 +282,20 @@ def init_cosmolike(CLprobe=None, with_data=False, lmax=None):
     allsims = ini.relativeFileName('all_sims_hdf5_file')
     ci.initial_setup()
     ci.init_nonlimber_zmax(zmax=float(_CONFIG["nonlimber_zmax"]))
+    ci.init_nonlimber_tolerance(
+        gg_tol=float(_CONFIG["nonlimber_tolerance_gg"]),
+        gs_tol=float(_CONFIG["nonlimber_tolerance_gs"]))
+    ci.init_lmax_nonlimber(lmax=int(_CONFIG["lmax_nonlimber"]))
+    ci.init_nonlimber_accuracy_boost(
+        nonlimber_boost=float(_CONFIG["nonlimber_accuracyboost"]))
+    ci.init_lowrank_nonlimber_gg(
+        flag=int(_CONFIG["nonlimber_lowrank_gg"]),
+        nrank=int(_CONFIG["nonlimber_lowrank_rank"]),
+        lmax=int(_CONFIG["nonlimber_lowrank_lmax"]))
+    ci.init_adopt_limber_gs(adopt_limber_gs=int(_CONFIG["adopt_limber_gs"]))
+    ci.init_adopt_limber_gg(adopt_limber_gg=int(_CONFIG["adopt_limber_gg"]))
+    ci.init_include_HOD_GX(include_HOD_GX=int(_CONFIG["include_HOD_GX"]))
+    ci.init_include_halo_IA(include_halo_IA=int(_CONFIG["include_halo_IA"]))
     # flatten() turns the [[lens, source], ...] pair list into the
     # flat [l0, s0, l1, s1, ...] array the C layer expects
     ci.init_ggl_exclude(np.array(_CONFIG["ggl_exclude"]).flatten())
@@ -1043,7 +1072,13 @@ def get_dv(param=None, AccuracyBoost=1.0):
                AccuracyBoost, 0, _CONFIG["non_linear_emul"],
                M=M, shear_photoz_bias=shear_photoz_bias,
                A1=A1, A2=A2_FID, BTA=BTA_FID)
-    return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
+    # A stencil must not change its stopping multipole between points.
+    # Restore configured bases, not the accuracy-scaled getter values.
+    with nonlimber_derivative_mode(
+            interface=ci,
+            production_gg=_CONFIG["nonlimber_tolerance_gg"],
+            production_gs=_CONFIG["nonlimber_tolerance_gs"]):
+        return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
 
 
 def get_ddv(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
@@ -1277,8 +1312,6 @@ FISHER_3X2PT_PARAM_LABELS = FISHER_W0WA_PARAM_LABELS + [
 def get_dv_w0wa(param=None, AccuracyBoost=1.0):
     """Return the masked cosmic-shear data vector with w0 and wa free.
 
-    DRAFT docstring (Fable rewrites the final text).
-
     The same evaluation as get_dv, in the FISHER_W0WA_PARAM_NAMES
     layout: w0 = param[5] and wa = param[6] reach CAMB (PPF dark
     energy) as w = w0 and w0pwa = w0 + wa.
@@ -1314,7 +1347,13 @@ def get_dv_w0wa(param=None, AccuracyBoost=1.0):
                AccuracyBoost, 0, _CONFIG["non_linear_emul"],
                M=M, shear_photoz_bias=shear_photoz_bias,
                A1=A1, A2=A2_FID, BTA=BTA_FID)
-    return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
+    # A stencil must not change its stopping multipole between points.
+    # Restore configured bases, not the accuracy-scaled getter values.
+    with nonlimber_derivative_mode(
+            interface=ci,
+            production_gg=_CONFIG["nonlimber_tolerance_gg"],
+            production_gs=_CONFIG["nonlimber_tolerance_gs"]):
+        return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
 
 
 def get_ddv_w0wa(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
@@ -1339,8 +1378,6 @@ def get_ddv_w0wa(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
 
 def get_dv_3x2pt(param=None, AccuracyBoost=1.0):
     """Return the masked 3x2pt data vector with w0 and wa free.
-
-    DRAFT docstring (Fable rewrites the final text).
 
     The FISHER_3X2PT_PARAM_NAMES layout: the cosmic-shear entries of
     get_dv_w0wa, then the linear lens biases b_1 (param[25:33]). Each
@@ -1381,7 +1418,13 @@ def get_dv_3x2pt(param=None, AccuracyBoost=1.0):
                A1=A1, A2=A2_FID, BTA=BTA_FID,
                lens_photoz_bias=photoz_bias, B1=B1, B2=ZEROS8,
                B_MAG=ZEROS8, B3nl=ZEROS8, BK=ZEROS8, PM=PM_FID)
-    return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
+    # A stencil must not change its stopping multipole between points.
+    # Restore configured bases, not the accuracy-scaled getter values.
+    with nonlimber_derivative_mode(
+            interface=ci,
+            production_gg=_CONFIG["nonlimber_tolerance_gg"],
+            production_gs=_CONFIG["nonlimber_tolerance_gs"]):
+        return np.array(ci.compute_data_vector_masked(), dtype=np.float64)
 
 
 def get_ddv_3x2pt(index=0, h=0.02, CV=None, AccuracyBoost=1.0):
