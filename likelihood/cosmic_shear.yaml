@@ -4,21 +4,25 @@ accuracyboost: 1.0
 internal_accuracyboost: 1.0 # C-FAST-PT convolution grid / output grid
 # refinements on top of accuracyboost (which multiplies them too):
 # the non-Limber FFTLog chi grid, and the z nodes of the P(k) tables
-# 4 here: the last source bin ends at z = 3.99, between chi-grid nodes at 1
-# (at 1 that bin's non-Limber correction to gamma_t is off by up to 60%; tests/data_vector/README.md)
+# 4 in this project: the highest source bin's n(z) ends at z = 3.99, between
+# radial nodes at boost 1, where that bin's non-Limber correction to gamma_t
+# is off by up to 60% (tests/data_vector/README.md)
 nonlimber_accuracyboost: 4.0
-# Upper redshift of the non-Limber distance grid; finite and >= 4.
-# Independent of radial sampling; the core default is 4.0.
+# upper redshift of the non-Limber radial grid (core default and minimum 4.0);
+# 4.5 clears the n(z) end at z = 3.99, which a grid ending at 4.0 truncates
+# (tests/data_vector/README.md)
 nonlimber_zmax: 4.5
 pk_z_refinement: 1
 # early-exit tolerances of the non-Limber real-space C_l (w(theta), gamma_t);
 # 0 = no early exit (Fisher derivatives); accuracyboost > 1 shrinks them
-# 0 here: the exit errs by up to delta chi2 = 16, mostly gamma_t (tests/data_vector/README.md)
+# no early exit in this project: across the example priors the exit errs by up
+# to delta chi2 = 16, almost all in gamma_t (tests/data_vector/README.md)
 nonlimber_tolerance_gg: 0.0
 nonlimber_tolerance_gs: 0.0
 # the FKEM non-Limber cap (limits.LMAX_NOLIMBER): C_gg and C_gs are
 # non-Limber below it and Limber above; 150 is the cosmolike default
-# 200 here: cap 150 errs by up to delta chi2 = 48 in the example box (tests/data_vector/README.md)
+# this project caps at 200: across the example priors cap 150 errs by up to
+# delta chi2 = 48, almost all in gamma_t (tests/data_vector/README.md)
 lmax_nonlimber: 200
 integration_accuracy: 0 # integer 0, 1 or 2
 # n(z) interpolation: 0 = cubic spline, 1 = linear, 2+ = Steffen (monotone)

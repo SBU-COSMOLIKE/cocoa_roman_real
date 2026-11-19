@@ -30,8 +30,8 @@ likelihood:
 # with A_s the primordial amplitude (sampled as As_1e9 = 10^9 A_s) and b_i the
 # bin's linear galaxy bias (roman_B1_i). The galaxy power of a bin scales as
 # A_s b_i^2, and a fixed relative numerical error of the data vector grows
-# with it against the fiducial covariance (the N-random-models check of
-# lsst_y1, projects/lsst_y1/tests/data_vector/README.md). A point outside
+# with it against the fiducial covariance (the prior-box measurements in
+# projects/roman_real/tests/data_vector/README.md). A point outside
 # the cut has prior -inf, so cobaya never evaluates its likelihood.
 prior:
   amplitude_cut: "lambda As_1e9, roman_B1_1, roman_B1_2, roman_B1_3, roman_B1_4, roman_B1_5, roman_B1_6, roman_B1_7, roman_B1_8: 0.0 if (As_1e9/2.1)*max((roman_B1_1/1.18)**2, (roman_B1_2/1.4)**2, (roman_B1_3/1.55)**2, (roman_B1_4/1.71)**2, (roman_B1_5/1.9)**2, (roman_B1_6/2.15)**2, (roman_B1_7/2.52)**2, (roman_B1_8/2.44)**2) <= 8 else -np.inf"
