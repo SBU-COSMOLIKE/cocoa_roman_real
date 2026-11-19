@@ -59,11 +59,18 @@ or, without pytest,
 
     python -m unittest discover -s ./projects/roman_real/tests -v
 
-The tests change no project files. Each test prints a progress line
-per model build and per evaluation, then a report with the
-computed $\chi^2$, the stored reference, the difference, and the pass
-limit. A full run performs about 135 likelihood evaluations and takes
-a few minutes. The test files force `OMP_NUM_THREADS=4` internally.
+The tests change no project files. Each test prints a progress line per
+model build and per evaluation, then a report with the computed $\chi^2$,
+the stored reference, the difference, and the pass limit. A full run
+performs about 135 likelihood evaluations and takes a few minutes. The test
+files set their OpenMP worker count before imports.
+
+The shared likelihood tests default to four OpenMP workers. For six workers,
+set `COCOA_TEST_OMP_THREADS=6` and `OMP_THREAD_LIMIT=6` before
+starting Python. The entry points copy the test setting to
+`OMP_NUM_THREADS` before importing native libraries. Keep BLAS at
+one worker. A smaller OpenMP thread limit can reduce the actual team
+below the requested count.
 
 ## The tests <a name="the_tests"></a>
 
