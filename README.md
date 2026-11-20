@@ -296,7 +296,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
            -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
           --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
           --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
-          python -m mpi4py.futures ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
+          python ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
             --root ./projects/roman_real/ \
             --outroot "EXAMPLE_EMUL_NAUTILUS1" \
             --maxfeval 750000 \
@@ -308,7 +308,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
   - macOS (arm)
 
         mpirun -n 12 --oversubscribe \
-          python -m mpi4py.futures ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
+          python ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
             --root ./projects/roman_real/ \
             --outroot "EXAMPLE_EMUL_NAUTILUS1" \
             --maxfeval 750000 \
