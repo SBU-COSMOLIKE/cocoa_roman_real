@@ -75,12 +75,16 @@ declare -i j=$(( AID % NY ))
 
 export rootprog="external_modules/code/emulators/emultrf/emultraining"
 
+# Clear inherited inclusion settings before the explicit exclusion below.
+# This list was tested at UofA; adapt interface names for other clusters.
+unset OMPI_MCA_btl_tcp_if_include
+
 "${CONDA_PREFIX}"/bin/mpirun -n ${SLURM_NTASKS} --oversubscribe \
   -x PATH -x LD_LIBRARY_PATH -x PYTHONPATH -x CONDA_PREFIX -x ROOTDIR -x OMP_NUM_THREADS \
   -x OMP_PROC_BIND -x OMP_PLACES -x OMP_DYNAMIC -x CLIK_PLUGIN --mca mpi_yield_when_idle 1 \
   -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH -x CLIK_DATA \
   --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-  --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+  --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
   --rank-by slot --map-by slot:pe=${OMP_NUM_THREADS} \
   ${ROOTDIR}/.local/bin/python ${rootprog}/dataset_generator_lensing.py \
     --root projects/roman_real/  \
