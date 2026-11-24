@@ -158,8 +158,9 @@ PNG/PDF figure in a new directory below `chains/hybrid_emulator_tests/`.
 The colors show the direct prediction error
 `E = (emulator - CAMB).T @ precision @ (emulator - CAMB)` at thresholds
 0.2, 0.5, 1 and 4. Errors from 1 to 4, errors at least 4, and failed
-nonfinite predictions have separate categories. Circles are prior draws;
-diamonds are focused points. The title identifies the project. The amplitude
+nonfinite predictions have separate categories. Marker shape identifies
+the error category; prior points are open and focused points are filled.
+Failed predictions use a cross. The title identifies the project. The amplitude
 axis stops at 3.5, or at a tighter project bound; this cap does not establish
 accuracy throughout the box.
 
