@@ -182,8 +182,11 @@ The Fisher calculation includes Gaussian prior curvature and applies hard
 bounds before marginalizing the plotted pairs. Solid/dashed contours enclose
 68/95 percent of this centered local approximation; they are not measured
 posterior contours. Insufficient bounded-sample convergence fails the test.
-Known inactive columns remain proper bounded directions without artificial
-information from rounding identical predictions.
+For NLA, the quadratic-alignment amplitude and slope and the density-weighting
+amplitude are absent from the prediction at every parameter value. Their
+independent priors integrate to constants, so these parameters are omitted
+from the Fisher integral. Other zero-response directions retain their
+bounds: a vanishing local derivative need not imply global independence.
 
 Large prediction errors and individual nonfinite emulator predictions are
 reported as advisory results. Missing CAMB references, no valid comparisons,
