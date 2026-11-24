@@ -5,8 +5,9 @@ Run from activated Cocoa:
 
 The shared Cocoa test uses the numbered example's cosmological priors,
 restricted to 0.2 < Omega_m < 0.5 and fixed mnu=0.06 eV. Nuisance parameters
-stay at its declared point. Both calculations use plain mead2020 and CAMB
-background distances. This does not change the production nonlinear
+stay at its declared point in the broad prior sweep. Both calculations
+use plain mead2020 and CAMB background distances. This does not change the
+production nonlinear
 prescription or its sampled neutrino-mass prior.
 
 Use EMULATOR_CODE_DIR and EMULATOR_DATA_DIR to select candidate checkouts.
@@ -14,10 +15,12 @@ COCOA_TEST_INTERFACE_DIR optionally selects an independently built native
 interface. Results, including failed points, go under chains/.
 
 The optional --points argument reads explicit named-column parameter points.
-The default Fisher calculation varies the sampled cosmological and nuisance
-parameters for this project's full retained observable. --local-points adds
-an independently specified local sample to the plot. The E5 official test
-runs the driver with --advisory, retaining all accuracy outcomes.
+The default uses EXAMPLE_EVALUATE1.yaml: its cosmic-shear observable and
+fiducial point. The Fisher varies its sampled cosmological and nuisance
+parameters. The shared workflow then evaluates 25 focused points from the
+bounded Fisher distribution and plots both samples. --local-points can
+replace that generated local sample. The E5 official test uses --advisory,
+retaining all accuracy outcomes.
 """
 
 import argparse
@@ -52,7 +55,7 @@ from cocoa_testing import (
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--configuration", default="EXAMPLE_EVALUATE2.yaml")
+    parser.add_argument("--configuration", default="EXAMPLE_EVALUATE1.yaml")
     parser.add_argument("--models", type=int, default=50)
     parser.add_argument("--seed", type=int, default=137)
     parser.add_argument("--limit", type=float, default=1.0)
@@ -71,7 +74,7 @@ if __name__ == "__main__":
                         help="Report error sizes; fail only incomplete calculations")
     parser.add_argument("--local-points", type=Path,
                         default=None,
-                        help="Local comparison points overlaid when Fisher is enabled")
+                        help="Named-column table replacing the generated local comparison points")
     args = parser.parse_args()
     if args.models < 1 or args.limit <= 0:
         parser.error("models and limit must be positive")
@@ -108,29 +111,6 @@ if __name__ == "__main__":
         fisher_sample_power=args.fisher_sample_power,
         points_file=points_file,
         advisory=args.advisory,
+        local_points_file=local_points,
     )
-    # Recompute local points with the same provider and likelihood routes.
-    # Their predictions have their own source/parameter records under local/.
-    if not args.no_fisher and points_file is None and local_points is not None:
-        output = output_dir
-        if output is None:
-            output = (project / "chains/matter_emulator_prior"
-                      / Path(args.configuration).stem / "with_fisher")
-        failed += run_matter_emulator_prior_check(
-            project=project,
-            configuration=args.configuration,
-            get_precision=ci.get_inv_cov_masked,
-            points_file=local_points,
-            output_dir=output / "local",
-            limit=args.limit,
-            advisory=args.advisory,
-        )
-        plot_matter_emulator_fisher(
-            output=output / "fisher",
-            points_file=output / "points.txt",
-            distances_file=output / "distances.txt",
-            project_name=project.name,
-            local_points_file=output / "local/points.txt",
-            local_distances_file=output / "local/distances.txt",
-        )
     sys.exit(1 if failed else 0)
