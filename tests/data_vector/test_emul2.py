@@ -16,7 +16,7 @@ import unittest
 
 
 class TestHybridEmulator(unittest.TestCase):
-    """E5: current hybrid matter emulator, including the Fisher/error figure.
+    """E5: EV1 cosmic shear, 50 prior points, Fisher and 25 focused points.
 
     This uses current example priors, not frozen E1--E4 reference vectors.
     It runs when the candidate code and networks are installed. Broad-prior
@@ -26,7 +26,7 @@ class TestHybridEmulator(unittest.TestCase):
     """
 
     def test_e5_hybrid_emulator_fisher(self):
-        """Compare fifty cosmologies and save the bounded Fisher overlay."""
+        """Use EV1 for 50 prior points, Fisher and 25 focused comparisons."""
         from datetime import datetime, timezone
         from pathlib import Path
         import subprocess
