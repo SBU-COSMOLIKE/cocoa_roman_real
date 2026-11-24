@@ -277,7 +277,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
           -x CLIK_PLUGIN -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH \
            -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
           --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
             cobaya-run ./projects/roman_real/EXAMPLE_EMUL_POLY1.yaml -r
 
   - macOS (arm)
@@ -295,7 +295,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
           -x CLIK_PLUGIN -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH \
            -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
           --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
           python ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS1.py \
             --root ./projects/roman_real/ \
             --outroot "EXAMPLE_EMUL_NAUTILUS1" \
@@ -327,7 +327,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
           -x CLIK_PLUGIN -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH \
            -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
           --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
           python ./projects/roman_real/EXAMPLE_EMUL_EMCEE1.py \
             --root ./projects/roman_real/ \
             --outroot "EXAMPLE_EMUL_EMCEE1" \
@@ -379,7 +379,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
           -x CLIK_PLUGIN -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH \
            -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
           --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+          --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
           python ./projects/roman_real/EXAMPLE_EMUL_MINIMIZE1.py \
             --root ./projects/roman_real/ \
             --outroot "EXAMPLE_EMUL_MIN1" \
@@ -415,7 +415,7 @@ For multi-node runs, see [MPI across nodes](#mpi_across_nodes).
             -x CLIK_PLUGIN -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH \
              -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
             --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-            --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+            --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
             python ./projects/roman_real/EXAMPLE_EMUL_PROFILE1.py \
               --root ./projects/roman_real/ \
               --cov 'chains/EXAMPLE_EMUL_MCMC1.covmat' \
@@ -641,7 +641,7 @@ python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE1.py --check
         -x OMP_NUM_THREADS -x OMP_PROC_BIND -x OMP_PLACES -x OMP_DYNAMIC \
         -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH -x CLIK_DATA \
         -x CLIK_PLUGIN -x CUDA_VISIBLE_DEVICES --mca mpi_yield_when_idle 1 \
-        --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 \
+        --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 \
         --bind-to core:overload-allowed --report-bindings \
         --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
         python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE1.py --nstw 200 --outroot hybrid_min1
@@ -662,7 +662,7 @@ python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE1.py --check
         -x OMP_NUM_THREADS -x OMP_PROC_BIND -x OMP_PLACES -x OMP_DYNAMIC \
         -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH -x CLIK_DATA \
         -x CLIK_PLUGIN -x CUDA_VISIBLE_DEVICES --mca mpi_yield_when_idle 1 \
-        --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 \
+        --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 \
         --bind-to core:overload-allowed --report-bindings \
         --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
         python ./projects/roman_real/EXAMPLE_EMUL2_PROFILE1.py --profile 0 --nstw 200 --numpts 11 --factor 1 --minfile ./projects/roman_real/chains/hybrid_min1.json --outroot hybrid_profile1
@@ -683,7 +683,7 @@ python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE1.py --check
         -x OMP_NUM_THREADS -x OMP_PROC_BIND -x OMP_PLACES -x OMP_DYNAMIC \
         -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH -x CLIK_DATA \
         -x CLIK_PLUGIN -x CUDA_VISIBLE_DEVICES --mca mpi_yield_when_idle 1 \
-        --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 \
+        --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 \
         --bind-to core:overload-allowed --report-bindings \
         --rank-by slot --map-by numa:pe=${OMP_NUM_THREADS} \
         python ./projects/roman_real/EXAMPLE_EMUL2_NAUTILUS1.py --nlive 1000 --neff 10000 --maxfeval 100000 --outroot hybrid_nautilus1
@@ -743,8 +743,11 @@ Basically, we apply standard neural network techniques to generalize the *syren-
 > **Running on more than one node.**
 >
 > 1. **Network interface.** TCP must use an interface routable between compute
->    nodes. A common exclusion list is
->    `--mca btl_tcp_if_exclude lo,docker0,virbr0,ib0`; adapt it to the cluster.
+>    nodes. The tested UofA exclusion list is
+>    `--mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0`; adapt it to the cluster.
+>    On the tested UofA nodes this leaves `enp1s0f1np1` available.
+>    Before launching, run `unset OMPI_MCA_btl_tcp_if_include` so an
+>    inherited inclusion list cannot conflict with the explicit exclusion.
 >    Keep `ib0` if routable IP-over-InfiniBand is the intended network. These
 >    examples exchange parameter vectors and scalar scores, so communication
 >    volume is small; actual scaling still depends on the machine.
@@ -813,7 +816,7 @@ The repository `emulators_code` provides the script `dataset_generator_lensing.p
     -x CLIK_PLUGIN -x OPENBLAS_NUM_THREADS -x MKL_NUM_THREADS -x CLIK_PATH \
      -x CLIK_DATA --mca mpi_yield_when_idle 1 --rank-by slot --map-by slot \
     --mca pml ob1 --mca btl vader,tcp,self --bind-to core:overload-allowed \
-    --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0 --report-bindings \
+    --mca btl_tcp_if_exclude lo,docker0,virbr0,ib0,eno1,enp1s0f0np0 --report-bindings \
     python external_modules/code/emulators/emultrf/emultraining/dataset_generator_lensing.py \
       --root projects/roman_real/  \
       --fileroot emulators/nla_cosmic_shear/ \
