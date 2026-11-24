@@ -92,3 +92,98 @@ python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE1.py --check
 ```bash
 python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE2.py --check
 ```
+
+
+## Matter-spectrum emulator comparison
+
+[compare_emulator_camb.py](compare_emulator_camb.py) compares the candidate
+matter-spectrum emulator with fresh CAMB predictions at 50 reproducible
+cosmologies from `EXAMPLE_EVALUATE2.yaml`. This study reads that live YAML,
+not the frozen regression configuration. It retains the example's nuisance
+point, mask and covariance, restricts $0.2<\Omega_m<0.5$, and fixes
+$\sum m_\nu=0.06$ eV. Both routes use plain `mead2020` and CAMB distances;
+the production YAML is not changed. The selected example has HOD galaxy
+power and halo intrinsic alignments disabled. Its prediction therefore does
+not test the EMUL2 approximation to cold-matter power used by those models.
+The two routes retain their own power-spectrum coverage and extrapolation,
+so the distance includes those differences as well as network error.
+
+**Step :one:**: from activated Cocoa, set `EMULATOR_CODE_DIR` and
+`EMULATOR_DATA_DIR` to the candidate code and model checkouts. The model checkout must contain
+`emulmps/w0wa_mead2020/emulator_mead2020.keras` and its `metadata.joblib`.
+**Step :two:**: set the OpenMP thread count. The driver fixes BLAS to one
+thread before importing numerical libraries.
+
+```bash
+export OMP_NUM_THREADS=4
+```
+
+**Step :three:**: run the comparison.
+
+```bash
+python projects/roman_real/tests/compare_emulator_camb.py
+```
+
+The script uses the existing shared `cocoa_testing.py` machinery. It saves
+points, vectors, failures and the prediction distance
+$\Delta\chi^2=\delta m^T C^{-1}\delta m$ under
+`chains/matter_emulator_prior/EXAMPLE_EVALUATE2/`. A value below 1 passes the
+requested criterion; failures are retained, never replaced by new draws.
+The project prior can extend beyond the emulator training range. Separate
+those extrapolation failures from interpolation errors when interpreting
+the saved points; this test does not narrow the prior to favor the emulator.
+`--models`, `--seed` and `--limit` change the test size, reproducible seed and
+threshold. BLAS stays at one thread. This comparison does not establish
+that posterior importance weights have adequate effective sample size;
+that must be checked on the chain used for reweighting.
+
+### Official hybrid-emulator test and Fisher figure
+
+The E5 test includes the approved accuracy figure whenever the hybrid
+emulator code and networks are installed. No separate plotting flag is
+needed. `EMULATOR_CODE_DIR` and `EMULATOR_DATA_DIR` can select candidate
+checkouts. This is a long numerical test: it evaluates 50 prior cosmologies
+through CAMB and the emulator, and computes Fisher derivatives at two step
+sizes. It keeps BLAS at one thread.
+
+```bash
+python -m pytest projects/roman_real/tests/data_vector/test_emul2.py -k test_e5_hybrid_emulator_fisher
+```
+
+Each invocation saves vectors, parameters, provenance, diagnostics and the
+PNG/PDF figure in a new directory below `chains/hybrid_emulator_tests/`.
+The colors show the direct prediction error
+`E = (emulator - CAMB).T @ precision @ (emulator - CAMB)` at thresholds
+0.2, 0.5 and 1. Circles are prior draws. The title identifies the project;
+the amplitude axis stops at 3.5, or at a tighter project bound. This cap does not establish accuracy throughout the box.
+
+The Fisher calculation uses the selected example's fiducial, sampled
+cosmological and nuisance parameters, and full retained data vector. These
+are project-specific forecasts, not a copy of the DES Y6 shear contour.
+An optional `--local-points` named-column table adds a separate local
+comparison, plotted as diamonds after it is recomputed.
+
+The Fisher calculation includes Gaussian prior curvature and applies hard
+bounds before marginalizing the plotted pairs. Solid/dashed contours enclose
+68/95 percent of this centered local approximation; they are not measured
+posterior contours. Insufficient bounded-sample convergence fails the test.
+Known inactive columns remain proper bounded directions without artificial
+information from rounding identical predictions.
+
+Large prediction errors and individual nonfinite emulator predictions are
+reported as advisory results. Missing CAMB references, no valid comparisons,
+or an incomplete Fisher/plot calculation fail the test. Frozen regression
+references and production theory choices are not changed.
+
+To redraw a completed run, set `EMULATOR_COMPARISON_DIR` to its directory:
+
+```bash
+python projects/roman_real/tests/compare_emulator_camb.py --plot-only "$EMULATOR_COMPARISON_DIR"
+```
+
+Add `--resample-fisher --fisher-sample-power 20` to repeat only the bounded
+integration with more samples. `--no-fisher` is available in the standalone
+driver for a prediction-only diagnostic; E5 does not use it. The driver
+supports `--models`, `--seed`, `--points` and `--output` for explicit studies.
+Its `--advisory` flag is used by E5; without it, accuracy exceedances also
+produce a nonzero exit code.
