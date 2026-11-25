@@ -1,7 +1,12 @@
 """Compare the candidate matter emulator with CAMB at random roman_real cosmologies.
 
-Run from activated Cocoa:
+Run from activated Cocoa (one project at a time):
     python projects/roman_real/tests/compare_emulator_camb.py
+    mpirun -n 2 --bind-to none python -m mpi4py \
+      projects/roman_real/tests/compare_emulator_camb.py --mpi
+
+MPI assigns independent parameter columns or cosmologies to each rank;
+OpenMP accelerates each rank's model evaluations. Keep BLAS at one thread.
 
 The shared Cocoa test uses the numbered example's cosmological priors,
 restricted to 0.2 < Omega_m < 0.5 and fixed mnu=0.06 eV. Nuisance parameters
@@ -54,6 +59,35 @@ from cocoa_testing import (
 )
 
 
+def fisher_calibration_columns(model, likelihood, center, steps, mpi_comm=None):
+    """Read the prepared shear mean and differentiate its (1+m) factors.
+
+    The shared Fisher driver calls this at the fiducial state. Reading the
+    native vector reuses that state and makes no CAMB call. Source-bin and
+    angular-bin counts come from the initialized project likelihood.
+    Other probes and additive baryon PCs retain numerical derivatives.
+    """
+    if (likelihood.probe != "xi" or likelihood.use_baryon_pca
+            or likelihood.create_baryon_pca):
+        return {}
+    from cosmolike_notebook_utils.fisher import shear_calibration_derivatives
+
+    # Canonical ordering matters: to_input(dict) changes Cobaya's ordering.
+    inputs = model.parameterization.to_input(
+        sampled_params_values=model.parameterization.check_sampled(center))
+    names = ["roman_M" + str(i + 1) for i in range(likelihood.source_ntomo)]
+    columns = shear_calibration_derivatives(
+        vector=ci.compute_data_vector_masked(),
+        calibration=[inputs[name] for name in names],
+        nangular=likelihood.ntheta,
+        real_space=True,
+    )
+    # Exact algebra has the same result at h and h/2; all other columns
+    # still use the shared numerical derivative and convergence check.
+    return {name: (columns[:, i], columns[:, i])
+            for i, name in enumerate(names) if name in steps}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--configuration", default="EXAMPLE_EVALUATE1.yaml")
@@ -76,11 +110,24 @@ if __name__ == "__main__":
     parser.add_argument("--local-points", type=Path,
                         default=None,
                         help="Named-column table replacing the generated local comparison points")
+    parser.add_argument("--mpi", action="store_true",
+                        help="Distribute points and Fisher columns across MPI ranks")
     args = parser.parse_args()
+    # Each rank owns its Cobaya model and native state. The shared test
+    # distributes different jobs and lets rank zero write combined results.
+    # Cobaya's own MPI remains disabled; this driver owns the work split.
+    mpi_comm = None
+    if args.mpi:
+        from mpi4py import MPI
+        mpi_comm = MPI.COMM_WORLD
+    elif int(os.environ.get("OMPI_COMM_WORLD_SIZE", "1")) > 1:
+        parser.error("Use --mpi with mpirun to distribute work without duplicate writes.")
     if args.models < 1 or args.limit <= 0:
         parser.error("models and limit must be positive")
     points_file = args.points.resolve() if args.points is not None else None
     if args.plot_only is not None:
+        if mpi_comm is not None and mpi_comm.Get_rank() != 0:
+            sys.exit(0)
         output = args.plot_only.resolve()
         if args.resample_fisher:
             sample_matter_emulator_fisher(
@@ -102,6 +149,7 @@ if __name__ == "__main__":
     os.chdir(root)
     failed = run_matter_emulator_prior_check(
         project=project,
+        mpi_comm=mpi_comm,
         configuration=args.configuration,
         get_precision=ci.get_inv_cov_masked,
         n_models=args.models,
@@ -113,5 +161,6 @@ if __name__ == "__main__":
         points_file=points_file,
         advisory=args.advisory,
         local_points_file=local_points,
+        derivative_provider=fisher_calibration_columns,
     )
     sys.exit(1 if failed else 0)
