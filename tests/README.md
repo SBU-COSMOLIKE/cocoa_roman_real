@@ -137,7 +137,7 @@ threshold. BLAS stays at one thread. This comparison does not establish
 that posterior importance weights have adequate effective sample size;
 that must be checked on the chain used for reweighting.
 
-### Official hybrid-emulator accuracy test
+### Hybrid-emulator accuracy test
 
 <!-- hybrid-emulator figure -->
 The CAMB reference uses the saved benchmark's standard numerical controls and one
