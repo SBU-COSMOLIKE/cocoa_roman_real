@@ -641,8 +641,8 @@ The five-point stencil uses a fixed 2.5% relative step, shortened near prior
 bounds. A zero-centered parameter uses its specified absolute step or one
 tenth of its proposal width. The fourth differences rank the numerical
 sensitivity of the columns. Both higher settings reevaluate the same selected
-columns and use the same full ordinary Fisher weights. The table scales the
-ordinary FoM by the estimated change at each setting. Contributions from
+columns and use the same full ordinary Fisher weights. Each estimate scales
+the ordinary FoM by the measured numerical correction. Contributions from
 omitted columns and correlated numerical errors remain unknown.
 
 | Case | Setting | CosmoLike boost / integration | CAMB boost / k_per_logint | Approx. FoM | Change from previous |
@@ -650,12 +650,14 @@ omitted columns and correlated numerical errors remain unknown.
 | Cosmic shear | Ordinary | 1.0 / 0 | 1.05 / 15 | 5.3147102 | — |
 | Cosmic shear | Refined | 2.0 / 1 | 2.0 / 50 | 5.3135878 | -0.0211177% |
 | Cosmic shear | Confirmation | 3.0 / 2 | 3.0 / 75 | 5.3134481 | -0.0026302% |
-
-Results are pending for 3×2pt.
+| 3×2pt | Ordinary | 1.0 / 0 | 1.1 / 15 | 39.49413 | — |
+| 3×2pt | Refined | 2.0 / 1 | 2.0 / 50 | 39.479663 | -0.0366311% |
+| 3×2pt | Confirmation | 3.0 / 2 | 3.0 / 75 | 39.476625 | -0.00769281% |
 
 **Selected columns in both higher settings**
 
 - Cosmic shear — `roman_DZ_S2`, `H0`, `omegam`, `roman_DZ_S3`, `roman_DZ_S5`, `roman_DZ_S4`, `w`, `roman_DZ_S6`, `w0pwa`.
+- 3×2pt — `roman_DZ_S1`, `roman_DZ_S2`, `roman_DZ_S3`, `roman_DZ_S6`, `roman_DZ_S7`, `w`, `roman_DZ_S5`, `roman_DZ_S8`, `w0pwa`.
 
 Run from activated Cocoa with two MPI ranks, four OpenMP threads per rank
 and one BLAS thread.
