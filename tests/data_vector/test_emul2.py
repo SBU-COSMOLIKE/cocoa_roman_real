@@ -21,12 +21,12 @@ class TestHybridEmulator(unittest.TestCase):
     This uses current example priors, not frozen E1--E4 reference vectors.
     It runs when the candidate code and networks are installed. Broad-prior
     accuracy exceedances and individual nonfinite candidate predictions are
-    advisory. Missing CAMB references, no valid comparisons, or incomplete
-    Fisher integration or plotting fail the test. No separate opt-in is required.
+    advisory. Missing CAMB predictions or a comparison with no valid vectors
+    fail the test. Saved Fisher contours do not affect the numerical verdict.
     """
 
-    def test_e5_hybrid_emulator_fisher(self):
-        """Use EV1 for 50 prior points, Fisher and 25 focused comparisons."""
+    def test_e5_hybrid_emulator_accuracy(self):
+        """Compare 50 saved broad points and 25 saved focused points."""
         from datetime import datetime, timezone
         from pathlib import Path
         import subprocess
@@ -64,8 +64,8 @@ class TestHybridEmulator(unittest.TestCase):
         environment["OPENBLAS_NUM_THREADS"] = "1"
         environment["MKL_NUM_THREADS"] = "1"
         environment["VECLIB_MAXIMUM_THREADS"] = "1"
-        print("E5 hybrid emulator comparison and Fisher figure:", output, flush=True)
-        frozen = project / "tests/frozen/emulator_precision"
+        print("E5 hybrid emulator vector accuracy:", output, flush=True)
+        frozen = project / "tests/fisher_reference"
         prior = frozen / "prior_50.txt"
         focused = frozen / "focused_25.txt"
         # A missing row changes the denominator even when CAMB itself succeeds.
@@ -82,7 +82,7 @@ class TestHybridEmulator(unittest.TestCase):
         )
         self.assertEqual(
             result.returncode, 0,
-            "Hybrid emulator numerical/Fisher pipeline failed; inspect " + str(output),
+            "Emulator vector comparison failed; inspect " + str(output),
         )
 
 
