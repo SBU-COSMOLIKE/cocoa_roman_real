@@ -1,39 +1,19 @@
-"""Unit test 5: the notebook-style direct cosmolike interface.
+"""Exercise the public Roman real notebook route at the frozen fiducial.
 
-The EXAMPLE_EVALUATE1.ipynb notebook drives cosmolike without cobaya:
-it runs CAMB itself, hands the resulting power spectra and distances
-to the compiled interface through set_cosmology, and calls
-compute_data_vector_masked directly (the functions interface.cpp binds
-from the cosmo2D wrapper layer). Tests 1-4 evaluate through the cobaya
-likelihood, so they never touch that call path, and an interface
-change can break every notebook while the yaml pipeline keeps passing.
-Two failures of that kind are the targets: a binding whose required
-arguments change (init_IA requires ia_code as its third argument), and
-the grid-monotonicity check of the C layer, which aborts the whole
-process (in Jupyter, a dead kernel) when it receives a chi(z) grid with
-duplicated nodes. The test here:
+EXAMPLE_EVALUATE1 imports cosmolike_roman_real_notebook_wrappers. This
+regression calls that same module's configure, init_cosmolike and get_chi2
+functions, so a broken wrapper cannot be hidden by a private reimplementation
+of its CAMB or native-interface calls. The frozen dataset and nuisance point
+keep the comparison reproducible. Its chi-squared is checked against the
+frozen Cobaya reference within the existing regression tolerance of 0.2.
 
-  5. rebuilds the notebook's call sequence against the frozen example1
-     dataset at the frozen fiducial point and checks the chi2 stays
-     within CHI2_TOLERANCE (0.2) of the frozen cobaya reference.
+CAMB and interpolation settings differ slightly between the two public
+routes, so this tolerance is a regression check, not a new convergence claim.
+The worker also checks the prepared vector is finite, repeatable and scored
+consistently. It runs in its own subprocess to isolate native global state.
 
-The two pipelines are close but deliberately not identical: the
-notebook computes its own CAMB run and interpolation grids while the
-cobaya prototype uses its internal ones, so the chi2 values differ at
-the 0.01 level. That sits far inside the 0.2 tolerance and far from
-the failure modes this test exists to catch (a TypeError from a
-changed binding, a process abort, or an order-unity chi2 shift).
-
-Like every physics evaluation in this suite, the computation runs in
-a worker subprocess: initializing this configuration next to another
-of different dimensions would abort the process (see cocoa_test_utils
-for the full explanation), and an abort inside a worker leaves a
-readable error instead of killing pytest.
-
-To run (from the Cocoa/ folder, cocoa environment active,
-start_cocoa.sh sourced):
-
-    python -m pytest ./projects/roman_real/tests/data_vector/test_notebook_interface.py
+Run from activated Cocoa:
+    python -m pytest projects/roman_real/tests/data_vector/test_notebook_interface.py
 """
 
 import json
@@ -78,256 +58,77 @@ _WORKER_DRIVER = (
 )
 
 
-def _get_camb_cosmology(point, camb_args, kmax_boltzmann):
-    """Run CAMB the way the notebook does and package the cosmology.
-
-    This reproduces the notebook's get_camb_cosmology at its default
-    accuracy (boost 1, so the dyadic factor m is 1): the interpolation
-    grids, the CAMB configuration, and the unit conventions (cosmolike
-    wants k in h/Mpc, P(k) in (Mpc/h)^3, distances in Mpc/h) all
-    follow the notebook cell, with the numerical settings taken from
-    the frozen configuration instead of the notebook's hardcoded
-    values so the comparison targets exactly what the yaml ran. The
-    shared cosmolike_notebook_utils.get_camb_cosmology cannot stand in
-    for this copy: it scales kmax, k_per_logint and
-    lens_potential_accuracy with its own CAMB boost, while the frozen
-    extra_args must reach CAMB unchanged.
-
-    Arguments:
-      point     = the frozen {parameter name: value} dictionary; the
-                  cosmology (As_1e9, ns, H0, omegab, omegam, mnu, w,
-                  w0pwa) is read from it.
-      camb_args = the frozen theory camb extra_args dictionary
-                  (halofit_version, AccuracyBoost, k_per_logint,
-                  kmax, lens_potential_accuracy, ...).
-      kmax_boltzmann = the frozen likelihood kmax_boltzmann; paired
-                  with camb_args["kmax"], the one physical cutoff.
-
-    Returns:
-      (log10k_interp_2D, z_interp_2D, lnPL, lnPNL, G_growth, z_growth,
-       z_interp_1D, chi), the arrays set_cosmology consumes as the
-      keywords log10k_2D, z_2D, lnP_linear, lnP_nonlinear, G, z_G, z_1D
-      and chi. G_growth lives on z_growth (the z_interp_1D nodes up to
-      z_interp_2D[-1]), not on z_interp_2D.
-    """
-    import camb
-    from camb import model
-    import numpy as np
-
-    h = point["H0"] / 100.0
-    # neutrino correction as in the notebook: omegach2 subtracts the
-    # massive-neutrino contribution from the cold component. ** is
-    # python's power operator (h**2 = h squared); ^ would be XOR
-    omegabh2 = point["omegab"] * h**2
-    omegach2 = (point["omegam"] - point["omegab"]) * h**2 \
-        - (point["mnu"] * (3.046 / 3)**0.75) / 94.0708
-    # .get(key, fallback) returns the fallback when the frozen camb
-    # block carries no kmax of its own
-    kmax = float(camb_args.get("kmax", kmax_boltzmann))
-
-    # chi(z) support grid: interior segments drop their endpoint
-    # (cosmolike aborts on non-monotone grids), same construction as
-    # the notebook and likelihood/_cosmolike_prototype_base.py.
-    # np.linspace(a, b, n) is n evenly spaced values from a to b;
-    # endpoint=False leaves the upper edge out, so the next segment
-    # can start there without duplicating a node
-    tmp = int(1000 + 250 * 1.0)
-    z_interp_1D = np.concatenate(
-        (np.linspace(0.0, 3.0, max(100, int(0.80 * tmp)), endpoint=False),
-         np.linspace(3.0, 50.1, max(100, int(0.40 * tmp)), endpoint=False),
-         np.linspace(1070, 1100, max(50, int(0.10 * tmp)))), axis=0)
-
-    # 2D table grids at boost 1: the m = 1 member of the nested dyadic
-    # family (105 + 35 = 140 z nodes), and the 1500-node log10k grid
-    z_interp_2D = np.concatenate(
-        (np.linspace(0, 3.0, 105, endpoint=False),
-         np.linspace(3.0, 49.99, 35)), axis=0)
-    log10k_interp_2D = np.linspace(-4.99, 2.0, int(1250 + 250 * 1.0))
-
-    # every .get(name, default) below falls back to the notebook's
-    # default when the frozen extra_args leave that key out
-    pars = camb.set_params(
-        H0=point["H0"],
-        ombh2=omegabh2,
-        omch2=omegach2,
-        mnu=point["mnu"],
-        omk=0,
-        tau=0.06,
-        As=1e-9 * point["As_1e9"],
-        ns=point["ns"],
-        halofit_version=camb_args.get("halofit_version", "takahashi"),
-        lmax=10,
-        AccuracyBoost=float(camb_args.get("AccuracyBoost", 1.0)),
-        lens_potential_accuracy=float(
-            camb_args.get("lens_potential_accuracy", 1.0)),
-        num_massive_neutrinos=1,
-        nnu=3.046,
-        accurate_massive_neutrino_transfers=bool(
-            camb_args.get("accurate_massive_neutrino_transfers", False)),
-        k_per_logint=int(camb_args.get("k_per_logint", 10)),
-        kmax=kmax)
-    pars.set_dark_energy(w=point["w"], wa=point["w0pwa"] - point["w"],
-                         dark_energy_model="ppf")
-    pars.NonLinear = model.NonLinear_both
-    # the z list handed to CAMB stays at the 140-node grid (CAMB caps
-    # requested transfer redshifts at 256; at boost 1 the table grid
-    # and the request grid coincide anyway)
-    pars.set_matter_power(redshifts=z_interp_2D, kmax=kmax, silent=True)
-
-    results = camb.get_results(pars)
-    PKL = results.get_matter_power_interpolator(
-        var1="delta_tot", var2="delta_tot", nonlinear=False,
-        extrap_kmax=2.5e2, hubble_units=False, k_hunit=False)
-    PKNL = results.get_matter_power_interpolator(
-        var1="delta_tot", var2="delta_tot", nonlinear=True,
-        extrap_kmax=2.5e2, hubble_units=False, k_hunit=False)
-
-    # flatten(order='F') serializes the (z, k) tables the way the
-    # interface expects; the log(h^3) converts P(k) to (Mpc/h)^3
-    lnPL = np.log(PKL.P(z_interp_2D, np.power(10.0, log10k_interp_2D))
-                  .flatten(order="F")) + np.log(h**3)
-    # the frozen configuration runs non_linear_emul = 2: the nonlinear
-    # spectrum is CAMB's halofit, no emulator boost on top
-    lnPNL = np.log(PKNL.P(z_interp_2D, np.power(10.0, log10k_interp_2D))
-                   .flatten(order="F")) + np.log(h**3)
-    # log10k shifts to h/Mpc units after the tables were evaluated
-    log10k_interp_2D = log10k_interp_2D - np.log10(h)
-
-    # growth factor G(z) = D(z) (1 + z) from the linear P(k) at one
-    # sub-horizon scale (k = 0.05/Mpc, the likelihood's growth_k
-    # default), where P grows as D^2, sampled on the
-    # dense 1D grid cut at the last 2D node, exactly as
-    # cosmolike_notebook_utils.get_camb_cosmology (the notebook path)
-    # and the likelihood build it: cosmolike reads G linearly in z,
-    # and on the 2D grid that read misses D by up to 9e-5. Indexing
-    # with the boolean array z_interp_1D <= z_interp_2D[-1] keeps the
-    # nodes where it is True
-    z_growth = z_interp_1D[z_interp_1D <= z_interp_2D[-1]]
-    power_ratio = PKL.P(z_growth, 0.05) / PKL.P(0, 0.05)
-    G_growth = np.sqrt(power_ratio) * (1 + z_growth)
-    # divided by G at the last 2D node (z = 49.99), as the notebook
-    # path and the likelihood do; cosmolike divides by G(z = 0) on its
-    # side, so D(z = 0) = 1 whatever this constant is
-    z_norm = z_interp_2D[-1]
-    power_ratio_norm = PKL.P(z_norm, 0.05) / PKL.P(0, 0.05)
-    G_growth = G_growth / (np.sqrt(power_ratio_norm) * (1 + z_norm))
-
-    chi = results.comoving_radial_distance(z_interp_1D) * h
-
-    return (log10k_interp_2D, z_interp_2D, lnPL, lnPNL, G_growth, z_growth,
-            z_interp_1D, chi)
-
-
 def _notebook_chi2_impl():
-    """Worker-side body: the notebook call sequence, start to finish.
+    """Exercise the same public wrappers imported by EXAMPLE_EVALUATE1.
 
-    Mirrors the notebook's setup cell followed by its get_chi2: dataset
-    descriptor via getdist's IniFile, the init_* sequence on the
-    compiled interface, one CAMB run, set_cosmology plus the nuisance
-    setters, then the masked data vector and its chi2. Every numeric
-    setting (lmax, IA choices, ggl_exclude, CAMB accuracy) comes from
-    the frozen example1 configuration, and the dataset comes from the
-    frozen data copy, so the number is comparable to the frozen cobaya
-    reference and the live project can change freely.
-
-    Returns:
-      chi2 = -2 ln L against the frozen shipped data vector, float.
+    The frozen dataset fixes the observed vector, mask and covariance.
+    Its fiducial parameters and source conventions are passed explicitly;
+    the actual notebook wrapper owns CAMB, native initialization and units.
+    This test must fail when that public route breaks, even if the Cobaya
+    likelihood remains usable. It does not maintain a second CAMB producer.
     """
-    from getdist import IniFile
     import numpy as np
-
     import cosmolike_roman_real_interface as ci
+    import cosmolike_roman_real_notebook_wrappers as nw
 
-    # load_frozen_info resolves the likelihood path to the absolute
-    # frozen/data location and returns the complete configuration
     info = u.load_frozen_info(EXAMPLE, tatt=False)
     like = info["likelihood"]["roman_real.cosmic_shear"]
     camb_args = info["theory"]["camb"]["extra_args"]
     point = u.load_frozen_point(EXAMPLE)
+    # The wrapper's CAMB prescription is Takahashi with a fixed neutrino
+    # mass. Fail explicitly if a future frozen fixture changes that model.
+    if camb_args["halofit_version"] != "takahashi":
+        raise AssertionError("The notebook comparison requires matched Takahashi power.")
+    if point["mnu"] != nw.mnu:
+        raise AssertionError("The notebook and frozen neutrino masses differ.")
 
-    dataset = os.path.join(like["path"], like["data_file"])
-    print(f"    dataset: {dataset}", flush=True)
-    # normpath collapses ./ and ../ segments in the path text
-    ini = IniFile(os.path.normpath(dataset))
-
-    # --- the notebook's init sequence (EXAMPLE_EVALUATE1.ipynb) ---
-    ci.initial_setup()
-    # the FAST-PT internal boost goes in before init_accuracy_boost, as
-    # the likelihood orders them: init_accuracy_boost multiplies it by
-    # the value it finds at its first call in the process, and
-    # initial_setup has just reset it to the C default 0.5. The value is
-    # the likelihood's (its yaml default, 1.0, unless the example sets it)
-    ci.init_fpt_internal_boost(float(like.get("internal_accuracyboost", 1.0)))
-    ci.init_ggl_exclude(np.array(like["ggl_exclude"]).flatten())
-    ci.init_cosmo_runmode(is_linear=False)
-    ci.init_redshift_distributions_from_files(
-        lens_multihisto_file=ini.relativeFileName("nz_lens_file"),
-        lens_ntomo=int(ini.int("lens_ntomo")),
-        source_multihisto_file=ini.relativeFileName("nz_source_file"),
-        source_ntomo=int(ini.int("source_ntomo")))
-    # NLA runs the C FASTPT branch: the same fallback the likelihood
-    # prototype applies when IA_model = 0
-    ia_code = int(like["IA_code"])
-    if int(like["IA_model"]) == 0 and ia_code == 1:
-        ia_code = 0
-    ci.init_IA(ia_model=int(like["IA_model"]),
-               ia_redshift_evolution=int(like["IA_redshift_evolution"]),
-               ia_code=ia_code)
-    ci.init_probes(possible_probes="xi")
-    ci.init_binning(int(ini.int("n_theta")),
-                    ini.float("theta_min_arcmin"),
-                    ini.float("theta_max_arcmin"))
-    ci.init_data_real(ini.relativeFileName("cov_file"),
-                      ini.relativeFileName("mask_file"),
-                      ini.relativeFileName("data_file"))
-    ci.init_ntable_lmax(int(like["lmax"]))
-    ci.init_accuracy_boost(float(like["accuracyboost"]),
-                           int(like["integration_accuracy"]))
-
-    # --- one CAMB run at the frozen point, notebook grids ---
-    print("    running CAMB (notebook-style grids)...", flush=True)
-    # the returned 8-tuple unpacks by position into the named grids;
-    # the backslash continues the statement on the next line
-    (log10k_2D, z_2D, lnPL, lnPNL, G_growth, z_growth, z_1D, chi) = \
-        _get_camb_cosmology(point, camb_args, like["kmax_boltzmann"])
-
-    # the growth table has its own z grid (z_growth, the dense 1D grid
-    # cut at the last z_2D node), handed over as z_G, as the notebook
-    # wrappers and the likelihood do
-    ci.set_cosmology(omegam=point["omegam"],
-                     H0=point["H0"],
-                     log10k_2D=log10k_2D,
-                     z_2D=z_2D,
-                     lnP_linear=lnPL,
-                     lnP_nonlinear=lnPNL,
-                     G=G_growth,
-                     z_G=z_growth,
-                     z_1D=z_1D,
-                     chi=chi)
-
-    # nuisance vectors ordered by tomographic bin, zero-padded to the
-    # 8 source bins exactly as the notebook passes them. The
-    # comprehension collects roman_M1..roman_M8 in bin order:
-    # range(1, 9) runs from 1 and stops before 9
-    ci.set_nuisance_shear_calib(
-        M=[point[f"roman_M{i}"] for i in range(1, 9)])
-    ci.set_nuisance_shear_photoz(
-        bias=[point[f"roman_DZ_S{i}"] for i in range(1, 9)])
-    # A2/BTA come from the frozen point too; under NLA (IA_model = 0)
-    # the C code ignores them, matching the cobaya reference run
-    ci.set_nuisance_ia(
+    nw.configure(
+        path=like["path"],
+        data_file=like["data_file"],
+        lmax=like["lmax"],
+        ggl_exclude=like["ggl_exclude"],
+        IA_model=0,
+        IA_code=0,
+        IA_redshift_evolution=like["IA_redshift_evolution"],
+        internal_accuracyboost=like["internal_accuracyboost"],
+        photoz_interpolation_type=like["photoz_interpolation_type"],
+        photoz_zmid_convention=like["photoz_zmid_convention"],
+        nonlimber_zmax=like["nonlimber_zmax"],
+        non_linear_emul=2,
+    )
+    nw.init_cosmolike(CLprobe="xi", with_data=True)
+    # AccuracyBoost=1 keeps the wrapper's sampling multiplier separate
+    # from the explicitly requested CAMB and native accuracy controls.
+    chi2 = nw.get_chi2(
+        omegam=point["omegam"],
+        omegab=point["omegab"],
+        H0=point["H0"],
+        ns=point["ns"],
+        As_1e9=point["As_1e9"],
+        w=point["w"],
+        w0pwa=point["w0pwa"],
         A1=[point["roman_A1_1"], point["roman_A1_2"], 0, 0, 0, 0, 0, 0],
         A2=[point["roman_A2_1"], point["roman_A2_2"], 0, 0, 0, 0, 0, 0],
-        B_TA=[point["roman_BTA_1"], 0, 0, 0, 0, 0, 0, 0])
-
-    datavector = np.array(ci.compute_data_vector_masked())
-    # float() converts the returned value to a plain python float;
-    # :.6f below prints it with a fixed six decimals
-    chi2 = float(ci.compute_chi2(datavector))
-    print(f"    direct-interface chi2 = {chi2:.6f}", flush=True)
-    if not np.isfinite(chi2):
-        raise AssertionError("non-finite chi2 from the direct interface")
-    return chi2
+        BTA=[point["roman_BTA_1"], 0, 0, 0, 0, 0, 0, 0],
+        shear_photoz_bias=[point[f"roman_DZ_S{i}"] for i in range(1, 9)],
+        M=[point[f"roman_M{i}"] for i in range(1, 9)],
+        AccuracyBoost=1.0,
+        CAMBAccuracyBoost=camb_args["AccuracyBoost"],
+        CLAccuracyBoost=like["accuracyboost"],
+        CLIntegrationAccuracy=like["integration_accuracy"],
+        kmax=like["kmax_boltzmann"],
+        k_per_logint=camb_args["k_per_logint"],
+        non_linear_emul=2,
+    )
+    vector = np.asarray(ci.compute_data_vector_masked()).copy()
+    if not np.isfinite(vector).all() or not np.isfinite(chi2):
+        raise AssertionError("The notebook wrapper produced nonfinite results.")
+    # Re-reading the already prepared vector must preserve its entries;
+    # re-scoring it checks that the public wrapper returns this same state.
+    np.testing.assert_array_equal(vector, ci.compute_data_vector_masked())
+    np.testing.assert_allclose(chi2, ci.compute_chi2(vector), rtol=0, atol=1.e-12)
+    print(f"    notebook-wrapper chi2 = {chi2:.6f}", flush=True)
+    return float(chi2)
 
 
 def _worker(result_path):
@@ -424,16 +225,16 @@ class TestNotebookInterface(unittest.TestCase):
         cls.reference = u.load_reference()
 
     def test_5_notebook_interface_chi2(self):
-        """The direct (notebook-style) call path agrees with cobaya."""
+        """The public notebook-wrapper call path agrees with Cobaya."""
         chi2 = notebook_interface_chi2()
         ref = self.reference[f"{EXAMPLE}_nla"]
         u.report_chi2_test(
-            5, "example1 notebook-style direct interface (cosmic shear, "
+            5, "example1 public notebook wrappers (cosmic shear, "
                "NLA) chi2 vs frozen cobaya reference",
             chi2, ref, u.CHI2_TOLERANCE)
         self.assertLess(
             abs(chi2 - ref), u.CHI2_TOLERANCE,
-            msg=f"direct-interface chi2 = {chi2:.6f} vs frozen cobaya "
+            msg=f"notebook-wrapper chi2 = {chi2:.6f} vs frozen cobaya "
                 f"reference {ref:.6f} (|delta| >= {u.CHI2_TOLERANCE}); "
                 "an interface-binding or grid-validation change likely "
                 "broke the notebook call path")

@@ -79,6 +79,48 @@ TestAccuracyAdvisory = u.accuracy_suite(
     ),
     knob_scan="example2")
 
+
+class TestAccuracyBoundaries(unittest.TestCase):
+    """Check native settings before any costly cosmology evaluation.
+
+    Signed levels are historical Cocoa settings: -1 is used by the
+    emulated-vector route, and the cross-bin rule keeps refining above 7.
+    Each trial imports the actual project binary in a separate process;
+    a native diagnostic exits that process without killing pytest.
+    """
+
+    def test_integration_levels(self):
+        """Accept established levels and reject values beyond the rule cap."""
+        from pathlib import Path
+        import subprocess
+
+        interface = Path(__file__).resolve().parents[2] / "interface"
+        code = (
+            "import sys\n"
+            "sys.path.insert(0, sys.argv[1])\n"
+            "import cosmolike_roman_real_interface as ci\n"
+            "ci.initial_setup()\n"
+            "ci.init_accuracy_boost(accuracy_boost=1.0, "
+            "integration_accuracy=int(sys.argv[2]))\n"
+        )
+        for level in (-1, 0, 10, 62, 126, -126, 127, -127):
+            with self.subTest(level=level):
+                result = subprocess.run(
+                    args=[sys.executable, "-c", code, str(interface), str(level)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if abs(level) <= 126:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(
+                        "must be in [-126, 126]",
+                        result.stdout + result.stderr,
+                    )
+
+
 # __name__ is "__main__" only when this file runs directly as a
 # script; pytest imports the module instead, so this block stays
 # idle under pytest
