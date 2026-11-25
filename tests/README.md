@@ -172,9 +172,11 @@ DES Y6 contour. The synthetic vector was built with the example's theory
 choice; matching both test routes to plain `mead2020` need not give zero
 chi-squared against that stored vector.
 
-The focused sample is computed automatically, with its sampled nuisance
-parameters as well as cosmology varied. Its predictions and errors are
-saved under `local/`; they are not inferred from the Fisher approximation.
+The focused cosmological points are drawn from the bounded Fisher after
+marginalizing its nuisance parameters. Both accuracy samples keep nuisance
+inputs fixed at the example values. Their predictions and errors are saved
+under `local/` for the focused sample; the errors are evaluated through
+both theory routes, not inferred from the Fisher approximation.
 An optional `--local-points` named-column table replaces the generated
 focused sample and is recomputed through both theory routes.
 

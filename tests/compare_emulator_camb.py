@@ -17,8 +17,9 @@ interface. Results, including failed points, go under chains/.
 The optional --points argument reads explicit named-column parameter points.
 The default uses EXAMPLE_EVALUATE1.yaml: its cosmic-shear observable and
 fiducial point. The Fisher varies its sampled cosmological and nuisance
-parameters. The shared workflow then evaluates 25 focused points from the
-bounded Fisher distribution and plots both samples. --local-points can
+parameters. The shared workflow then draws 25 cosmological points from
+their bounded Fisher marginal, evaluates them with nuisance inputs fixed
+at the example values, and plots both samples. --local-points can
 replace that generated local sample. The E5 official test uses --advisory,
 retaining all accuracy outcomes.
 """
