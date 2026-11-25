@@ -97,10 +97,10 @@ python ./projects/roman_real/EXAMPLE_EMUL2_MINIMIZE2.py --check
 ## Matter-spectrum emulator comparison
 
 [compare_emulator_camb.py](compare_emulator_camb.py) compares the candidate
-matter-spectrum emulator with fresh CAMB predictions at 50 reproducible
-cosmologies from `EXAMPLE_EVALUATE1.yaml`. This study reads that live YAML,
-not the frozen regression configuration. It retains the example's nuisance
-point, mask and covariance, restricts $0.2<\Omega_m<0.5$, and fixes
+matter-spectrum emulator with fresh CAMB predictions at the saved 50
+broad and 25 focused cosmologies. Its fixed [benchmark](fisher_reference/)
+supplies the nuisance point, mask and covariance, enforces $0.2<\Omega_m<0.5$,
+and fixes
 $\sum m_\nu=0.06$ eV. Both routes use plain `mead2020` and CAMB distances;
 the production YAML is not changed. The selected example has HOD galaxy
 power and halo intrinsic alignments disabled. Its prediction therefore does
@@ -127,7 +127,7 @@ python projects/roman_real/tests/compare_emulator_camb.py
 The script uses the existing shared `cocoa_testing.py` machinery. It saves
 points, vectors, failures and the prediction distance
 $\Delta\chi^2=\delta m^T C^{-1}\delta m$ under
-`chains/matter_emulator_prior/EXAMPLE_EVALUATE1/with_fisher/`. A value below 1 passes the
+a timestamped directory below `chains/matter_emulator_points/`. A value below 1 passes the
 requested criterion; failures are retained, never replaced by new draws.
 The project prior can extend beyond the emulator training range. Separate
 those extrapolation failures from interpolation errors when interpreting
