@@ -542,9 +542,6 @@ that posterior importance weights have adequate effective sample size;
 that must be checked on the chain used for reweighting.
 
 <!-- hybrid-emulator figure -->
-The figures below show the earlier benchmark. Runs with $w_0+w_a<-0.4$
-are pending.
-
 **Emulator training range**
 
 | Parameter | Range |
@@ -553,7 +550,13 @@ are pending.
 | Primordial amplitude | $1<10^9 A_s\le 3.5$ |
 | Hubble constant | $H_0<85$ km/s/Mpc |
 | Present dark-energy equation of state in CPL | $w_0>-2$ |
+| Early-time dark-energy equation of state | $w_0+w_a<-0.4$ |
 | Physical baryon density | $\Omega_b(H_0/100)^2<0.035$ |
+
+The revised tables retain cosmologies that already satisfy the cap and
+replace the excluded rows deterministically. The focused replacements
+use the saved Fisher matrix integrated over the capped priors. The run reuses saved
+predictions where the point, inputs and settings match exactly.
 
 The fixed tables intersect this range with the benchmark priors. CAMB uses
 one massive species with $\sum m_\nu=0.06$ eV. Both model routes evaluate
@@ -569,7 +572,7 @@ Counts use the thresholds 0.2, 0.5, 1 and 4 in that order.
 
 | Case | Broad below threshold (50) | Focused below threshold (25) | Nonfinite broad/focused |
 | --- | --- | --- | --- |
-| Roman real | 17/23/26/32 | 17/20/21/22 | 0/0 |
+| Roman real | 18/25/28/34 | 20/23/24/25 | 0/0 |
 
 <!-- end hybrid-emulator figure -->
 
@@ -590,7 +593,7 @@ Counts use the thresholds 0.2, 0.5, 1 and 4 in that order.
 
 | Probe | Broad below threshold (50) | Focused below threshold (25) | Nonfinite broad/focused |
 | --- | --- | --- | --- |
-| 3×2pt | 4/8/13/25 | 1/11/20/24 | 0/0 |
+| 3×2pt | 6/10/15/27 | 1/10/20/24 | 0/0 |
 
 Add `--probe 3x2pt` to the standalone comparison command below.
 
