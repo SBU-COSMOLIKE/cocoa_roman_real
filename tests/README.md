@@ -145,10 +145,12 @@ The numbered example supplies any tighter priors.
 The open symbols show 50 broad draws.
 The filled symbols show 25 draws near the example fiducial.
 The solid and dashed curves enclose the 68% and 95% regions of the nuisance-marginalized Fisher forecast.
+The official test reads the model settings from [the fixed parameter tables](frozen/emulator_precision/). It evaluates CAMB and the emulator on the same ordered rows each time.
+The initial Fisher selected the focused coordinates; recomputing the contours leaves those coordinates fixed.
 
 ![Roman real hybrid-emulator error against CAMB](figures/emulator_precision.png)
 
-After a later run passes the Fisher convergence check and completes the focused sample,
+After a later run completes the focused sample,
 copy its `fisher/emulator_fisher.png` to `tests/figures/emulator_precision.png` to refresh the published figure.
 <!-- end hybrid-emulator figure -->
 
