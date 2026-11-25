@@ -125,14 +125,11 @@ likelihood:
     - roman_BARYON_Q3
     - roman_BARYON_Q4
     output_params: []
-prior:
-  emulator_omegabh2_cap: "lambda omegab, H0: 0.0 if omegab*(H0/100)**2 < 0.035 else -np.inf"
-
 params:
   As_1e9:
     prior:
-      min: 1.0000000000000002
-      max: 3.5
+      min: 0.5
+      max: 5
     ref:
       dist: norm
       loc: 2.1
@@ -154,7 +151,7 @@ params:
   H0:
     prior:
       min: 45
-      max: 84.99999999999999
+      max: 91
     ref:
       dist: norm
       loc: 67.32
@@ -174,8 +171,8 @@ params:
     drop: true
   omegam:
     prior:
-      min: 0.20000000000000004
-      max: 0.49999999999999994
+      min: 0.1
+      max: 0.9
     ref:
       dist: norm
       loc: 0.316
