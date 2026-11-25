@@ -542,6 +542,9 @@ that posterior importance weights have adequate effective sample size;
 that must be checked on the chain used for reweighting.
 
 <!-- hybrid-emulator figure -->
+The figures below show the earlier benchmark. Runs with $w_0+w_a<-0.4$
+are pending.
+
 **Emulator training range**
 
 | Parameter | Range |
