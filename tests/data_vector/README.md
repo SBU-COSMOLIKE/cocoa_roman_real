@@ -39,7 +39,9 @@ it measured.
     10. [The halo-model checks](#halo_checks)
     11. [The non-Limber early-exit tolerance checks](#nonlimber_tolerance)
     12. [The non-Limber radial grid](#nonlimber_grid)
-3. [Appendix](#appendix)
+3. [Hybrid-emulator accuracy test](#hybrid-emulator-accuracy-test)
+4. [FoM convergence](#fom-convergence)
+5. [Appendix](#appendix)
     1. [FAQ: What does this project's snapshot hold?](#frozen_copy)
     2. [FAQ: How can maintainers refresh the snapshot?](#refreeze)
 
@@ -495,6 +497,144 @@ the frozen references were regenerated at 4.5, and
 `test_nonlimber_endpoint.py` checks the preset (4.5), the resets,
 invalid values, and that the endpoint is independent of the radial
 node count.
+
+## Hybrid-emulator accuracy test
+
+[compare_emulator_camb.py](../compare_emulator_camb.py) compares the candidate
+matter-spectrum emulator with fresh CAMB predictions at the saved 50
+broad and 25 focused cosmologies. Its fixed [benchmark](../fisher_reference/)
+supplies the nuisance point, mask and covariance, enforces $0.2<\Omega_m<0.5$,
+and fixes
+$\sum m_\nu=0.06$ eV. Both routes use plain `mead2020` and CAMB distances;
+the production YAML is not changed. The selected example has HOD galaxy
+power and halo intrinsic alignments disabled. Its prediction therefore does
+not test the EMUL2 approximation to cold-matter power used by those models.
+The two routes retain their own power-spectrum coverage and extrapolation,
+so the distance includes those differences as well as network error.
+
+**Step :one:**: from activated Cocoa, set `EMULATOR_CODE_DIR` and
+`EMULATOR_DATA_DIR` to the candidate code and model checkouts. The model checkout must contain
+`emulmps/w0wa_mead2020/emulator_mead2020.keras` and its `metadata.joblib`.
+**Step :two:**: set the OpenMP thread count. The driver fixes BLAS to one
+thread before importing numerical libraries.
+
+```bash
+export OMP_NUM_THREADS=4
+```
+
+**Step :three:**: run the comparison.
+
+```bash
+python projects/roman_real/tests/compare_emulator_camb.py
+```
+
+The script uses the existing shared `cocoa_testing.py` machinery. It saves
+points, vectors, failures and the prediction distance
+$\Delta\chi^2=\delta m^T C^{-1}\delta m$ under
+a timestamped directory below `chains/matter_emulator_points/`. A value below 1 passes the
+requested criterion; failures are retained, never replaced by new draws.
+The project prior can extend beyond the emulator training range. Separate
+those extrapolation failures from interpolation errors when interpreting
+the saved points; this test does not narrow the prior to favor the emulator.
+`--models`, `--seed` and `--limit` change the test size, reproducible seed and
+threshold. BLAS stays at one thread. This comparison does not establish
+that posterior importance weights have adequate effective sample size;
+that must be checked on the chain used for reweighting.
+
+<!-- hybrid-emulator figure -->
+The fixed tables intersect the benchmark priors with training-motivated cuts.
+Points outside the emulator's recorded scaler bounds exercise extrapolation.
+
+| Parameter | Benchmark restriction |
+| --- | --- |
+| Total matter density | $0.2<\Omega_m<0.5$ |
+| Primordial amplitude | $1<10^9 A_s\le 3.5$ |
+| Hubble constant | $H_0<85$ km/s/Mpc |
+| Present dark-energy equation of state in CPL | $w_0>-2$ |
+| Physical baryon density | $\Omega_b(H_0/100)^2<0.035$ |
+| CAMB neutrino mass | One massive species with $\sum m_\nu=0.06$ eV |
+
+Both model routes evaluate the 50 broad points (open symbols) and the 25
+focused points (filled symbols). The solid and dashed curves show the saved
+68% and 95% nuisance-marginalized Fisher regions.
+
+CAMB uses `AccuracyBoost: 1.05`, `k_per_logint: 15` and `kmax: 7.5`. The saved
+Fisher diagnostic found a maximum FoM shift of 0.12%.
+
+![Roman real hybrid-emulator error against CAMB](figures/emulator_precision.png)
+
+Counts use the thresholds 0.2, 0.5, 1 and 4 in that order.
+
+| Case | Broad below threshold (50) | Focused below threshold (25) | Nonfinite broad/focused |
+| --- | --- | --- | --- |
+| Roman real | 17/23/26/32 | 17/20/21/22 | 0/0 |
+
+<!-- end hybrid-emulator figure -->
+
+E5 reads the saved `benchmark.yaml` in [fisher_reference/](../fisher_reference/).
+The benchmark fixes the likelihood, data selection, sampled parameters,
+fiducial and normal numerical controls.
+
+The accuracy test evaluates CAMB and the candidate at the fixed
+[50 broad and 25 focused points](../fisher_reference/) and stores both
+vectors, the covariance-weighted error, and point status. Nuisance inputs are
+held at the evaluate fiducial. Missing CAMB predictions or a comparison
+with no valid vectors fails E5. The E5 adapter treats large prediction errors
+as advisory. The strict standalone command also checks the error threshold.
+
+```bash
+python -m pytest projects/roman_real/tests/data_vector/test_emul2.py -k e5
+```
+
+To distribute the numerical comparisons across two MPI ranks with four
+OpenMP threads each, use the same driver directly from activated Cocoa.
+Keep BLAS at one thread and pass `--mpi` so the ranks own different points.
+
+```bash
+OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  VECLIB_MAXIMUM_THREADS=1 mpirun -n 2 --bind-to none python -m mpi4py \
+  projects/roman_real/tests/compare_emulator_camb.py --mpi --advisory
+```
+
+Saved Fisher contours show the bounded 68% and 95% regions of a centered
+CAMB forecast with nuisance parameters marginalized. The saved reference
+records the matrix, priors, fiducial, selection and numerical diagnostics.
+The accuracy run uses the available saved contour for display. Prediction
+errors remain valid when the saved contour is absent or marked unreliable. `--fisher-reference` selects a saved directory, and
+`--no-fisher` omits the display. Candidate networks can be changed using
+`EMULATOR_CODE_DIR` and `EMULATOR_DATA_DIR`.
+
+```bash
+python projects/roman_real/tests/compare_emulator_camb.py --plot-only /path/to/run
+```
+
+## FoM convergence
+
+This test estimates how numerical settings affect the Fisher figure of merit
+(FoM), which is proportional to the inverse area of the marginalized
+parameter ellipse. The pair is $w_0,w_a$ for CPL and $10^9 A_s,\Omega_m$
+for ΛCDM. The test builds one full CAMB Fisher matrix at the benchmark
+settings. Fourth differences of its model vectors rank contributions from
+numerical noise.
+The higher-accuracy calculation reevaluates only the selected derivative
+columns. The estimate uses the same baseline Fisher weights at both settings.
+
+Each nonzero fiducial uses `h = 0.025 * abs(fiducial)`, capped as needed
+to keep both `±2h` stencil points within its prior. Zero-centered
+coordinates use their configured absolute step or one tenth of their proposal
+width. The output records the actual steps, numerical settings, measured and
+omitted columns, and the estimated FoM shift. Contributions from omitted
+columns remain unbounded, so the estimate measures sensitivity to the tested
+refinement.
+
+Run from activated Cocoa with two MPI ranks, four OpenMP threads per rank
+and one BLAS thread.
+
+```bash
+OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  VECLIB_MAXIMUM_THREADS=1 mpirun -n 2 --bind-to none python -m mpi4py \
+  projects/roman_real/tests/check_fom_convergence.py --mpi
+```
 
 ## Appendix <a name="appendix"></a>
 
