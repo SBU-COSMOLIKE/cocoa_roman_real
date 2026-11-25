@@ -31,6 +31,8 @@
     "frozen/data/tatt_roman_real.dataset": "d66ecdd2fd29ef5a3137fae6372d890aa4a8cae70c76743d65648cbff344ab6a",
     "frozen/data/tatt_roman_real.modelvector": "3eaff0a27499f69f4a61b620c10bff2619e4b1e7d39ce80fd8d3f66667ae4d95",
     "frozen/data/tatt_roman_real_ones.dataset": "39ac1c6895a20bde1ee366c9b3be81a76dfd5cacef84b76bdc035781b459fc15",
+    "frozen/emulator_precision/focused_25.txt": "3ab8178b82519c0b5dff50033b38165c2795b89752a34f0d9e787f8c5c02e7c0",
+    "frozen/emulator_precision/prior_50.txt": "e7589dde114a387391497131486d6d887bb9ba6ddfbc779346034ba6a841c1e4",
     "frozen/frozen_config_example1.py": "c87172db317b0ad6d0b3ba8545f6046f4a5ab0f80c8860cd83d2111ae84cefdd",
     "frozen/frozen_config_example2.py": "fbd685b6bb82230bcbbcde2d7f3ffc6b7f260a7ff72623a5f7dbbd9caa1b24a8",
     "frozen/frozen_config_example2_2x2pt.py": "c4715a60385514c126cf4ead380eeb701dcedc90aecd6c6f0eca8aa06c17de32",
