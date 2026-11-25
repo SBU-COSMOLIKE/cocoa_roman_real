@@ -542,21 +542,21 @@ that posterior importance weights have adequate effective sample size;
 that must be checked on the chain used for reweighting.
 
 <!-- hybrid-emulator figure -->
-The fixed tables intersect the benchmark priors with training-motivated cuts.
-Points outside the emulator's recorded scaler bounds exercise extrapolation.
+**Emulator training range**
 
-| Parameter | Benchmark restriction |
+| Parameter | Range |
 | --- | --- |
 | Total matter density | $0.2<\Omega_m<0.5$ |
 | Primordial amplitude | $1<10^9 A_s\le 3.5$ |
 | Hubble constant | $H_0<85$ km/s/Mpc |
 | Present dark-energy equation of state in CPL | $w_0>-2$ |
 | Physical baryon density | $\Omega_b(H_0/100)^2<0.035$ |
-| CAMB neutrino mass | One massive species with $\sum m_\nu=0.06$ eV |
 
-Both model routes evaluate the 50 broad points (open symbols) and the 25
-focused points (filled symbols). The solid and dashed curves show the saved
-68% and 95% nuisance-marginalized Fisher regions.
+The fixed tables intersect this range with the benchmark priors. CAMB uses
+one massive species with $\sum m_\nu=0.06$ eV. Both model routes evaluate
+the same 50 broad points (open symbols) and 25 focused points (filled symbols).
+The solid and dashed curves show the saved 68% and 95%
+nuisance-marginalized Fisher regions.
 
 CAMB uses `AccuracyBoost: 1.05`, `k_per_logint: 15` and `kmax: 7.5`. The saved
 Fisher diagnostic found a maximum FoM shift of 0.12%.
