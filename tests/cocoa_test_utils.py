@@ -81,9 +81,15 @@ TATT_GENERATORS = {
 
 # ---- configurations ---------------------------------------------------------
 
+# The random-model test uses this current NLA analysis and its joint prior.
+NMODELS_CURRENT_PRIOR = True
+NMODELS_EXAMPLES = (("example2", "Roman real space - 3×2pt"),)
+
+
 # The two frozen configurations. "likelihood" is the cobaya component
 # name, needed to reach that block inside the loaded info dictionary;
-# "provenance" names the human-readable snapshot (never loaded).
+# "provenance" names the current evaluation YAML for the random-model
+# test. frozen/ retains a snapshot for reference.
 EXAMPLES = {
     "example1": {
         "frozen_module": "frozen_config_example1.py",
@@ -94,6 +100,7 @@ EXAMPLES = {
     "example2": {
         "frozen_module": "frozen_config_example2.py",
         "provenance": "EXAMPLE_EVALUATE2.yaml",
+        "nmodels_fisher": "fisher_reference/3x2pt/contours.json",
         "likelihood": "roman_real.combo_3x2pt",
         "tatt_dataset": "tatt_roman_real.dataset",
     },
