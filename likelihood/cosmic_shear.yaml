@@ -25,6 +25,8 @@ nonlimber_tolerance_gs: 0.0
 # delta chi2 = 48, almost all in gamma_t (tests/data_vector/README.md)
 lmax_nonlimber: 200
 integration_accuracy: 0 # integer 0, 1 or 2
+# Multipliers for each probe’s radial integration resolution.
+integration_accuracy_ss: 1.0
 # n(z) interpolation: 0 = cubic spline, 1 = linear, 2+ = Steffen (monotone)
 # 0: original midpoint curve (default); 1: histogram + Akima.
 # Akima ignores photoz_interpolation_type; select its fixed first factor below.
