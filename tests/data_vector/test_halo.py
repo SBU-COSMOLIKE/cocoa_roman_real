@@ -663,7 +663,11 @@ def rebuild_tables(state):
     like = state["like"]
     state["ci"].init_accuracy_boost(
         accuracy_boost=float(like["accuracyboost"]),
-        integration_accuracy=int(like["integration_accuracy"]))
+        integration_accuracy=int(like["integration_accuracy"]),
+        integration_accuracy_ss=like.get("integration_accuracy_ss", 1.0),
+        integration_accuracy_gs=like.get("integration_accuracy_gs", 1.0),
+        integration_accuracy_gg=like.get("integration_accuracy_gg", 1.0),
+    )
 
 
 def build_halo_state():

@@ -524,9 +524,14 @@ def worker_main(spec_json, out_path):
 
     if kind == "accuracy":
         model, point, ci = build_model(workdir, 1)
+        like = model.likelihood[LIKELIHOOD]
         ci.init_accuracy_boost(
             accuracy_boost=float(spec["accuracy_boost"]),
-            integration_accuracy=int(spec["integration_accuracy"]))
+            integration_accuracy=int(spec["integration_accuracy"]),
+            integration_accuracy_ss=getattr(like, "integration_accuracy_ss", 1.0),
+            integration_accuracy_gs=getattr(like, "integration_accuracy_gs", 1.0),
+            integration_accuracy_gg=getattr(like, "integration_accuracy_gg", 1.0),
+        )
         set_ia(ci, IA_HALO_FIDUCIAL)
         u.evaluate_chi2(model, point)
         out["dv_on"] = data_vector(ci)
