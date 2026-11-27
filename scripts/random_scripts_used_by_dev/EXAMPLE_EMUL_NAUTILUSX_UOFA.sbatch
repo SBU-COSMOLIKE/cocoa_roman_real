@@ -51,4 +51,4 @@ ulimit -u 2000000 # require line when nmpi is high
     ./projects/roman_real/EXAMPLE_EMUL_NAUTILUS${SLURM_ARRAY_TASK_ID}.py \
     --root ./projects/roman_real/ \
     --outroot "EXAMPLE_EMUL_NAUTILUS${SLURM_ARRAY_TASK_ID}" \
-    --maxfeval 750000 --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
+    --nlive 2048 --neff 15000 --flive 0.01 --nnetworks 5
