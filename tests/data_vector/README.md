@@ -588,13 +588,15 @@ node count.
 the same saved cosmologies and nuisance values. Score the prediction
 differences using the benchmark mask and covariance.
 
+The command uses emulated distances and spectra for the EMUL2 candidate.
+The saved figures and results below used CAMB distances for both routes.
+
 [compare_emulator_camb.py](../compare_emulator_camb.py) compares the candidate
 matter-spectrum emulator with fresh CAMB predictions at the saved 50
 broad and 25 focused cosmologies. Its fixed [benchmark](../fisher_reference/)
 supplies the nuisance point, mask and covariance, enforces $0.2<\Omega_m<0.5$,
 and fixes
-$\sum m_\nu=0.06$ eV. Both routes use plain `mead2020` and CAMB distances;
-the production YAML is not changed. The selected example has HOD galaxy
+$\sum m_\nu=0.06$ eV. Both routes use plain `mead2020`. The selected example has HOD galaxy
 power and halo intrinsic alignments disabled. Its prediction therefore does
 not test the EMUL2 approximation to cold-matter power used by those models.
 The two routes retain their own power-spectrum coverage and extrapolation,
